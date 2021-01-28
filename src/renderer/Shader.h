@@ -2,12 +2,16 @@
 #include <string>
 #include <glad/glad.h>
 
+
 class Shader
 {
  public:
-	Shader(std::string&& vertexPath,std::string&& fragmentPath);
+	Shader();
 	~Shader();
 
+	void Build(std::string&& vertexPath,std::string&& fragmentPath);
+	void Bind();
+	void Unbind();
 	GLuint ID() const {return m_shaderID;}
  private:
 	GLuint CompileStage(const GLchar* code, GLenum stage);

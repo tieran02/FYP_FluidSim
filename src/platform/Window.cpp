@@ -1,6 +1,7 @@
 #include "Window.h"
 #include <iostream>
 #include <cassert>
+#include <glad/glad.h>
 
 Window::Window(std::string&& title, uint32_t width, uint32_t height) :
 	m_title{ title },
