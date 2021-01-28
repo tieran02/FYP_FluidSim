@@ -1,12 +1,12 @@
 #include "Window.h"
 #include <iostream>
-#include <assert.h>
+#include <cassert>
 
-Window::Window(std::string&& title, uint32_t width, uint32_t height, std::function<void()>&& update) :
-	m_title(title),
-	m_width(width),
-	m_height(height),
-	m_updateFunc(update)
+Window::Window(std::string&& title, uint32_t width, uint32_t height) :
+	m_title{ title },
+	m_width{ width },
+	m_height{ height },
+	m_window{ nullptr}
 {
 	std::cout << "Starting GLFW context, OpenGL 3.3" << std::endl;
 	init();
@@ -20,7 +20,7 @@ Window::~Window()
 	glfwTerminate();
 }
 
-void Window::Run()
+void Window::Run(const std::function<void()>& draw)
 {
 	// Game loop
 	while (!glfwWindowShouldClose(m_window))
@@ -28,8 +28,8 @@ void Window::Run()
 		// Check if any events have been activated (key pressed, mouse moved etc.) and call corresponding response functions
 		glfwPollEvents();
 
-		if(m_updateFunc)
-			m_updateFunc();
+		if(draw)
+			draw();
 
 		// Swap the screen buffers
 		glfwSwapBuffers(m_window);
@@ -59,11 +59,6 @@ void Window::init()
 
 	// Set the required callback functions
 	glfwSetKeyCallback(m_window, key_callback);
-
-	assert(gladLoadGLLoader((GLADloadproc) glfwGetProcAddress));
-
-	// Define the viewport dimensions
-	glViewport(0, 0, m_width, m_height);
 }
 
 void Window::key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
