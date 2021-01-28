@@ -11,7 +11,7 @@ Renderer::Renderer(uint32_t viewportWidth, uint32_t viewportHeight)
 	glViewport(0, 0, viewportWidth, viewportHeight);
 }
 
-void Renderer::Draw()
+void Renderer::DrawFrame()
 {
 	// Render
 	// Clear the colorbuffer
