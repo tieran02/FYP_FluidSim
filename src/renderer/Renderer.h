@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include "Shader.h"
+#include "Buffer.h"
 
 class Renderer
 {
@@ -9,6 +10,7 @@ class Renderer
 	~Renderer();
 	void DrawFrame();
  private:
-	unsigned int VBO, VAO;
+	unsigned int VAO;
+	Buffer vertexBuffer{BufferType::VERTEX_BUFFER};
 	Shader shader;
 };
