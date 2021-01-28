@@ -38,6 +38,60 @@ void Shader::Unbind()
 	glUseProgram(0);
 }
 
+void Shader::SetBool(const std::string& name, bool value) const
+{
+	int location = glGetUniformLocation(m_shaderID, name.c_str());
+	glUniform1i(location, static_cast<int>(value));
+}
+
+void Shader::SetInt(const std::string& name, int value) const
+{
+	int location = glGetUniformLocation(m_shaderID, name.c_str());
+	glUniform1i(location, value);
+}
+
+void Shader::SetFloat(const std::string& name, float value) const
+{
+	int location = glGetUniformLocation(m_shaderID, name.c_str());
+	glUniform1f(location, value);
+}
+
+void Shader::SetVec2(const std::string& name, glm::vec2 value) const
+{
+	int location = glGetUniformLocation(m_shaderID, name.c_str());
+	glUniform2f(location, value.x, value.y);
+}
+
+void Shader::SetVec3(const std::string& name, glm::vec3 value) const
+{
+	int location = glGetUniformLocation(m_shaderID, name.c_str());
+	glUniform3f(location, value.x, value.y, value.z);
+}
+
+void Shader::SetVec4(const std::string& name, glm::vec4 value) const
+{
+	int location = glGetUniformLocation(m_shaderID, name.c_str());
+	glUniform4f(location, value.x, value.y, value.z, value.w);
+}
+
+void Shader::SetMat2(const std::string& name, const glm::mat2& value, bool transpose) const
+{
+	int location = glGetUniformLocation(m_shaderID, name.c_str());
+	glUniformMatrix2fv(location,1, transpose, &value[0][0]);
+}
+
+void Shader::SetMat3(const std::string& name, const glm::mat3& value, bool transpose) const
+{
+	int location = glGetUniformLocation(m_shaderID, name.c_str());
+	glUniformMatrix3fv(location,1, transpose, &value[0][0]);
+}
+
+void Shader::SetMat4(const std::string& name, const glm::mat4& value, bool transpose) const
+{
+	int location = glGetUniformLocation(m_shaderID, name.c_str());
+	glUniformMatrix4fv(location,1, transpose, &value[0][0]);
+}
+
 GLuint Shader::CompileStage(const GLchar* code, GLenum stage)
 {
 	GLuint shader = 0;

@@ -47,9 +47,8 @@ void Renderer::DrawFrame()
 
 	// update shader uniform
 	float timeValue = glfwGetTime();
-	float greenValue = sin(timeValue) / 2.0f + 0.5f;
-	int vertexColorLocation = glGetUniformLocation(shader.ID(), "ourColor");
-	glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
+	glm::vec4 color{0.0f, sin(timeValue) / 2.0f + 0.5f ,0.0f ,1.0f};
+	shader.SetVec4("ourColor", color);
 
 	// render the triangle
 	glDrawArrays(GL_TRIANGLES, 0, 3);
