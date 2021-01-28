@@ -6,6 +6,7 @@ void update();
 int main()
 {
 	Window window("Fluid Simulation", 1280, 720, update);
+	window.Run();
 }
 
 void update()
