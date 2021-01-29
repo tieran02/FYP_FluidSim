@@ -1,5 +1,6 @@
 #pragma once
 #include <glad/glad.h>
+#include <NonCopyable.h>
 
 enum class BufferType
 {
@@ -9,7 +10,7 @@ enum class BufferType
 	STORAGE_BUFFER
 };
 
-class Buffer
+class Buffer : NonCopyable
 {
  public:
 	Buffer(BufferType bufferType);

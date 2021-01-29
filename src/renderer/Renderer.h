@@ -1,9 +1,10 @@
 #pragma once
 #include <cstdint>
+#include <NonCopyable.h>
 #include "Shader.h"
 #include "Buffer.h"
 
-class Renderer
+class Renderer : NonCopyable
 {
  public:
 	Renderer(uint32_t viewportWidth, uint32_t viewportHeight);

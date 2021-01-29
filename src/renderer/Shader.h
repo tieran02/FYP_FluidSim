@@ -2,8 +2,9 @@
 #include <string>
 #include <glad/glad.h>
 #include <glm.hpp>
+#include <NonCopyable.h>
 
-class Shader
+class Shader : NonCopyable
 {
  public:
 	Shader();
