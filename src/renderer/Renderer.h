@@ -11,7 +11,9 @@ class Renderer : NonCopyable
 	~Renderer();
 	void DrawFrame();
  private:
-	unsigned int VAO;
+	void BuildVAO();
+
+	unsigned int m_VAO;
 	Buffer vertexBuffer{BufferType::VERTEX_BUFFER};
 	Shader shader;
 };

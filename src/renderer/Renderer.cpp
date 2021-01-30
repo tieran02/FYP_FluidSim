@@ -1,8 +1,9 @@
 #include "Renderer.h"
+#include "Vertex.h"
 #include <GLFW/glfw3.h>
 #include <cassert>
 
-Renderer::Renderer(uint32_t viewportWidth, uint32_t viewportHeight)
+Renderer::Renderer(uint32_t viewportWidth, uint32_t viewportHeight) : m_VAO(0)
 {
 	assert(gladLoadGLLoader((GLADloadproc) glfwGetProcAddress));
 
@@ -12,28 +13,25 @@ Renderer::Renderer(uint32_t viewportWidth, uint32_t viewportHeight)
 	//build shader
 	shader.Build("resources/shaders/testShader.vert","resources/shaders/testShader.frag");
 
-	float vertices[] = {
-		0.5f, -0.5f, 0.0f,  // bottom right
-		-0.5f, -0.5f, 0.0f,  // bottom left
-		0.0f,  0.5f, 0.0f   // top
+	Vertex vertices[] =
+	{
+		{glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(0,0,0), glm::vec2(0,0)},
+		{glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0,0,0), glm::vec2(0,0)},
+		{glm::vec3(0.0f,  0.75f, 0.0f), glm::vec3(0,0,0), glm::vec2(0,0)}
 	};
 
-	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
-
+	// We only need one VAO for now as we just use the Vertex struct as the layout,
+	// if decide to have another vertex layout then another VAO will be needed.
+	BuildVAO();
 	vertexBuffer.Build(vertices, sizeof(vertices));
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	glBindVertexArray(VAO);
+	Vertex::EnableAttributes();
 }
 
 Renderer::~Renderer()
 {
-	glDeleteVertexArrays(1, &VAO);
+	glDeleteVertexArrays(1, &m_VAO);
 }
-
 
 void Renderer::DrawFrame()
 {
@@ -48,4 +46,12 @@ void Renderer::DrawFrame()
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
 	shader.Unbind();
+}
+
+void Renderer::BuildVAO()
+{
+	glGenVertexArrays(1, &m_VAO);
+	glBindVertexArray(m_VAO);
+
+
 }
