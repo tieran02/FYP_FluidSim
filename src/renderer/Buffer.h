@@ -22,6 +22,7 @@ class Buffer : NonCopyable, NonMovable
 	void Unbind();
 
 	GLuint ID() const {return m_id;}
+	bool Valid() const {return m_id > 0;}
  private:
 	BufferType m_type;
  	GLuint m_id;

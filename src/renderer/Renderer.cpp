@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 #include <cassert>
 #include <iostream>
+#include <renderer/primitives/Mesh.h>
 
 Renderer::Renderer(uint32_t viewportWidth, uint32_t viewportHeight) : m_VAO(0)
 {
@@ -15,12 +16,21 @@ Renderer::Renderer(uint32_t viewportWidth, uint32_t viewportHeight) : m_VAO(0)
 	//build shader
 	shader.Build("resources/shaders/testShader.vert","resources/shaders/testShader.frag");
 
-	Vertex vertices[] =
+	std::vector<Vertex> vertices =
 	{
+		{glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec3(0,0,0), glm::vec2(0,0)},
 		{glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(0,0,0), glm::vec2(0,0)},
 		{glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0,0,0), glm::vec2(0,0)},
-		{glm::vec3(0.0f,  0.75f, 0.0f), glm::vec3(0,0,0), glm::vec2(0,0)}
+		{glm::vec3( -0.5f,  0.5f, 0.0f), glm::vec3(0,0,0), glm::vec2(0,0)}
 	};
+
+	std::vector<uint32_t> indices =
+	{
+		0, 1, 3,   // first triangle
+		1, 2, 3    // second triangle
+	};
+
+	mesh.Build(std::move(vertices),std::move(indices));
 
 	Vertex vertices1[] =
 	{
@@ -34,8 +44,7 @@ Renderer::Renderer(uint32_t viewportWidth, uint32_t viewportHeight) : m_VAO(0)
 	BuildVAO();
 	Vertex::EnableAttributes();
 
-	vertexBuffer.Build(vertices, sizeof(vertices));
-	vertexBuffer1.Build(vertices1, sizeof(vertices1));
+	vertexBuffer1.Build(vertices1, 3 * sizeof(Vertex));
 }
 
 Renderer::~Renderer()
@@ -56,18 +65,16 @@ void Renderer::DrawFrame()
 	{
 		glm::vec4 color{0.0f, sin(timeValue) / 2.0f + 0.5f ,0.0f ,1.0f};
 		shader.SetVec4("ourColor", color);
-		vertexBuffer.Bind();
+		mesh.Draw();
 	}
 	else
 	{
 		glm::vec4 color{0.0f, 0.0f ,sin(timeValue) / 2.0f + 0.5f ,1.0f};
 		shader.SetVec4("ourColor", color);
 		vertexBuffer1.Bind();
+		//render the triangle
+		glDrawArrays(GL_TRIANGLES, 0, 3);
 	}
-
-
-	//render the triangle
-	glDrawArrays(GL_TRIANGLES, 0, 3);
 
 	shader.Unbind();
 }
