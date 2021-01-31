@@ -2,10 +2,12 @@
 #include "Vertex.h"
 #include <GLFW/glfw3.h>
 #include <cassert>
+#include <iostream>
 
 Renderer::Renderer(uint32_t viewportWidth, uint32_t viewportHeight) : m_VAO(0)
 {
 	assert(gladLoadGLLoader((GLADloadproc) glfwGetProcAddress));
+	std::cout << "Renderer using OpenGL 4.5" << std::endl;
 
 	// Define the viewport dimensions
 	glViewport(0, 0, viewportWidth, viewportHeight);
@@ -20,12 +22,20 @@ Renderer::Renderer(uint32_t viewportWidth, uint32_t viewportHeight) : m_VAO(0)
 		{glm::vec3(0.0f,  0.75f, 0.0f), glm::vec3(0,0,0), glm::vec2(0,0)}
 	};
 
+	Vertex vertices1[] =
+	{
+		{glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(0,0,0), glm::vec2(0,0)},
+		{glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0,0,0), glm::vec2(0,0)},
+		{glm::vec3(0.0f,  0.25f, 0.0f), glm::vec3(0,0,0), glm::vec2(0,0)}
+	};
+
 	// We only need one VAO for now as we just use the Vertex struct as the layout,
 	// if decide to have another vertex layout then another VAO will be needed.
 	BuildVAO();
-	vertexBuffer.Build(vertices, sizeof(vertices));
-
 	Vertex::EnableAttributes();
+
+	vertexBuffer.Build(vertices, sizeof(vertices));
+	vertexBuffer1.Build(vertices1, sizeof(vertices1));
 }
 
 Renderer::~Renderer()
@@ -35,14 +45,28 @@ Renderer::~Renderer()
 
 void Renderer::DrawFrame()
 {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 	shader.Bind();
 
 	// update shader uniform
 	float timeValue = glfwGetTime();
-	glm::vec4 color{0.0f, sin(timeValue) / 2.0f + 0.5f ,0.0f ,1.0f};
-	shader.SetVec4("ourColor", color);
 
-	// render the triangle
+	if(static_cast<int>(std::floor(timeValue)) % 2 == 0)
+	{
+		glm::vec4 color{0.0f, sin(timeValue) / 2.0f + 0.5f ,0.0f ,1.0f};
+		shader.SetVec4("ourColor", color);
+		vertexBuffer.Bind();
+	}
+	else
+	{
+		glm::vec4 color{0.0f, 0.0f ,sin(timeValue) / 2.0f + 0.5f ,1.0f};
+		shader.SetVec4("ourColor", color);
+		vertexBuffer1.Bind();
+	}
+
+
+	//render the triangle
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
 	shader.Unbind();
@@ -52,6 +76,4 @@ void Renderer::BuildVAO()
 {
 	glGenVertexArrays(1, &m_VAO);
 	glBindVertexArray(m_VAO);
-
-
 }

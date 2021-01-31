@@ -18,6 +18,9 @@ class Buffer : NonCopyable, NonMovable
 	~Buffer();
 
 	void Build(void* data, size_t size);
+	void Bind();
+	void Unbind();
+
 	GLuint ID() const {return m_id;}
  private:
 	BufferType m_type;

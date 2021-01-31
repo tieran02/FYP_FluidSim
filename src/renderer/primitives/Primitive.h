@@ -12,5 +12,5 @@ class Primitive
 	virtual void Build() = 0;
  private:
 	std::vector<Vertex> m_vertices;
-	GLuint m_vao, m_vbo;
+	GLuint m_vbo;
 };

@@ -15,5 +15,6 @@ class Renderer : NonCopyable
 
 	unsigned int m_VAO;
 	Buffer vertexBuffer{BufferType::VERTEX_BUFFER};
+	Buffer vertexBuffer1{BufferType::VERTEX_BUFFER};
 	Shader shader;
 };

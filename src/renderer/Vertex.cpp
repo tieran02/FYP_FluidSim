@@ -5,11 +5,15 @@ void Vertex::EnableAttributes()
 {
 	// positions
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+	glVertexAttribFormat(0, 3, GL_FLOAT, false, offsetof(Vertex, Position));
+	glVertexAttribBinding(0, 0);
+
 	// normals
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
+	glVertexAttribFormat(1, 3, GL_FLOAT, false, offsetof(Vertex, Normal));
+	glVertexAttribBinding(1, 0);
 	// texture coords
 	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
+	glVertexAttribFormat(2, 2, GL_FLOAT, false, offsetof(Vertex, TexCoords));
+	glVertexAttribBinding(2, 0);
 }
