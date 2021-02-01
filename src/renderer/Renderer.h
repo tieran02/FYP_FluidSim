@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <NonCopyable.h>
 #include <renderer/primitives/Mesh.h>
+#include <renderer/primitives/PlanePrimitive.h>
 #include "Shader.h"
 #include "Buffer.h"
 
@@ -18,6 +19,6 @@ class Renderer : NonCopyable
 
 	unsigned int m_VAO;
 	Buffer vertexBuffer1{BufferType::VERTEX_BUFFER};
-	Mesh mesh;
+	PlanePrimitive plane{glm::vec2(0.75f,0.5f)};
 	Shader shader;
 };

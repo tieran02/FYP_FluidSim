@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <renderer/Vertex.h>
-#include <glad/gl.h>
+#include "Mesh.h"
 
 class Primitive
 {
@@ -10,7 +10,8 @@ class Primitive
 	Primitive();
 	virtual ~Primitive();
 	virtual void Build() = 0;
- private:
-	std::vector<Vertex> m_vertices;
-	GLuint m_vbo;
+
+	Mesh& GetMesh();
+ protected:
+	Mesh m_mesh;
 };

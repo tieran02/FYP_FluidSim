@@ -15,21 +15,7 @@ Renderer::Renderer(uint32_t viewportWidth, uint32_t viewportHeight) : m_VAO(0)
 	//build shader
 	shader.Build("resources/shaders/testShader.vert","resources/shaders/testShader.frag");
 
-	std::vector<Vertex> vertices =
-	{
-		{glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec3(0,0,0), glm::vec2(0,0)},
-		{glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(0,0,0), glm::vec2(0,0)},
-		{glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0,0,0), glm::vec2(0,0)},
-		{glm::vec3( -0.5f,  0.5f, 0.0f), glm::vec3(0,0,0), glm::vec2(0,0)}
-	};
-
-	std::vector<uint32_t> indices =
-	{
-		0, 1, 3,   // first triangle
-		1, 2, 3    // second triangle
-	};
-
-	mesh.Build(std::move(vertices),std::move(indices));
+	plane.Build();
 
 	Vertex vertices1[] =
 	{
@@ -65,7 +51,7 @@ void Renderer::DrawFrame()
 	{
 		glm::vec4 color{0.0f, sin(timeValue) / 2.0f + 0.5f ,0.0f ,1.0f};
 		shader.SetVec4("ourColor", color);
-		mesh.Draw();
+		plane.GetMesh().Draw();
 	}
 	else
 	{
