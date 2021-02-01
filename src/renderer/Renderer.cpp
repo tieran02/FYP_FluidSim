@@ -1,14 +1,12 @@
 #include "Renderer.h"
-#include "Vertex.h"
-#include <GLFW/glfw3.h>
-#include <cassert>
 #include <iostream>
-#include <renderer/primitives/Mesh.h>
+#include <util/Log.h>
 
 Renderer::Renderer(uint32_t viewportWidth, uint32_t viewportHeight) : m_VAO(0)
 {
-	assert(gladLoadGLLoader((GLADloadproc) glfwGetProcAddress));
-	std::cout << "Renderer using OpenGL 4.5" << std::endl;
+	int initResult = gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
+	CORE_ASSERT(initResult, "Failed to init GLAD")
+	LOG_CORE_INFO("Renderer using OpenGL 4.5");
 
 	// Define the viewport dimensions
 	glViewport(0, 0, viewportWidth, viewportHeight);

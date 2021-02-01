@@ -1,6 +1,16 @@
 #pragma once
+
+#ifdef _WIN32
+#include <windows.h>
+#else
+#define APIENTRY
+#endif
+
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+#include "glad/glad.h"
+
+
 #include <string>
 #include <functional>
 

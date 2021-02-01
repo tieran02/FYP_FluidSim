@@ -1,6 +1,6 @@
 #include <iostream>
 #include "Shader.h"
-#include "Util.h"
+#include "util/Util.h"
 
 Shader::Shader() : m_shaderID{0}
 {

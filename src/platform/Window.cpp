@@ -1,7 +1,7 @@
 #include "Window.h"
 #include <iostream>
-#include <cassert>
 #include <glad/glad.h>
+#include <util/Log.h>
 
 Window::Window(std::string&& title, uint32_t width, uint32_t height) :
 	m_title{ title },
@@ -9,7 +9,7 @@ Window::Window(std::string&& title, uint32_t width, uint32_t height) :
 	m_height{ height },
 	m_window{ nullptr}
 {
-	std::cout << "Starting GLFW context" << std::endl;
+	LOG_CORE_INFO("Starting GLFW context");
 	init();
 }
 
@@ -17,7 +17,7 @@ Window::Window(std::string&& title, uint32_t width, uint32_t height) :
 Window::~Window()
 {
 	// Terminates GLFW, clearing any resources allocated by GLFW.
-	std::cout << "Cleaning GLFW context" << std::endl;
+	LOG_CORE_INFO("Cleaning GLFW context");
 	glfwTerminate();
 }
 
@@ -56,7 +56,7 @@ void Window::init()
 	m_window = glfwCreateWindow(m_width, m_height, m_title.c_str(), NULL, NULL);
 	glfwMakeContextCurrent(m_window);
 
-	assert(m_window);
+	CORE_ASSERT(m_window, "Failed to init GLFW window");
 
 	// Set the required callback functions
 	glfwSetKeyCallback(m_window, key_callback);

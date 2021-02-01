@@ -1,4 +1,6 @@
 #pragma once
+
+#include <platform/Window.h>
 #include <cstdint>
 #include <NonCopyable.h>
 #include <renderer/primitives/Mesh.h>
