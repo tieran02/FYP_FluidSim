@@ -8,7 +8,7 @@ Primitive::~Primitive()
 {
 
 }
-Mesh& Primitive::GetMesh()
+const Mesh& Primitive::GetMesh() const
 {
 	return m_mesh;
 }

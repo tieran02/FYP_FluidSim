@@ -38,7 +38,7 @@ void Buffer::Build(void* data, size_t size)
 	}
 }
 
-void Buffer::Bind()
+void Buffer::Bind() const
 {
 	switch (m_type)
 	{
@@ -56,7 +56,7 @@ void Buffer::Bind()
 	}
 }
 
-void Buffer::Unbind()
+void Buffer::Unbind() const
 {
 	switch (m_type)
 	{

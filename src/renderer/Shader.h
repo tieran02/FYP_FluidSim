@@ -11,8 +11,8 @@ class Shader : NonCopyable
 	~Shader();
 
 	void Build(std::string&& vertexPath,std::string&& fragmentPath);
-	void Bind();
-	void Unbind();
+	void Bind() const;
+	void Unbind() const;
 
 	void SetBool(const std::string &name, bool value) const;
 	void SetInt(const std::string &name, int value) const;

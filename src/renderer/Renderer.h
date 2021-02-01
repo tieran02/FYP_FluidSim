@@ -13,7 +13,7 @@ class Renderer : NonCopyable
  public:
 	Renderer(uint32_t viewportWidth, uint32_t viewportHeight);
 	~Renderer();
-	void DrawFrame();
+	void DrawFrame() const;
  private:
 	void BuildVAO();
 

@@ -29,11 +29,11 @@ void Shader::Build(std::string&& vertexPath, std::string&& fragmentPath)
 	glDeleteShader(fragmentStage);
 }
 
-void Shader::Bind()
+void Shader::Bind() const
 {
 	glUseProgram(m_shaderID);
 }
-void Shader::Unbind()
+void Shader::Unbind() const
 {
 	glUseProgram(0);
 }

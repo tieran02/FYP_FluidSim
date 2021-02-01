@@ -12,7 +12,7 @@ class Mesh : NonCopyable, NonMovable
 	Mesh() = default;
 	Mesh(std::vector<Vertex>&& vertices, std::vector<uint32_t>&& indices);
 	void Build(std::vector<Vertex>&& vertices, std::vector<uint32_t>&& indices);
-	void Draw();
+	void Draw() const;
  private:
 	std::vector<Vertex> m_vertices;
 	std::vector<uint32_t> m_indices;

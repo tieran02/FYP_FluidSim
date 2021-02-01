@@ -18,7 +18,7 @@ void Mesh::Build(std::vector<Vertex>&& vertices, std::vector<uint32_t>&& indices
 	m_EBO.Build(m_indices.data(), m_indices.size() * sizeof(uint32_t));
 }
 
-void Mesh::Draw()
+void Mesh::Draw() const
 {
 	m_VBO.Bind();
 	m_EBO.Bind();

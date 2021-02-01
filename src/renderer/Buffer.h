@@ -18,8 +18,8 @@ class Buffer : NonCopyable, NonMovable
 	~Buffer();
 
 	void Build(void* data, size_t size);
-	void Bind();
-	void Unbind();
+	void Bind() const;
+	void Unbind() const;
 
 	GLuint ID() const {return m_id;}
 	bool Valid() const {return m_id > 0;}

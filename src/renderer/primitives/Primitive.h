@@ -11,7 +11,7 @@ class Primitive
 	virtual ~Primitive();
 	virtual void Build() = 0;
 
-	Mesh& GetMesh();
+	const Mesh& GetMesh() const;
  protected:
 	Mesh m_mesh;
 };
