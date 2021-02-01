@@ -4,7 +4,6 @@
 
 Renderer::Renderer(uint32_t viewportWidth, uint32_t viewportHeight) : m_VAO(0)
 {
-
 	int initResult = gladLoadGL((GLADloadfunc) glfwGetProcAddress);
 	CORE_ASSERT(initResult, "Failed to init GLAD")
 	LOG_CORE_INFO("Renderer using OpenGL 4.5");
@@ -16,20 +15,12 @@ Renderer::Renderer(uint32_t viewportWidth, uint32_t viewportHeight) : m_VAO(0)
 	shader.Build("resources/shaders/testShader.vert","resources/shaders/testShader.frag");
 
 	plane.Build();
-
-	Vertex vertices1[] =
-	{
-		{glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(0,0,0), glm::vec2(0,0)},
-		{glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0,0,0), glm::vec2(0,0)},
-		{glm::vec3(0.0f,  0.25f, 0.0f), glm::vec3(0,0,0), glm::vec2(0,0)}
-	};
+	sphere.Build();
 
 	// We only need one VAO for now as we just use the Vertex struct as the layout,
 	// if decide to have another vertex layout then another VAO will be needed.
 	BuildVAO();
 	Vertex::EnableAttributes();
-
-	vertexBuffer1.Build(vertices1, 3 * sizeof(Vertex));
 }
 
 Renderer::~Renderer()
@@ -57,9 +48,7 @@ void Renderer::DrawFrame() const
 	{
 		glm::vec4 color{0.0f, 0.0f ,sin(timeValue) / 2.0f + 0.5f ,1.0f};
 		shader.SetVec4("ourColor", color);
-		vertexBuffer1.Bind();
-		//render the triangle
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		sphere.GetMesh().Draw();
 	}
 
 	shader.Unbind();

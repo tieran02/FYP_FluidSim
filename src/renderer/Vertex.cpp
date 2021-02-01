@@ -18,6 +18,11 @@ void Vertex::EnableAttributes()
 	glVertexAttribBinding(2, 0);
 }
 
+Vertex::Vertex() : Position{0.0f,0.0f,0.0f}, Normal{0.0f,0.0f,0.0f}, TexCoords{0.0f,0.0f}
+{
+
+}
+
 Vertex::Vertex(glm::vec3 Position, glm::vec3 Normal, glm::vec2 TexCoord)
 {
 	this->Position = Position;
@@ -62,3 +67,4 @@ Vertex& Vertex::operator=(Vertex&& other) noexcept
 
 	return *this;
 }
+

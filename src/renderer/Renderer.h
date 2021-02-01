@@ -5,6 +5,7 @@
 #include <NonCopyable.h>
 #include <renderer/primitives/Mesh.h>
 #include <renderer/primitives/PlanePrimitive.h>
+#include <renderer/primitives/SpherePrimitive.h>
 #include "Shader.h"
 #include "Buffer.h"
 
@@ -18,7 +19,7 @@ class Renderer : NonCopyable
 	void BuildVAO();
 
 	unsigned int m_VAO;
-	Buffer vertexBuffer1{BufferType::VERTEX_BUFFER};
 	PlanePrimitive plane{glm::vec2(0.75f,0.5f)};
+	SpherePrimitive sphere{0.5f,24,16};
 	Shader shader;
 };
