@@ -1,4 +1,3 @@
-#include <iostream>
 #include "platform/Window.h"
 #include "renderer/Renderer.h"
 #include <util/Log.h>

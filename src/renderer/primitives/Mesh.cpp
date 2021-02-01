@@ -1,5 +1,6 @@
 #include "Mesh.h"
 #include <cassert>
+#include <util/Log.h>
 
 Mesh::Mesh(std::vector<Vertex>&& vertices, std::vector<uint32_t>&& indices)
 {
@@ -8,7 +9,7 @@ Mesh::Mesh(std::vector<Vertex>&& vertices, std::vector<uint32_t>&& indices)
 
 void Mesh::Build(std::vector<Vertex>&& vertices, std::vector<uint32_t>&& indices)
 {
-	assert(!m_VBO.Valid() || !m_EBO.Valid());
+	CORE_ASSERT(!m_VBO.Valid() && !m_EBO.Valid(), "Mesh already has a VBO/EBO");
 
 	m_vertices = std::move(vertices);
 	m_indices = std::move(indices);

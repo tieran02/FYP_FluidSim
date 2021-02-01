@@ -7,6 +7,8 @@ add_subdirectory(vendor/glad) #include glad
 add_subdirectory(vendor/glfw) #include glfw
 
 file(GLOB_RECURSE  SRC_FILES ${PROJECT_SOURCE_DIR}/src/*)
+add_compile_definitions(CORE_DEBUG)
+
 
 add_executable(FYP_FluidSim ${SRC_FILES})
 target_link_libraries(FYP_FluidSim OpenCL::OpenCL glfw glad)

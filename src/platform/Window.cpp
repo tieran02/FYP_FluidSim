@@ -1,6 +1,6 @@
 #include "Window.h"
 #include <iostream>
-#include <glad/glad.h>
+#include "glad/gl.h"
 #include <util/Log.h>
 
 Window::Window(std::string&& title, uint32_t width, uint32_t height) :

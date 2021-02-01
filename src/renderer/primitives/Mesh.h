@@ -1,7 +1,6 @@
 #pragma once
 
 #include <renderer/Vertex.h>
-#include <glad/glad.h>
 #include <vector>
 #include <NonCopyable.h>
 #include <NonMovable.h>

@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <renderer/Vertex.h>
-#include <glad/glad.h>
+#include <glad/gl.h>
 
 class Primitive
 {

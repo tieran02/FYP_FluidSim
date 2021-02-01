@@ -4,7 +4,8 @@
 
 Renderer::Renderer(uint32_t viewportWidth, uint32_t viewportHeight) : m_VAO(0)
 {
-	int initResult = gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
+
+	int initResult = gladLoadGL((GLADloadfunc) glfwGetProcAddress);
 	CORE_ASSERT(initResult, "Failed to init GLAD")
 	LOG_CORE_INFO("Renderer using OpenGL 4.5");
 
@@ -52,6 +53,7 @@ Renderer::~Renderer()
 
 void Renderer::DrawFrame()
 {
+	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	shader.Bind();

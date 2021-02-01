@@ -1,5 +1,5 @@
 #include "Vertex.h"
-#include "glad/glad.h"
+#include "glad/gl.h"
 
 void Vertex::EnableAttributes()
 {

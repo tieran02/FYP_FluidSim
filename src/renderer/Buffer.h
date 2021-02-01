@@ -1,5 +1,5 @@
 #pragma once
-#include <glad/glad.h>
+#include "glad/gl.h"
 #include <NonCopyable.h>
 #include <NonMovable.h>
 
