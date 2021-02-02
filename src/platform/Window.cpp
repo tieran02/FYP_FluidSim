@@ -3,14 +3,20 @@
 #include "glad/gl.h"
 #include <util/Log.h>
 
+const Window* Window::m_instance = nullptr;
+
 Window::Window(std::string&& title, uint32_t width, uint32_t height) :
 	m_title{ title },
 	m_width{ width },
 	m_height{ height },
 	m_window{ nullptr}
 {
-	LOG_CORE_INFO("Starting GLFW context");
-	init();
+	if(!m_instance)
+	{
+		m_instance = this;
+		LOG_CORE_INFO("Starting GLFW context");
+		init();
+	}
 }
 
 
@@ -67,4 +73,13 @@ void Window::key_callback(GLFWwindow* window, int key, int scancode, int action,
 	std::cout << key << std::endl;
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
+}
+
+uint32_t Window::Width()
+{
+	return m_instance->m_width;
+}
+uint32_t Window::Height()
+{
+	return m_instance->m_height;
 }

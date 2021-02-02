@@ -21,9 +21,13 @@ class Window
 	~Window();
 	void Run(const std::function<void()>& draw);
 	void Close();
+
+	static uint32_t Width();
+	static uint32_t Height();
  private:
 	void init();
 	static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
+	static const Window* m_instance;
 
 	GLFWwindow* m_window{};
 	std::string m_title;
