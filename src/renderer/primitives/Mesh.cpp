@@ -18,10 +18,15 @@ void Mesh::Build(std::vector<Vertex>&& vertices, std::vector<uint32_t>&& indices
 	m_EBO.Build(m_indices.data(), m_indices.size() * sizeof(uint32_t));
 }
 
-void Mesh::Draw() const
+void Mesh::Draw(const Transform& transform, const Shader& shader) const
 {
 	m_VBO.Bind();
 	m_EBO.Bind();
+
+	//NOTE: the model matrix is calculated each draw call, if the model doesn't change it still needs to be calculated
+	//TODO: cache a copy of the model matrix in Transfrom and update it only when it changes
+	glm::mat4 modelMatrix = transform.ModelMatrix();
+	shader.SetMat4("model", modelMatrix,false);
 
 	glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
 }

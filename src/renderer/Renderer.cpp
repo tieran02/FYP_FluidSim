@@ -38,7 +38,6 @@ void Renderer::DrawFrame() const
 	//set MVP
 	shader.SetMat4("view", m_camera.ViewMatrix(), false);
 	shader.SetMat4("perspective", m_camera.PerspectiveMatrix(), false);
-	shader.SetMat4("model", model,false);
 
 	// update shader uniform
 	float timeValue = glfwGetTime();
@@ -47,13 +46,13 @@ void Renderer::DrawFrame() const
 	{
 		glm::vec4 color{0.0f, sin(timeValue) / 2.0f + 0.5f ,0.0f ,1.0f};
 		shader.SetVec4("ourColor", color);
-		plane.GetMesh().Draw();
+		plane.GetMesh().Draw(Transform(), shader);
 	}
 	else
 	{
 		glm::vec4 color{0.0f, 0.0f ,sin(timeValue) / 2.0f + 0.5f ,1.0f};
 		shader.SetVec4("ourColor", color);
-		sphere.GetMesh().Draw();
+		sphere.GetMesh().Draw(Transform(), shader);
 	}
 
 	shader.Unbind();

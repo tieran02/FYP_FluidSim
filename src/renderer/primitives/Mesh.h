@@ -5,6 +5,8 @@
 #include <NonCopyable.h>
 #include <NonMovable.h>
 #include <renderer/Buffer.h>
+#include <math/Transform.h>
+#include <renderer/Shader.h>
 
 class Mesh : NonCopyable, NonMovable
 {
@@ -12,7 +14,7 @@ class Mesh : NonCopyable, NonMovable
 	Mesh() = default;
 	Mesh(std::vector<Vertex>&& vertices, std::vector<uint32_t>&& indices);
 	void Build(std::vector<Vertex>&& vertices, std::vector<uint32_t>&& indices);
-	void Draw() const;
+	void Draw(const Transform& transform, const Shader& shader) const;
  private:
 	std::vector<Vertex> m_vertices;
 	std::vector<uint32_t> m_indices;
