@@ -11,6 +11,7 @@ class Transform
 
 	void SetPosition(const glm::vec3& position);
 	void SetRotation(const glm::quat& rotation);
+	void SetRotation(const glm::vec3& axis, float angle);
 	void SetScale(const glm::vec3& scale);
 
 	glm::vec3& Position();
