@@ -12,7 +12,7 @@ add_compile_definitions(CORE_DEBUG)
 
 add_executable(FYP_FluidSim ${SRC_FILES})
 target_link_libraries(FYP_FluidSim OpenCL::OpenCL glfw glad)
-target_include_directories(FYP_FluidSim PUBLIC ${PROJECT_SOURCE_DIR}/src vendor/glad/include/ vendor/glfw/include/ vendor/glm/glm/ vendor/spdlog/include)
+target_include_directories(FYP_FluidSim PUBLIC ${PROJECT_SOURCE_DIR}/src vendor/glad/debug/include/ vendor/glfw/include/ vendor/glm/glm/ vendor/spdlog/include)
 
 add_custom_command(
         TARGET FYP_FluidSim POST_BUILD

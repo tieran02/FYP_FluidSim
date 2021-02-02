@@ -29,4 +29,27 @@ void Mesh::Draw(const Transform& transform, const Shader& shader) const
 	shader.SetMat4("model", modelMatrix,false);
 
 	glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
+
+	m_VBO.Unbind();
+	m_EBO.Unbind();
+
+}
+const Buffer& Mesh::VBO() const
+{
+	return m_VBO;
+}
+
+const Buffer& Mesh::EBO() const
+{
+	return m_EBO;
+}
+
+const std::vector<Vertex>& Mesh::Vertices() const
+{
+	return m_vertices;
+}
+
+const std::vector<uint32_t>& Mesh::Indices() const
+{
+	return m_indices;
 }

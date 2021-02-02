@@ -16,5 +16,5 @@ struct Vertex
 	glm::vec3 Normal{};
 	glm::vec2 TexCoords{};
 
-	static void EnableAttributes();
+	static void EnableAttributes(int& attributeCount);
 };

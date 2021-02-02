@@ -14,6 +14,7 @@ glm::vec3 Plane::AC() const
 {
 	return C - A;
 }
+
 bool Plane::IsPointWithinPlane(const glm::vec3& point) const
 {
 	glm::vec3 N = GetNormal();
