@@ -5,7 +5,7 @@
 class Camera
 {
  public:
-	Camera(glm::vec3&& pos, float near, float far, float fov);
+	Camera(glm::vec3&& pos, float nearClip, float farClip, float fov);
 	void LootAt(const glm::vec3& target);
 
 	const glm::mat4& PerspectiveMatrix() const;

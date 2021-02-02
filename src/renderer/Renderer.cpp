@@ -33,7 +33,12 @@ void Renderer::DrawFrame() const
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	glm::mat4 model = glm::mat4(1);
 	shader.Bind();
+	//set MVP
+	shader.SetMat4("view", m_camera.ViewMatrix(), false);
+	shader.SetMat4("perspective", m_camera.PerspectiveMatrix(), false);
+	shader.SetMat4("model", model,false);
 
 	// update shader uniform
 	float timeValue = glfwGetTime();
