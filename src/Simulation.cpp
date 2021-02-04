@@ -1,7 +1,8 @@
 #include "Simulation.h"
 
-Simulation::Simulation(Renderer& renderer) : m_renderer(renderer), m_solver(1.0/60.0)
+Simulation::Simulation(Renderer& renderer) : m_renderer(renderer)
 {
+	m_camera.LootAt(glm::vec3(0,25.0f,0.0f));
 	createRenderResources();
 }
 
@@ -25,7 +26,7 @@ void Simulation::Update()
 	for (int i = 0; i < m_instancedSpheres.size(); ++i)
 	{
 		glm::mat4 trans = glm::mat4(1);
-		trans = glm::translate(trans, glm::vec3(0,sin(timeValue + i), -2.5f + (i*1.1f)));
+		trans = glm::translate(trans, m_solver.Particles().Positions[i]);
 		m_instancedSpheres[i] = trans;
 	}
 	matrixBuffer.Upload(m_instancedSpheres.data(),sizeof(glm::mat4) * m_instancedSpheres.size());
