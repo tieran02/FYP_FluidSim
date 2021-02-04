@@ -48,11 +48,12 @@ void Buffer::Unbind() const
 void Buffer::Upload(void* data, size_t size) const
 {
 	CORE_ASSERT(m_id, "Buffer not built");
-	CORE_ASSERT(size > m_size, "size is greater than Buffer size");
+	CORE_ASSERT(size <= m_size, "size is greater than Buffer size");
 
-	Bind();
-	glBufferSubData(ConvertGLType(m_type), 0, size, data);
-	Unbind();
+	GLenum glBufferType = ConvertGLType(m_type);
+	glBindBuffer(glBufferType, m_id);
+	glBufferSubData(glBufferType, 0, size, data);
+	glBindBuffer(glBufferType, 0);
 
 }
 

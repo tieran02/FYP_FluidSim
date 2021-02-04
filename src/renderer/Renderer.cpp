@@ -36,6 +36,9 @@ Renderer::Renderer(uint32_t viewportWidth, uint32_t viewportHeight) : m_VAO(0), 
 	// Define the viewport dimensions
 	glViewport(0, 0, viewportWidth, viewportHeight);
 
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+
 	//build shader
 	shader.Build("resources/shaders/testShader.vert","resources/shaders/testShader.frag");
 	m_instancedShader.Build("resources/shaders/teshShaderInstanced.vert","resources/shaders/testShader.frag");
@@ -65,7 +68,7 @@ Renderer::~Renderer()
 	glDeleteVertexArrays(1, &m_instancedVAO);
 }
 
-void Renderer::DrawFrame() const
+void Renderer::DrawFrame()
 {
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -92,7 +95,18 @@ void Renderer::DrawFrame() const
 
 	//instanced rendering
 
+
 	glBindVertexArray(m_instancedVAO);
+
+	//update pos
+	for (int i = 0; i < m_instancedSpheres.size(); ++i)
+	{
+		glm::mat4 trans = glm::mat4(1);
+		trans = glm::translate(trans, glm::vec3(0,sin(timeValue + i), -2.5f + (i*1.1f)));
+		m_instancedSpheres[i] = trans;
+	}
+	matrixBuffer.Upload(m_instancedSpheres.data(),sizeof(glm::mat4) * m_instancedSpheres.size());
+
 	m_instancedShader.Bind();
 
 	m_instancedShader.SetMat4("view", m_camera.ViewMatrix(), false);
