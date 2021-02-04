@@ -1,5 +1,6 @@
 #pragma once
 #include <renderer/Renderer.h>
+#include <sph/SPHSolverCPU.h>
 
 class Simulation
 {
@@ -8,6 +9,7 @@ class Simulation
 	void Update();
  private:
 	Renderer& m_renderer;
+	SPHSolverCPU m_solver;
 
 	void createRenderResources();
 

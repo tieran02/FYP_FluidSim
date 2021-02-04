@@ -1,12 +1,16 @@
 #include "Simulation.h"
 
-Simulation::Simulation(Renderer& renderer) : m_renderer(renderer)
+Simulation::Simulation(Renderer& renderer) : m_renderer(renderer), m_solver(1.0/60.0)
 {
 	createRenderResources();
 }
 
 void Simulation::Update()
 {
+	//run simulation
+	m_solver.Update();
+
+
 
 	//Render
 	m_renderer.BeginFrame();
