@@ -1,5 +1,6 @@
 #include "platform/Window.h"
 #include "renderer/Renderer.h"
+#include "Simulation.h"
 #include <util/Log.h>
 
 void update();
@@ -12,5 +13,7 @@ int main()
 	Window window{"Fluid Simulation", WIDTH, HEIGHT};
 	Renderer renderer{WIDTH,HEIGHT};
 
-	window.Run(std::bind(&Renderer::DrawFrame, &renderer));
+	Simulation simulation(renderer);
+
+	window.Run(std::bind(&Simulation::Update, &simulation));
 }

@@ -30,7 +30,7 @@ Renderer::Renderer(uint32_t viewportWidth, uint32_t viewportHeight) : m_VAO(0), 
 	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 	glDebugMessageCallback(openglCallbackFunction, nullptr);
 	glDebugMessageControl(
-		GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, true
+		GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, true
 	);
 
 	// Define the viewport dimensions
@@ -39,89 +39,16 @@ Renderer::Renderer(uint32_t viewportWidth, uint32_t viewportHeight) : m_VAO(0), 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
-	//build shader
-	shader.Build("resources/shaders/testShader.vert","resources/shaders/testShader.frag");
-	m_instancedShader.Build("resources/shaders/teshShaderInstanced.vert","resources/shaders/testShader.frag");
-
-	plane.Build();
-	sphere.Build();
-
 	// We only need one VAO for now as we just use the Vertex struct as the layout,
 	// if decide to have another vertex layout then another VAO will be needed.
 	BuildVAO();
 	BuildInstancedVAO();
-
-	//build instanced buffer
-	Transform transform;
-	for (int i = 0; i < m_instancedSpheres.size(); ++i)
-	{
-		transform.SetPosition(glm::vec3(0,0, -2.5f + (i*1.1f)));
-		m_instancedSpheres[i] = transform.ModelMatrix();
-	}
-
-	matrixBuffer.Build(m_instancedSpheres.data(), sizeof(glm::mat4) * m_instancedSpheres.size());
 }
 
 Renderer::~Renderer()
 {
 	glDeleteVertexArrays(1, &m_VAO);
 	glDeleteVertexArrays(1, &m_instancedVAO);
-}
-
-void Renderer::DrawFrame()
-{
-	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	glBindVertexArray(m_VAO);
-	shader.Bind();
-
-	//set MVP
-	shader.SetMat4("view", m_camera.ViewMatrix(), false);
-	shader.SetMat4("perspective", m_camera.PerspectiveMatrix(), false);
-
-	// update shader uniform
-	float timeValue = glfwGetTime();
-
-	glm::vec4 color{0.0f, 0.0f ,sin(timeValue) / 2.0f + 0.5f ,1.0f};
-
-	Transform planeTransform;
-	planeTransform.SetRotation(glm::vec3(1,0,0),-1.5708f);
-	shader.SetVec4("ourColor", glm::vec4(1.0f,1.0f,1.0f,1.0f));
-	plane.GetMesh().Draw(planeTransform, shader);
-
-	shader.Unbind();
-	glBindVertexArray(0);
-
-	//instanced rendering
-
-
-	glBindVertexArray(m_instancedVAO);
-
-	//update pos
-	for (int i = 0; i < m_instancedSpheres.size(); ++i)
-	{
-		glm::mat4 trans = glm::mat4(1);
-		trans = glm::translate(trans, glm::vec3(0,sin(timeValue + i), -2.5f + (i*1.1f)));
-		m_instancedSpheres[i] = trans;
-	}
-	matrixBuffer.Upload(m_instancedSpheres.data(),sizeof(glm::mat4) * m_instancedSpheres.size());
-
-	m_instancedShader.Bind();
-
-	m_instancedShader.SetMat4("view", m_camera.ViewMatrix(), false);
-	m_instancedShader.SetMat4("perspective", m_camera.PerspectiveMatrix(), false);
-	m_instancedShader.SetVec4("ourColor", color);
-
-	glBindVertexBuffer(0, sphere.GetMesh().VBO().ID(), 0, sizeof(Vertex));
-	glBindVertexBuffer(1, matrixBuffer.ID(), 0, sizeof(glm::mat4));
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,  sphere.GetMesh().EBO().ID());
-
-	glDrawElementsInstanced(GL_TRIANGLES, sphere.GetMesh().Indices().size(), GL_UNSIGNED_INT, nullptr, m_instancedSpheres.size());
-
-	m_instancedShader.Unbind();
-	glBindVertexArray(0);
-
 }
 
 void Renderer::BuildVAO()
@@ -154,5 +81,44 @@ void Renderer::BuildInstancedVAO()
 
 
 
+	glBindVertexArray(0);
+}
+
+void Renderer::BeginFrame() const
+{
+	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void Renderer::EndFrame() const
+{
+	glBindVertexArray(0);
+}
+
+void Renderer::Draw(const Mesh& mesh, const Shader& shader, const Transform& transform) const
+{
+	glBindVertexArray(m_VAO);
+	shader.Bind();
+	mesh.Draw(transform,shader);
+	shader.Unbind();
+	glBindVertexArray(0);
+}
+
+void Renderer::DrawInstanced(const Mesh& mesh, const Shader& shader, const Buffer& instanceBuffer,
+	const glm::mat4* instanceModelMats, size_t instanceCount) const
+{
+	glBindVertexArray(m_instancedVAO);
+	shader.Bind();
+
+	//update pos
+	instanceBuffer.Upload((void*)instanceModelMats,sizeof(glm::mat4) * instanceCount);
+
+	glBindVertexBuffer(0, mesh.VBO().ID(), 0, sizeof(Vertex));
+	glBindVertexBuffer(1, instanceBuffer.ID(), 0, sizeof(glm::mat4));
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,  mesh.EBO().ID());
+
+	glDrawElementsInstanced(GL_TRIANGLES, mesh.Indices().size(), GL_UNSIGNED_INT, nullptr,instanceCount);
+
+	shader.Unbind();
 	glBindVertexArray(0);
 }
