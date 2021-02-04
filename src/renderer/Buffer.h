@@ -21,9 +21,14 @@ class Buffer : NonCopyable, NonMovable
 	void Bind() const;
 	void Unbind() const;
 
+	void Upload(void* data, size_t size) const;
+
 	GLuint ID() const {return m_id;}
 	bool Valid() const {return m_id > 0;}
  private:
+	GLenum ConvertGLType(BufferType bufferType) const;
+
 	BufferType m_type;
+	size_t m_size;
  	GLuint m_id;
 };

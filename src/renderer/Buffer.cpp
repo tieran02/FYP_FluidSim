@@ -1,7 +1,7 @@
 #include "Buffer.h"
 #include "Vertex.h"
-#include <cassert>
 #include <exception>
+#include <util/Log.h>
 
 Buffer::Buffer(BufferType bufferType) : m_type{bufferType}, m_id{0}
 {
@@ -15,60 +15,61 @@ Buffer::~Buffer()
 
 void Buffer::Build(void* data, size_t size)
 {
-	assert(!m_id); //check if buffer already exists
+	CORE_ASSERT(!m_id, "BufferID already set");
 
+	if(m_id)
+	{
+		LOG_CORE_ERROR("Buffer already built, if you plan to set data use upload instead");
+		return;
+	}
+
+	m_size = size;
 	glGenBuffers(1, &m_id);
 
-	switch (m_type)
-	{
-		case BufferType::VERTEX_BUFFER:
-			glBindBuffer(GL_ARRAY_BUFFER, m_id);
-			glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
-			break;
-		case BufferType::ELEMENT_BUFFER:
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_id);
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-			break;
-		case BufferType::UNIFORM_BUFFER:
-			throw std::exception("UNIFORM_BUFFER is not implemented yet.");
-		case BufferType::STORAGE_BUFFER:
-			throw std::exception("STORAGE_BUFFER is not implemented yet.");
-	}
+	GLenum glBufferType = ConvertGLType(m_type);
+	glBindBuffer(glBufferType, m_id);
+	glBufferData(glBufferType, size, data, GL_STATIC_DRAW);
+	glBindBuffer(glBufferType, 0);
 }
 
 void Buffer::Bind() const
 {
-	switch (m_type)
-	{
-	case BufferType::VERTEX_BUFFER:
-		// use glBindVertexBuffer as we are using separate_attrib_format, decoupled vertex layout from VBO
+	if(m_type == BufferType::VERTEX_BUFFER)
 		glBindVertexBuffer(0,m_id, 0, sizeof(Vertex));
-		break;
-	case BufferType::ELEMENT_BUFFER:
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_id);
-		break;
-	case BufferType::UNIFORM_BUFFER:
-		throw std::exception("UNIFORM_BUFFER is not implemented yet.");
-	case BufferType::STORAGE_BUFFER:
-		throw std::exception("STORAGE_BUFFER is not implemented yet.");
-	}
+	else
+		glBindBuffer(ConvertGLType(m_type), m_id);
 }
 
 void Buffer::Unbind() const
 {
+	glBindBuffer(ConvertGLType(m_type), 0);
+}
+
+void Buffer::Upload(void* data, size_t size) const
+{
+	CORE_ASSERT(m_id, "Buffer not built");
+	CORE_ASSERT(size > m_size, "size is greater than Buffer size");
+
+	Bind();
+	glBufferSubData(ConvertGLType(m_type), 0, size, data);
+	Unbind();
+
+}
+
+GLenum Buffer::ConvertGLType(BufferType bufferType) const
+{
 	switch (m_type)
 	{
 	case BufferType::VERTEX_BUFFER:
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		break;
+		return GL_ARRAY_BUFFER;
 	case BufferType::ELEMENT_BUFFER:
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-		break;
+		return GL_ELEMENT_ARRAY_BUFFER;
 	case BufferType::UNIFORM_BUFFER:
-		throw std::exception("UNIFORM_BUFFER is not implemented yet.");
+		return GL_UNIFORM_BUFFER;
 	case BufferType::STORAGE_BUFFER:
-		throw std::exception("STORAGE_BUFFER is not implemented yet.");
+		return GL_SHADER_STORAGE_BUFFER;
 	}
+
+	return GL_INVALID_ENUM;
 }
+
