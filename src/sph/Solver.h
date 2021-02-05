@@ -1,9 +1,11 @@
 #pragma once
 
+#include <glm.hpp>
+
 class Solver
 {
  public:
-	Solver(double timeStep);
+	Solver(float timeStep);
 	void Update();
 
  protected:
@@ -12,7 +14,8 @@ class Solver
 	virtual void Integrate() = 0;
 	virtual void ResolveCollisions() = 0;
 	virtual void EndTimeStep() = 0;
+
+	const float TIMESTEP;
  private:
-	double m_timestep;
-	double m_tickTime;
+	float m_tickTime;
 };

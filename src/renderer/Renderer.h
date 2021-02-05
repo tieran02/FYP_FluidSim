@@ -25,5 +25,5 @@ class Renderer : NonCopyable, NonMovable
  private:
 	void BuildVAO();
 
-	unsigned int m_VAO, m_instancedVAO;
+	unsigned int m_VAO;
 };

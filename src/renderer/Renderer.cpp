@@ -20,7 +20,7 @@ static void APIENTRY openglCallbackFunction(
 	}
 }
 
-Renderer::Renderer(uint32_t viewportWidth, uint32_t viewportHeight) : m_VAO(0), m_instancedVAO(0)
+Renderer::Renderer(uint32_t viewportWidth, uint32_t viewportHeight) : m_VAO(0)
 {
 	int initResult = gladLoadGL((GLADloadfunc) glfwGetProcAddress);
 	CORE_ASSERT(initResult, "Failed to init GLAD")
@@ -47,7 +47,6 @@ Renderer::Renderer(uint32_t viewportWidth, uint32_t viewportHeight) : m_VAO(0), 
 Renderer::~Renderer()
 {
 	glDeleteVertexArrays(1, &m_VAO);
-	glDeleteVertexArrays(1, &m_instancedVAO);
 }
 
 void Renderer::BuildVAO()
@@ -55,11 +54,6 @@ void Renderer::BuildVAO()
 	int attributeCount = 0;
 	glGenVertexArrays(1, &m_VAO);
 	glBindVertexArray(m_VAO);
-	Vertex::EnableAttributes(attributeCount);
-	glBindVertexArray(0);
-
-	glGenVertexArrays(1, &m_instancedVAO);
-	glBindVertexArray(m_instancedVAO);
 	Vertex::EnableAttributes(attributeCount);
 	glBindVertexArray(0);
 }

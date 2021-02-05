@@ -1,7 +1,7 @@
 #include "Solver.h"
 #include <GLFW/glfw3.h>
 
-Solver::Solver(double timeStep) : m_timestep(timeStep)
+Solver::Solver(float timeStep) : TIMESTEP(timeStep)
 {
 	m_tickTime = glfwGetTime();
 }
@@ -17,6 +17,6 @@ void Solver::Update()
 		ResolveCollisions();
 		EndTimeStep();
 
-		m_tickTime += m_timestep;
+		m_tickTime += TIMESTEP;
 	}
 }

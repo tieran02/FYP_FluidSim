@@ -6,7 +6,7 @@
 class SPHSolverCPU : public Solver
 {
  public:
-	SPHSolverCPU(double timeStep, size_t particleCount);
+	SPHSolverCPU(float timeStep, size_t particleCount);
 	const ParticleSet& Particles() const;
  private:
 	void BeginTimeStep() override;
@@ -17,4 +17,5 @@ class SPHSolverCPU : public Solver
 
 	const size_t PARTICLE_COUNT;
 	ParticleSet m_particles;
+	const glm::vec3 GRAVITY{0.0f,-9.81f,0.0f};
 };
