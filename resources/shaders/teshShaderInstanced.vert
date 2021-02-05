@@ -2,7 +2,15 @@
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNorm;
 layout (location = 2) in vec2 aTex;
-layout (location = 3) in mat4 aModel;
+
+struct Position {
+    float x, y, z;
+};
+
+layout(std430, binding = 0) buffer ParticleData
+{
+    Position positions[];
+};
 
 out vec4 vertexColor;
 
@@ -11,5 +19,6 @@ uniform mat4 perspective;
 
 void main()
 {
-    gl_Position = perspective * view * aModel * vec4(aPos, 1.0);
+    vec3 instancePos = vec3(positions[gl_InstanceID].x,positions[gl_InstanceID].y,positions[gl_InstanceID].z);
+    gl_Position = perspective * view * vec4(instancePos + aPos, 1.0);
 }

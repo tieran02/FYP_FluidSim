@@ -13,7 +13,7 @@ Buffer::~Buffer()
 	glDeleteBuffers(1, &m_id);
 }
 
-void Buffer::Build(void* data, size_t size)
+void Buffer::Build(void* data, size_t size, GLuint bindPoint)
 {
 	CORE_ASSERT(!m_id, "BufferID already set");
 
@@ -29,13 +29,17 @@ void Buffer::Build(void* data, size_t size)
 	GLenum glBufferType = ConvertGLType(m_type);
 	glBindBuffer(glBufferType, m_id);
 	glBufferData(glBufferType, size, data, GL_STATIC_DRAW);
+
+	if(m_type == BufferType::STORAGE_BUFFER)
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, bindPoint, m_id);
+
 	glBindBuffer(glBufferType, 0);
 }
 
-void Buffer::Bind() const
+void Buffer::Bind(GLuint bindPoint) const
 {
 	if(m_type == BufferType::VERTEX_BUFFER)
-		glBindVertexBuffer(0,m_id, 0, sizeof(Vertex));
+		glBindVertexBuffer(bindPoint,m_id, 0, sizeof(Vertex));
 	else
 		glBindBuffer(ConvertGLType(m_type), m_id);
 }

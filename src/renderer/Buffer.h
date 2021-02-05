@@ -17,8 +17,8 @@ class Buffer : NonCopyable, NonMovable
 	Buffer(BufferType bufferType);
 	~Buffer();
 
-	void Build(void* data, size_t size);
-	void Bind() const;
+	void Build(void* data, size_t size, GLuint bindPoint = 0);
+	void Bind(GLuint bindPoint = 0) const;
 	void Unbind() const;
 
 	void Upload(void* data, size_t size) const;

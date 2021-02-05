@@ -21,11 +21,9 @@ class Renderer : NonCopyable, NonMovable
 	void EndFrame() const;
 
 	void Draw(const Mesh& mesh, const Shader& shader, const Transform& transform) const;
-	void DrawInstanced(const Mesh& mesh, const Shader& shader, const Buffer& instanceBuffer,
-		const glm::mat4* instanceModelMats, size_t instanceCount) const;
+	void DrawInstanced(const Mesh& mesh, const Shader& shader, const Buffer& instanceBuffer, size_t instanceCount) const;
  private:
 	void BuildVAO();
-	void BuildInstancedVAO();
 
 	unsigned int m_VAO, m_instancedVAO;
 };
