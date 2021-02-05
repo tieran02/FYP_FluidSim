@@ -19,11 +19,7 @@ void Simulation::Update()
 	m_renderer.Draw(plane.GetMesh(),shader,planeTransform);
 
 	//update pos
-	for (int i = 0; i < m_instancedPositions.size(); ++i)
-	{;
-		m_instancedPositions[i] = m_solver.Particles().Positions[i];
-	}
-	particleBuffer.Upload(m_instancedPositions.data(),sizeof(glm::vec3) * m_instancedPositions.size());
+	particleBuffer.Upload((void*)m_solver.Particles().Positions.data(),sizeof(glm::vec3) * SPHERE_COUNT);
 
 	m_renderer.DrawInstanced(sphere.GetMesh(),m_instancedShader,particleBuffer ,SPHERE_COUNT);
 
@@ -40,11 +36,7 @@ void Simulation::createRenderResources()
 	sphere.Build();
 
 	//build instanced buffer
-	for (int i = 0; i < m_instancedPositions.size(); ++i)
-	{
-		m_instancedPositions[i] = glm::vec3(0,0, -2.5f + (i*1.1f));
-	}
-	particleBuffer.Build(m_instancedPositions.data(), sizeof(glm::vec3) * m_instancedPositions.size());
+	particleBuffer.Build((void*)m_solver.Particles().Positions.data(),sizeof(glm::vec3) * SPHERE_COUNT);
 
 	//set shader uniforms
 	shader.Bind();
