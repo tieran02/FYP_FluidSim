@@ -1,6 +1,7 @@
 #pragma once
 #include <renderer/Renderer.h>
 #include <sph/SPHSolverCPU.h>
+#include <math/PlaneCollider.h>
 
 class Simulation
 {
@@ -15,7 +16,9 @@ class Simulation
 	Buffer particleBuffer{BufferType::STORAGE_BUFFER};
 
 	Camera m_camera{glm::vec3(0,50.0f,-50.5f),1.0f,1000.0f,65.0f};
-	PlanePrimitive plane{glm::vec2(1000.0f,1000.0f)};
+	QuadPrimitive plane{ glm::vec2(1000.0f,1000.0f)};
+	PlaneCollider planeCollider{plane.GetPlane()};
+
 	SpherePrimitive sphere{0.5f,24,16};
 	Shader shader, m_instancedShader;
 

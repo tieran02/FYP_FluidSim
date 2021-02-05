@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <NonCopyable.h>
 #include <renderer/primitives/Mesh.h>
-#include <renderer/primitives/PlanePrimitive.h>
+#include <renderer/primitives/QuadPrimitive.h>
 #include <renderer/primitives/SpherePrimitive.h>
 #include <array>
 #include "Shader.h"

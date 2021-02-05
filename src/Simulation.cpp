@@ -16,6 +16,7 @@ void Simulation::Update()
 
 	Transform planeTransform;
 	planeTransform.SetRotation(glm::vec3(1,0,0),-1.5708f);
+	planeCollider.SetTransform(planeTransform);
 	m_renderer.Draw(plane.GetMesh(),shader,planeTransform);
 
 	//update pos
