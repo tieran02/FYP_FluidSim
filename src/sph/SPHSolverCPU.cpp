@@ -2,7 +2,11 @@
 #include <Simulation.h>
 #include "SPHSolverCPU.h"
 
-SPHSolverCPU::SPHSolverCPU(float timeStep, size_t particleCount) : Solver(timeStep), PARTICLE_COUNT(particleCount), m_particles(particleCount)
+SPHSolverCPU::SPHSolverCPU(float timeStep, size_t particleCount, const PlaneCollider& CollisionPlane) :
+	Solver(timeStep),
+	PARTICLE_COUNT(particleCount),
+	m_particles(particleCount),
+	m_collisionPlane(CollisionPlane)
 {
 	constexpr int perRow = 64;
 	constexpr float spacing = 1.25f;
@@ -33,13 +37,25 @@ void SPHSolverCPU::Integrate()
 {
 	for (int i = 0; i < PARTICLE_COUNT; i++)
 	{
-		m_particles.Positions[i] = m_particles.Positions[i] + TIMESTEP * m_particles.Velocities[i];
+		m_particles.Positions[i] = m_particles.Positions[i] + (TIMESTEP * m_particles.Velocities[i]);
 	}
 }
 
 void SPHSolverCPU::ResolveCollisions()
 {
+	for (int i = 0; i < PARTICLE_COUNT; i++)
+	{
+		glm::vec3& pos = m_particles.Positions[i];
+		glm::vec3& vel = m_particles.Velocities[i];
 
+		CollisionData collisionData{};
+
+		if(m_collisionPlane.CollisionOccured(pos,vel,collisionData))
+		{
+			pos.y = 0.001f;
+			vel *= 0;
+		}
+	}
 }
 
 void SPHSolverCPU::EndTimeStep()

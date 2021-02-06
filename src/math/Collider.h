@@ -21,8 +21,8 @@ class Collider
 	};
 
  public:
-	virtual bool CollisionOccured(const PlaneCollider& collider, const glm::vec3& velocity, CollisionData& collisionData) = 0;
-	virtual bool CollisionOccured(const glm::vec3& point, const glm::vec3& velocity, CollisionData& collisionData) = 0;
+	virtual bool CollisionOccured(const PlaneCollider& collider, const glm::vec3& velocity, CollisionData& collisionData) const = 0;
+	virtual bool CollisionOccured(const glm::vec3& point, const glm::vec3& velocity, CollisionData& collisionData) const = 0;
 	virtual void SetTransform(const Transform& transform) = 0;
  protected:
 	explicit Collider(Shape shape);
