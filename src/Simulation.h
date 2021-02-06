@@ -15,7 +15,7 @@ class Simulation
  private:
 	Renderer& m_renderer;
 
-	Camera m_camera{glm::vec3(0,50.0f,-50.5f),1.0f,1000.0f,65.0f};
+	Camera m_camera{glm::vec3(0,50.0f,-50.5f),0.1f,1000.0f,65.0f};
 	QuadPrimitive plane{ glm::vec2(1000.0f,1000.0f)};
 	PlaneCollider planeCollider{plane.GetPlane(),true};
 

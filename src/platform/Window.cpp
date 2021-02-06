@@ -63,6 +63,7 @@ void Window::init()
 	glfwMakeContextCurrent(m_window);
 
 	glfwSetWindowUserPointer(m_window, this);
+	glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	CORE_ASSERT(m_window, "Failed to init GLFW window");
 

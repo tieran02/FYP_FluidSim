@@ -15,6 +15,16 @@ void Simulation::Update()
 	//Render
 	m_renderer.BeginFrame();
 
+	//update Camera views
+	shader.Bind();
+	shader.SetMat4("view", m_camera.ViewMatrix(), false);
+	shader.Unbind();
+
+	//set shader uniforms
+	m_instancedShader.Bind();
+	m_instancedShader.SetMat4("view", m_camera.ViewMatrix(), false);
+	m_instancedShader.Unbind();
+
 	Transform planeTransform;
 	planeTransform.SetRotation(glm::vec3(1,0,0),-1.5708f);
 	planeCollider.SetTransform(planeTransform);
@@ -58,16 +68,33 @@ void Simulation::createRenderResources()
 void Simulation::KeyCallback(int key, int action, int mode)
 {
 	LOG_CORE_INFO(key);
+	switch (key)
+	{
+	case GLFW_KEY_W:
+		m_camera.Move(m_camera.Forward());
+		break;
+	case GLFW_KEY_S:
+		m_camera.Move(-m_camera.Forward());
+		break;
+	case GLFW_KEY_A:
+		m_camera.Move(-glm::cross(m_camera.Forward(), m_camera.Up()));
+		break;
+	case GLFW_KEY_D:
+		m_camera.Move(glm::cross(m_camera.Forward(), m_camera.Up()));
+		break;
+	}
 }
 
 void Simulation::CursorCallback(double xPos, double yPos)
 {
 	LOG_CORE_INFO(xPos);
+	m_camera.MousePosition(xPos,yPos);
 }
 
 void Simulation::MouseButtonCallback(int button, int action, int mod)
 {
 	LOG_CORE_INFO(button);
+
 }
 
 
