@@ -1,3 +1,4 @@
+#include <util/Log.h>
 #include "Simulation.h"
 
 Simulation::Simulation(Renderer& renderer) : m_renderer(renderer)
@@ -53,3 +54,21 @@ void Simulation::createRenderResources()
 	m_instancedShader.SetVec4("ourColor", glm::vec4(0.0f,0.0f,1.0f,1.0f));
 	m_instancedShader.Unbind();
 }
+
+void Simulation::KeyCallback(int key, int action, int mode)
+{
+	LOG_CORE_INFO(key);
+}
+
+void Simulation::CursorCallback(double xPos, double yPos)
+{
+	LOG_CORE_INFO(xPos);
+}
+
+void Simulation::MouseButtonCallback(int button, int action, int mod)
+{
+	LOG_CORE_INFO(button);
+}
+
+
+

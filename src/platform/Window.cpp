@@ -62,17 +62,39 @@ void Window::init()
 	m_window = glfwCreateWindow(m_width, m_height, m_title.c_str(), NULL, NULL);
 	glfwMakeContextCurrent(m_window);
 
+	glfwSetWindowUserPointer(m_window, this);
+
 	CORE_ASSERT(m_window, "Failed to init GLFW window");
 
 	// Set the required callback functions
 	glfwSetKeyCallback(m_window, key_callback);
+	glfwSetCursorPosCallback(m_window, cursor_callback);
+	glfwSetMouseButtonCallback(m_window, mouseButton_callback);
 }
 
 void Window::key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
-	std::cout << key << std::endl;
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
+
+	Window* instance = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+	if(instance && instance->m_keyCallback)
+		instance->m_keyCallback(key,action,mode);
+
+}
+
+void Window::cursor_callback(GLFWwindow* window, double xPos, double yPos)
+{
+	Window* instance = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+	if(instance && instance->m_cursorCallback)
+		instance->m_cursorCallback(xPos,yPos);
+}
+
+void Window::mouseButton_callback(GLFWwindow* window, int button, int action, int mod)
+{
+	Window* instance = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+	if(instance && instance->m_mouseButtonCallBack)
+		instance->m_mouseButtonCallBack(button,action,mod);
 }
 
 uint32_t Window::Width()
@@ -83,3 +105,20 @@ uint32_t Window::Height()
 {
 	return m_instance->m_height;
 }
+
+void Window::SetKeyCallback(const WindowKeyCallBack& keyCallback)
+{
+	m_keyCallback = keyCallback;
+}
+
+void Window::SetCursorCallback(const WindowCursorCallBack & cursorCallback)
+{
+	m_cursorCallback = cursorCallback;
+}
+
+void Window::SetMouseButtonCallback(const WindowMouseButtonCallBack& mosueButtonCallback)
+{
+	m_mouseButtonCallBack = mosueButtonCallback;
+}
+
+

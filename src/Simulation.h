@@ -8,6 +8,10 @@ class Simulation
  public:
 	Simulation(Renderer& renderer);
 	void Update();
+
+	void KeyCallback(int key, int action, int mode);
+	void CursorCallback(double xPos, double yPos);
+	void MouseButtonCallback(int key, int action, int mod);
  private:
 	Renderer& m_renderer;
 
