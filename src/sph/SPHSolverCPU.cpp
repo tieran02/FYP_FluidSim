@@ -27,23 +27,23 @@ void SPHSolverCPU::BeginTimeStep()
 
 void SPHSolverCPU::ApplyForces()
 {
-	for (int i = 0; i < PARTICLE_COUNT; i++)
+	/*for (int i = 0; i < PARTICLE_COUNT; i++)
 	{
 		m_particles.Velocities[i] += (GRAVITY * TIMESTEP);
-	}
+	}*/
 }
 
 void SPHSolverCPU::Integrate()
 {
-	for (int i = 0; i < PARTICLE_COUNT; i++)
+	/*for (int i = 0; i < PARTICLE_COUNT; i++)
 	{
 		m_particles.Positions[i] = m_particles.Positions[i] + (TIMESTEP * m_particles.Velocities[i]);
-	}
+	}*/
 }
 
 void SPHSolverCPU::ResolveCollisions()
 {
-	for (int i = 0; i < PARTICLE_COUNT; i++)
+	/*for (int i = 0; i < PARTICLE_COUNT; i++)
 	{
 		glm::vec3& pos = m_particles.Positions[i];
 		glm::vec3& vel = m_particles.Velocities[i];
@@ -52,10 +52,10 @@ void SPHSolverCPU::ResolveCollisions()
 
 		if(m_collisionPlane.CollisionOccured(pos,vel,collisionData))
 		{
-			pos.y = 0.001f;
+			pos.y = 0.0f;
 			vel *= 0;
 		}
-	}
+	}*/
 }
 
 void SPHSolverCPU::EndTimeStep()

@@ -2,7 +2,7 @@
 
 glm::vec3 Plane::GetNormal() const
 {
-	return glm::normalize(glm::cross(AB(),AC()));
+	return glm::normalize(glm::cross(AC(),AB()));
 }
 
 glm::vec3 Plane::AB() const

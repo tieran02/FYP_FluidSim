@@ -12,13 +12,14 @@ layout(std430, binding = 0) buffer ParticleData
     Position positions[];
 };
 
-out vec4 vertexColor;
-
 uniform mat4 view;
 uniform mat4 perspective;
+
+out vec3 Normal;
 
 void main()
 {
     vec3 instancePos = vec3(positions[gl_InstanceID].x,positions[gl_InstanceID].y,positions[gl_InstanceID].z);
     gl_Position = perspective * view * vec4(instancePos + aPos, 1.0);
+    Normal = aNorm;
 }
