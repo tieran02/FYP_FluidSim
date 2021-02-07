@@ -3,6 +3,7 @@ project(FYP_FluidSim)
 
 set(CMAKE_CXX_STANDARD 17)
 find_package(OpenCL REQUIRED) #Nvidia only support OpenCL 1.2 via the CUDA SDK
+find_package(OpenMP) #openMD for parallel code
 add_subdirectory(vendor/glad) #include glad
 add_subdirectory(vendor/glfw) #include glfw
 
@@ -10,7 +11,7 @@ file(GLOB_RECURSE  SRC_FILES ${PROJECT_SOURCE_DIR}/src/*)
 
 
 add_executable(FYP_FluidSim ${SRC_FILES})
-target_link_libraries(FYP_FluidSim OpenCL::OpenCL glfw glad)
+target_link_libraries(FYP_FluidSim OpenCL::OpenCL glfw glad OpenMP::OpenMP_CXX)
 target_compile_definitions(FYP_FluidSim PUBLIC "$<$<CONFIG:DEBUG>:CORE_DEBUG>")
 
 if (CMAKE_BUILD_TYPE EQUAL "Debug")

@@ -1,6 +1,9 @@
 #include <util/Log.h>
 #include <Simulation.h>
 #include "SPHSolverCPU.h"
+#include <omp.h>
+#include <iterator>
+#include <iostream>
 
 SPHSolverCPU::SPHSolverCPU(float timeStep, size_t particleCount, const PlaneCollider& CollisionPlane) :
 	Solver(timeStep),
@@ -27,14 +30,14 @@ void SPHSolverCPU::BeginTimeStep()
 
 void SPHSolverCPU::ApplyForces()
 {
-	for (int i = 0; i < PARTICLE_COUNT; i++)
-	{
+	#pragma omp parallel for
+	for(int i=0; i < m_particles.Size(); ++i)
 		m_particles.Forces[i] = (GRAVITY * TIMESTEP);
-	}
 }
 
 void SPHSolverCPU::Integrate()
 {
+	#pragma omp parallel for
 	for (int i = 0; i < PARTICLE_COUNT; i++)
 	{
 		//integrate velocity
@@ -49,6 +52,7 @@ void SPHSolverCPU::Integrate()
 
 void SPHSolverCPU::ResolveCollisions()
 {
+	#pragma omp parallel for
 	for (int i = 0; i < PARTICLE_COUNT; i++)
 	{
 		glm::vec3& pos = m_state.Positions[i];

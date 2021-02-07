@@ -18,6 +18,8 @@ struct ParticleSet
 	std::vector<glm::vec3> Positions;
 	std::vector<glm::vec3> Velocities;
 	std::vector<glm::vec3> Forces;
+
+	size_t Size() const {return Positions.size();}
 };
 
 struct ParticleState
