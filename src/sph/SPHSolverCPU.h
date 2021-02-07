@@ -21,5 +21,6 @@ class SPHSolverCPU : public Solver
 
 	const size_t PARTICLE_COUNT;
 	ParticleSet m_particles;
+	ParticleState m_state;
 	const glm::vec3 GRAVITY{0.0f,-9.81f,0.0f};
 };

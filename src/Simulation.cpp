@@ -67,7 +67,6 @@ void Simulation::createRenderResources()
 
 void Simulation::KeyCallback(int key, int action, int mode)
 {
-	LOG_CORE_INFO(key);
 	switch (key)
 	{
 	case GLFW_KEY_W:
@@ -87,13 +86,11 @@ void Simulation::KeyCallback(int key, int action, int mode)
 
 void Simulation::CursorCallback(double xPos, double yPos)
 {
-	LOG_CORE_INFO(xPos);
 	m_camera.MousePosition(xPos,yPos);
 }
 
 void Simulation::MouseButtonCallback(int button, int action, int mod)
 {
-	LOG_CORE_INFO(button);
 
 }
 

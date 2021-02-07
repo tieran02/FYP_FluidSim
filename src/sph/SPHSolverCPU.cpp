@@ -22,45 +22,52 @@ SPHSolverCPU::SPHSolverCPU(float timeStep, size_t particleCount, const PlaneColl
 
 void SPHSolverCPU::BeginTimeStep()
 {
-
+	m_state = ParticleState(m_particles);
 }
 
 void SPHSolverCPU::ApplyForces()
 {
-	/*for (int i = 0; i < PARTICLE_COUNT; i++)
+	for (int i = 0; i < PARTICLE_COUNT; i++)
 	{
-		m_particles.Velocities[i] += (GRAVITY * TIMESTEP);
-	}*/
+		m_particles.Forces[i] = (GRAVITY * TIMESTEP);
+	}
 }
 
 void SPHSolverCPU::Integrate()
 {
-	/*for (int i = 0; i < PARTICLE_COUNT; i++)
+	for (int i = 0; i < PARTICLE_COUNT; i++)
 	{
-		m_particles.Positions[i] = m_particles.Positions[i] + (TIMESTEP * m_particles.Velocities[i]);
-	}*/
+		//integrate velocity
+		glm::vec3& newVelocity = m_state.Velocities[i];
+		newVelocity = m_particles.Velocities[i] + TIMESTEP * m_particles.Forces[i];
+
+		//integrate position
+		glm::vec3& newPosition = m_state.Positions[i];
+		newPosition = m_particles.Positions[i] + TIMESTEP * newVelocity;
+	}
 }
 
 void SPHSolverCPU::ResolveCollisions()
 {
-	/*for (int i = 0; i < PARTICLE_COUNT; i++)
+	for (int i = 0; i < PARTICLE_COUNT; i++)
 	{
-		glm::vec3& pos = m_particles.Positions[i];
-		glm::vec3& vel = m_particles.Velocities[i];
+		glm::vec3& pos = m_state.Positions[i];
+		glm::vec3& vel = m_state.Velocities[i];
 
 		CollisionData collisionData{};
 
 		if(m_collisionPlane.CollisionOccured(pos,vel,collisionData))
 		{
-			pos.y = 0.0f;
+			pos = collisionData.ContactPoint  + (vel * TIMESTEP);
 			vel *= 0;
 		}
-	}*/
+	}
 }
 
 void SPHSolverCPU::EndTimeStep()
 {
-
+	//move state into particles
+	m_particles.Integrate(m_state);
 }
 
 const ParticleSet& SPHSolverCPU::Particles() const
