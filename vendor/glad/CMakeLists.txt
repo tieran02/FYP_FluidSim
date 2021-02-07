@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.17)
 project(Glad)
 
-add_library(glad debug/include/glad/gl.h debug/src/gl.c)
-target_include_directories(glad PUBLIC debug/include/)
+if (CMAKE_BUILD_TYPE EQUAL "Debug")
+    add_library(glad debug/include/glad/gl.h debug/src/gl.c)
+    target_include_directories(glad PUBLIC debug/include/)
+else(CMAKE_BUILD_TYPE EQUAL "Release")
+    add_library(glad release/include/glad/gl.h release/src/gl.c)
+    target_include_directories(glad PUBLIC release/include/)
+endif()

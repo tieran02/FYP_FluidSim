@@ -12,7 +12,7 @@ int main()
 {
 	Log::Init();
 
-	constexpr uint32_t WIDTH{1280}, HEIGHT{720};
+	constexpr uint32_t WIDTH{1920}, HEIGHT{1080};
 	Window window{"Fluid Simulation", WIDTH, HEIGHT};
 	Renderer renderer{WIDTH,HEIGHT};
 

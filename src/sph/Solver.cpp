@@ -6,6 +6,10 @@ Solver::Solver(float timeStep) : TIMESTEP(timeStep)
 	m_tickTime = glfwGetTime();
 }
 
+Solver::~Solver()
+{
+
+}
 
 void Solver::Update()
 {
@@ -20,3 +24,4 @@ void Solver::Update()
 		m_tickTime += TIMESTEP;
 	}
 }
+

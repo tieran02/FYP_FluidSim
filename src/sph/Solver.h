@@ -6,6 +6,7 @@ class Solver
 {
  public:
 	Solver(float timeStep);
+	virtual ~Solver();
 	void Update();
 
  protected:

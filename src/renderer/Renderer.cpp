@@ -2,6 +2,7 @@
 #include <iostream>
 #include <util/Log.h>
 
+#ifdef CORE_DEBUG
 static void APIENTRY openglCallbackFunction(
 	GLenum source,
 	GLenum type,
@@ -19,6 +20,7 @@ static void APIENTRY openglCallbackFunction(
 		abort();
 	}
 }
+#endif
 
 Renderer::Renderer(uint32_t viewportWidth, uint32_t viewportHeight) : m_VAO(0)
 {
@@ -28,10 +30,12 @@ Renderer::Renderer(uint32_t viewportWidth, uint32_t viewportHeight) : m_VAO(0)
 
 	glEnable(GL_DEBUG_OUTPUT);
 	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+	#ifdef CORE_DEBUG
 	glDebugMessageCallback(openglCallbackFunction, nullptr);
 	glDebugMessageControl(
 		GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, true
 	);
+	#endif
 
 	// Define the viewport dimensions
 	glViewport(0, 0, viewportWidth, viewportHeight);
