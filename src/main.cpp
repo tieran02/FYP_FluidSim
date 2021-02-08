@@ -2,17 +2,28 @@
 #include "renderer/Renderer.h"
 #include "Simulation.h"
 #include <util/Log.h>
+#include <structures/KDTree.h>
 
-void KeyCallback(int key, int action, int mode)
+std::vector<glm::vec3> randomPoints()
 {
-
+	std::vector<glm::vec3> points(10);
+	for (int i = 0; i < 10; ++i)
+	{
+		points[i].x = 0 + rand() % (( 100 + 1 ) - 0);
+		points[i].y = 0 + rand() % (( 100 + 1 ) - 0);
+		points[i].z = 0 + rand() % (( 100 + 1 ) - 0);
+	}
+	return points;
 }
 
 int main()
 {
 	Log::Init();
 
-	constexpr uint32_t WIDTH{1920}, HEIGHT{1080};
+	std::vector<glm::vec3> points = randomPoints();
+	KDTree tree(points,1);
+
+	/*constexpr uint32_t WIDTH{1920}, HEIGHT{1080};
 	Window window{"Fluid Simulation", WIDTH, HEIGHT};
 	Renderer renderer{WIDTH,HEIGHT};
 
@@ -24,5 +35,5 @@ int main()
 		std::placeholders::_1,std::placeholders::_2));
 	window.SetMouseButtonCallback(std::bind(&Simulation::MouseButtonCallback, &simulation,
 		std::placeholders::_1,std::placeholders::_2,std::placeholders::_3));
-	window.Run(std::bind(&Simulation::Update, &simulation));
+	window.Run(std::bind(&Simulation::Update, &simulation));*/
 }
