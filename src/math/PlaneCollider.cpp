@@ -1,4 +1,5 @@
 #include "PlaneCollider.h"
+#include "gtx/intersect.hpp"
 
 PlaneCollider::PlaneCollider(const Plane& plane, bool IsInfinite) : Collider(Shape::PLANE), m_plane(plane), m_isInfinite(IsInfinite)
 {
@@ -14,29 +15,14 @@ bool PlaneCollider::CollisionOccured(const PlaneCollider& collider, const glm::v
 bool PlaneCollider::CollisionOccured(const glm::vec3& point, const glm::vec3& velocity, CollisionData& collisionData) const
 {
 	glm::vec3 N = m_plane.GetNormal();
-	glm::vec3 k = m_plane.A;
-	glm::vec3 P = point - k;
 
-	float dist = glm::dot(N, P);
-	if (dist > std::numeric_limits<float>::epsilon())
-	{
-		return false;
-	}
-
-	//If the plane is finite, check if the colliers point is within the finite plane
-	if ((!m_isInfinite && !m_plane.IsPointWithinPlane(point)) || dist > std::numeric_limits<float>::epsilon())
-	{
-		return false;
-	}
-
-	float d = glm::dot(N, P);
-	float e = glm::dot(N, -velocity);
-
-	if (e > std::numeric_limits<float>::epsilon())
+	float distance = 0.0f;
+	bool collided = m_plane.LineIntersection(point,velocity,distance);
+	if(collided)
 	{
 		collisionData.CollisionNormal = N;
-		collisionData.ContactPoint = point + velocity * d / e;
-		collisionData.Distance = d / e;
+		collisionData.ContactPoint = point - (velocity * distance);
+		collisionData.Distance = distance;
 		return true;
 	}
 

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.17)
 project(FYP_FluidSim)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)
 find_package(OpenCL REQUIRED) #Nvidia only support OpenCL 1.2 via the CUDA SDK
 find_package(OpenMP) #openMD for parallel code
 add_subdirectory(vendor/glad) #include glad

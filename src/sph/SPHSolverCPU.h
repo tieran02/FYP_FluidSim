@@ -8,6 +8,7 @@ class SPHSolverCPU : public Solver
 {
  public:
 	SPHSolverCPU(float timeStep, size_t particleCount, const PlaneCollider& CollisionPlane);
+	void Reset() override;
 	const ParticleSet& Particles() const;
  private:
 	void BeginTimeStep() override;

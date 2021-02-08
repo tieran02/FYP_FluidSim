@@ -30,8 +30,8 @@ void QuadPrimitive::Build()
 	};
 
 	std::vector<uint32_t> indices = {
-		3,2,0,
-		2,1,0
+		0,2,3,
+		0,1,2
 	};
 
 	m_mesh.Build(std::move(verts), std::move(indices));

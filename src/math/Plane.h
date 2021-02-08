@@ -12,4 +12,5 @@ struct Plane
 	glm::vec3 GetNormal() const;
 
 	bool IsPointWithinPlane(const glm::vec3& point) const;
+	bool LineIntersection(const glm::vec3& point, const glm::vec3& line, float& distance) const;
 };

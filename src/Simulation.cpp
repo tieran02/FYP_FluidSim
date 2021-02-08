@@ -9,6 +9,10 @@ Simulation::Simulation(Renderer& renderer) : m_renderer(renderer)
 
 void Simulation::Update()
 {
+	Transform planeTransform;
+	planeTransform.SetRotation(glm::vec3(1,0,0),glm::radians(90.0f));
+	planeCollider.SetTransform(planeTransform);
+
 	//run simulation
 	m_solver.Update();
 
@@ -25,9 +29,7 @@ void Simulation::Update()
 	m_instancedShader.SetMat4("view", m_camera.ViewMatrix(), false);
 	m_instancedShader.Unbind();
 
-	Transform planeTransform;
-	planeTransform.SetRotation(glm::vec3(1,0,0),-1.5708f);
-	planeCollider.SetTransform(planeTransform);
+
 	m_renderer.Draw(plane.GetMesh(),shader,planeTransform);
 
 	//update pos
@@ -65,6 +67,11 @@ void Simulation::createRenderResources()
 	m_instancedShader.Unbind();
 }
 
+void Simulation::restart()
+{
+	m_solver.Reset();
+}
+
 void Simulation::KeyCallback(int key, int action, int mode)
 {
 	switch (key)
@@ -80,6 +87,9 @@ void Simulation::KeyCallback(int key, int action, int mode)
 		break;
 	case GLFW_KEY_D:
 		m_camera.Move(glm::cross(m_camera.Forward(), m_camera.Up()));
+		break;
+	case GLFW_KEY_F5:
+		restart();
 		break;
 	}
 }

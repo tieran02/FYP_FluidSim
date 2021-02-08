@@ -13,7 +13,8 @@ struct ParticleSet
 		Forces = std::vector<glm::vec3>{particleCount};
 	}
 
-	void Integrate(const ParticleState& state);
+	void Integrate(ParticleState& state);
+	void Reset();
 
 	std::vector<glm::vec3> Positions;
 	std::vector<glm::vec3> Velocities;

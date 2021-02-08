@@ -8,6 +8,7 @@ class Solver
 	Solver(float timeStep);
 	virtual ~Solver();
 	void Update();
+	virtual void Reset() = 0;
 
  protected:
 	virtual void BeginTimeStep() = 0;
