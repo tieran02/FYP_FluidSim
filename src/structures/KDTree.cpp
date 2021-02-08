@@ -3,12 +3,12 @@
 #include <util/Log.h>
 #include "KDTree.h"
 
-KDNode::KDNode(const glm::vec3& point) : Point(point)
+KDNode::KDNode(const glm::vec3& point, size_t index) : Point(point), Index(index)
 {
 
 }
 
-KDTree::KDTree(std::vector<glm::vec3>& points, size_t leafLimit)
+KDTree::KDTree(std::vector<glm::vec3>& points, size_t leafLimit) : m_start(points.begin())
 {
 	m_root = buildTree(points.begin(),points.end(),0);
 }
@@ -50,7 +50,7 @@ std::unique_ptr<KDNode> KDTree::buildTree(const std::vector<glm::vec3>::iterator
 		break;
 	}
 
-	std::unique_ptr<KDNode> node = std::make_unique<KDNode>(*mid);
+	std::unique_ptr<KDNode> node = std::make_unique<KDNode>(*mid, mid - m_start);
 	node->Left = buildTree(begin,mid, depth+1);
 	node->Right = buildTree(mid + 1 ,end, depth+1);
 	return node;

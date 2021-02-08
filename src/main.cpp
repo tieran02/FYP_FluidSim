@@ -4,10 +4,10 @@
 #include <util/Log.h>
 #include <structures/KDTree.h>
 
-std::vector<glm::vec3> randomPoints()
+std::vector<glm::vec3> randomPoints(size_t count)
 {
-	std::vector<glm::vec3> points(10);
-	for (int i = 0; i < 10; ++i)
+	std::vector<glm::vec3> points(count);
+	for (int i = 0; i < count; ++i)
 	{
 		points[i].x = 0 + rand() % (( 100 + 1 ) - 0);
 		points[i].y = 0 + rand() % (( 100 + 1 ) - 0);
@@ -20,7 +20,7 @@ int main()
 {
 	Log::Init();
 
-	std::vector<glm::vec3> points = randomPoints();
+	std::vector<glm::vec3> points = randomPoints(2000);
 	KDTree tree(points,1);
 
 	/*constexpr uint32_t WIDTH{1920}, HEIGHT{1080};
