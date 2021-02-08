@@ -3,15 +3,17 @@
 #include "Simulation.h"
 #include <util/Log.h>
 #include <structures/KDTree.h>
+#include "util/Stopwatch.h"
 
-std::vector<glm::vec3> randomPoints(size_t count)
+std::vector<KDPair<3,size_t>> randomPoints(size_t count)
 {
-	std::vector<glm::vec3> points(count);
+	std::vector<KDPair<3,size_t>> points(count);
 	for (int i = 0; i < count; ++i)
 	{
-		points[i].x = 0 + rand() % (( 100 + 1 ) - 0);
-		points[i].y = 0 + rand() % (( 100 + 1 ) - 0);
-		points[i].z = 0 + rand() % (( 100 + 1 ) - 0);
+		points[i].first[0] = 0 + rand() % (( 100 + 1 ) - 0);
+		points[i].first[1] = 0 + rand() % (( 100 + 1 ) - 0);
+		points[i].first[2] = 0 + rand() % (( 100 + 1 ) - 0);
+		points[i].second = i;
 	}
 	return points;
 }
@@ -20,8 +22,19 @@ int main()
 {
 	Log::Init();
 
-	std::vector<glm::vec3> points = randomPoints(2000);
-	KDTree tree(points,1);
+	std::vector<KDPair<3,size_t>> points = randomPoints(100000);
+
+	Stopwatch sw;
+
+	sw.Start();
+	KDTree<3,size_t> tree(points);
+	sw.Stop();
+	LOG_CORE_INFO(sw.Time());
+
+	sw.Start();
+	const auto& closest = tree.GetClosestNode({20,41,4});
+	sw.Stop();
+	LOG_CORE_INFO(sw.Time());
 
 	/*constexpr uint32_t WIDTH{1920}, HEIGHT{1080};
 	Window window{"Fluid Simulation", WIDTH, HEIGHT};
