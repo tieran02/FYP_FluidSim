@@ -8,5 +8,5 @@ class INearestNeighbor
 {
  public:
 	virtual bool FindNearestNeighbor(const point_t<K>& point, ElementType& element) = 0;
-	virtual bool FindNearestNeighbors(const point_t<K>& point, float radius, std::vector<ElementType*>& elements) = 0;
+	virtual bool FindNearestNeighbors(const point_t<K>& point, float radius, std::vector<ElementType>& elements) = 0;
 };

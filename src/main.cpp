@@ -4,15 +4,21 @@
 #include <util/Log.h>
 #include <structures/KDTree.h>
 #include "util/Stopwatch.h"
+#include <random>
 
 std::vector<KDPair<3,size_t>> randomPoints(size_t count)
 {
 	std::vector<KDPair<3,size_t>> points(count);
+
+	std::random_device rd;
+	std::mt19937 mt(rd());
+	std::uniform_int_distribution<int> dist(-10000, 10000);
+
 	for (int i = 0; i < count; ++i)
 	{
-		points[i].first.x = 0 + rand() % (( 100 + 1 ) - 0);
-		points[i].first.y = 0 + rand() % (( 100 + 1 ) - 0);
-		points[i].first.z = 0 + rand() % (( 100 + 1 ) - 0);
+		points[i].first.x = dist(mt);
+		points[i].first.y = dist(mt);
+		points[i].first.z = dist(mt);
 		points[i].second = i;
 	}
 	return points;
@@ -35,10 +41,24 @@ int main()
 	size_t index = 0;
 	bool found = tree.FindNearestNeighbor(glm::vec3(20,41,4), index);
 
-	std::vector<size_t*> elements;
-	bool foundElements = tree.FindNearestNeighbors(glm::vec3(20,41,4),5, elements);
+	std::vector<size_t> elements;
+	bool foundElements = tree.FindNearestNeighbors(glm::vec3(50,60,60),20*20, elements);
 	sw.Stop();
 	LOG_CORE_INFO(sw.Time());
+
+	sw.Start();
+	//find all neighbours of all elements
+	std::vector<std::vector<size_t>> neighbors(points.size());
+	#pragma omp parallel for
+	for (int i = 0; i < points.size(); ++i)
+	{
+		std::vector<size_t> e;
+		bool foundE = tree.FindNearestNeighbors(points[i].first,100*100, e);
+		neighbors[points[i].second] = e;
+	}
+	sw.Stop();
+	LOG_CORE_INFO(sw.Time());
+
 
 	/*constexpr uint32_t WIDTH{1920}, HEIGHT{1080};
 	Window window{"Fluid Simulation", WIDTH, HEIGHT};

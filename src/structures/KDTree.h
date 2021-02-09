@@ -35,7 +35,7 @@ class KDTree : public INearestNeighbor<K,ElementType>
 	const std::unique_ptr<KDNode<K,ElementType>>& Root() const { return m_root; }
 
 	bool FindNearestNeighbor(const point_t<K>& point, ElementType& element) override;
-	bool FindNearestNeighbors(const point_t<K>& point, float radius, std::vector<ElementType*>&) override;
+	bool FindNearestNeighbors(const point_t<K>& point, float radius, std::vector<ElementType>&) override;
  private:
 	typedef KDPair<K,ElementType> pair;
 	typedef typename std::vector<pair>::iterator point_Iterator;
@@ -49,10 +49,10 @@ class KDTree : public INearestNeighbor<K,ElementType>
 		KDNode<K, ElementType>* best,
 		float bestDistance) const;
 
-	KDNode<K, ElementType>* findNearestNodesWithinRadius(KDNode<K, ElementType>* branch,
+	void findNearestNodesWithinRadius(KDNode<K, ElementType>* branch,
 		const point_t<K>& point,
 		size_t depth,
-		std::vector<ElementType*>& nearestNodes,
+		std::vector<ElementType>& nearestNodes,
 		float radius) const;
 
 	float dist2(const point_t<K>& p1, const point_t<K>& p2) const;
@@ -166,12 +166,7 @@ KDNode<K, ElementType>* KDTree<K, ElementType>::findNearestNode(KDNode<K, Elemen
 template<size_t K, typename ElementType>
 float KDTree<K, ElementType>::dist2(const point_t<K>& p1, const point_t<K>& p2) const
 {
-	float distc = 0;
-	for (size_t i = 0; i < K; i++) {
-		float di = p1[i] - p2[i];
-		distc += di * di;
-	}
-	return distc;
+	return glm::distance2(p1,p2);
 }
 
 template<size_t K, typename ElementType>
@@ -188,20 +183,52 @@ bool KDTree<K, ElementType>::FindNearestNeighbor(const point_t<K>& point, Elemen
 }
 
 template<size_t K, typename ElementType>
-bool KDTree<K, ElementType>::FindNearestNeighbors(const point_t<K>& point, float radius, std::vector<ElementType*>& elements)
+bool KDTree<K, ElementType>::FindNearestNeighbors(const point_t<K>& point, float radius, std::vector<ElementType>& elements)
 {
-	elements = std::vector<ElementType*>();
+	elements = std::vector<ElementType>();
 
 	findNearestNodesWithinRadius(m_root.get(),point,0,elements,radius);
 	return false;
 }
 
 template<size_t K, typename ElementType>
-KDNode<K, ElementType>* KDTree<K, ElementType>::findNearestNodesWithinRadius(KDNode<K, ElementType>* branch,
+void KDTree<K, ElementType>::findNearestNodesWithinRadius(KDNode<K, ElementType>* branch,
 	const point_t<K>& point,
 	size_t depth,
-	std::vector<ElementType*>& nearestNodes,
+	std::vector<ElementType>& nearestNodes,
 	float radius) const
 {
-	return nullptr;
+
+	float d, dx, dx2;
+	if(!branch)
+		return;
+
+	const point_t<K>& branchPoint = branch->Point;
+
+	d = dist2(branchPoint, point);
+	dx = branchPoint[depth] - point[depth];
+	dx2 = dx * dx;
+
+	if(d <= radius)
+		nearestNodes.push_back(branch->Element);
+
+	size_t next_lv = (depth + 1) % K;
+	KDNode<K, ElementType>* section = nullptr;
+	KDNode<K, ElementType>* other = nullptr;
+
+	// select which branch makes sense to check
+	if (dx > 0) {
+		section = branch->Left.get();
+		other = branch->Right.get();
+	} else {
+		section = branch->Right.get();
+		other = branch->Left.get();
+	}
+
+	findNearestNodesWithinRadius(section, point, next_lv, nearestNodes, radius);
+
+	// only check the other branch if it makes sense to do so
+	if (dx2 <= radius) {
+		findNearestNodesWithinRadius(other, point, next_lv, nearestNodes, radius);
+	}
 }
