@@ -25,6 +25,6 @@ inline void Stopwatch::Stop()
 
 inline double Stopwatch::Time() const
 {
-	const auto time = std::chrono::duration<double, std::milli>(endPoint-startPoint);
+	const auto time = std::chrono::duration<double, std::ratio<1,1>>(endPoint-startPoint);
 	return time.count();
 }
