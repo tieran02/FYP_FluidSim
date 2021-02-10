@@ -1,5 +1,6 @@
 #pragma once
 #include <glm.hpp>
+#include <gtx/norm.hpp>
 #include <vector>
 #include <memory>
 #include "INearestNeighbor .h"
