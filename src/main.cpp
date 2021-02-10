@@ -32,7 +32,7 @@ int main()
 	Stopwatch sw;
 
 	sw.Start();
-	KDTree<3,size_t> tree(points, 1);
+	KDTree<3> tree(points, 1);
 	sw.Stop();
 	LOG_CORE_INFO(sw.Time());
 
