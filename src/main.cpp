@@ -6,9 +6,9 @@
 #include "util/Stopwatch.h"
 #include <random>
 
-std::vector<KDPair<3,size_t>> randomPoints(size_t count)
+std::vector<glm::vec3> randomPoints(size_t count)
 {
-	std::vector<KDPair<3,size_t>> points(count);
+	std::vector<glm::vec3> points(count);
 
 	std::random_device rd;
 	std::mt19937 mt(rd());
@@ -16,10 +16,9 @@ std::vector<KDPair<3,size_t>> randomPoints(size_t count)
 
 	for (int i = 0; i < count; ++i)
 	{
-		points[i].first.x = dist(mt);
-		points[i].first.y = dist(mt);
-		points[i].first.z = dist(mt);
-		points[i].second = i;
+		points[i].x = dist(mt);
+		points[i].y = dist(mt);
+		points[i].z = dist(mt);
 	}
 	return points;
 }
@@ -28,7 +27,7 @@ int main()
 {
 	Log::Init();
 
-	std::vector<KDPair<3,size_t>> points = randomPoints(100000);
+	auto points = randomPoints(10000);
 
 	Stopwatch sw;
 
@@ -53,8 +52,8 @@ int main()
 	for (int i = 0; i < points.size(); ++i)
 	{
 		std::vector<size_t> e;
-		bool foundE = tree.FindNearestNeighbors(points[i].first,100*100, e);
-		neighbors[points[i].second] = e;
+		bool foundE = tree.FindNearestNeighbors(points[i],5000*5000, e);
+		neighbors[i] = e;
 	}
 	sw.Stop();
 	LOG_CORE_INFO(sw.Time());

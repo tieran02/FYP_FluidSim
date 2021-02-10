@@ -7,6 +7,7 @@ template<size_t K, typename ElementType>
 class INearestNeighbor
 {
  public:
+	virtual void Build(const std::vector<point_t<K>>& points) = 0;
 	virtual bool FindNearestNeighbor(const point_t<K>& point, ElementType& element) = 0;
 	virtual bool FindNearestNeighbors(const point_t<K>& point, float radius, std::vector<ElementType>& elements) = 0;
 };
