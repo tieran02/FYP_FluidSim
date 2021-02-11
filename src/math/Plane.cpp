@@ -68,7 +68,7 @@ bool Plane::LineIntersection(const glm::vec3& point, const glm::vec3& line, floa
 	{
 		return false;
 	}
-	if (distance < std::numeric_limits<float>::epsilon())
+	if (distance < std::numeric_limits<float>::epsilon() || d*d > glm::dot(line,line))
 	{
 		return false;
 	}

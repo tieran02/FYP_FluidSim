@@ -5,13 +5,18 @@ Simulation::Simulation(Renderer& renderer) : m_renderer(renderer)
 {
 	m_camera.LootAt(glm::vec3(0,25.0f,0.0f));
 	createRenderResources();
+
+	Transform planeTransform;
+	planeTransform.SetRotation(glm::vec3(1,0,0),glm::radians(90.0f));
+	planeCollider.SetTransform(planeTransform);
+	m_solver.Setup();
 }
 
 void Simulation::Update()
 {
 	Transform planeTransform;
 	planeTransform.SetRotation(glm::vec3(1,0,0),glm::radians(90.0f));
-	planeCollider.SetTransform(planeTransform);
+	//planeCollider.SetTransform(planeTransform);
 
 	//run simulation
 	m_solver.Update();
