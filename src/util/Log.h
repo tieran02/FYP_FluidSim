@@ -4,6 +4,7 @@
 #include <NonCopyable.h>
 #include <memory>
 #include <spdlog/logger.h>
+#include "spdlog/fmt/ostr.h"
 
 class Log : NonCopyable, NonMovable
 {

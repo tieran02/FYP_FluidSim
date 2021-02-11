@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include "INearestNeighbor .h"
+#include "gtx/string_cast.hpp"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <gtx/hash.hpp>
@@ -14,13 +15,25 @@ class SpartialHash : public INearestNeighbor<K>
 	SpartialHash(const std::vector<point_t<K>>& points, uint32_t bucketSize);
 
 	void Build(const std::vector<point_t<K>>& points) override;
+
+	/// Find the Nearest neighbour from the given point (Note: this will only search the bucket that contains the point)
+	/// \param point
+	/// \param index ref that gets assigned the closest index
 	bool FindNearestNeighbor(const point_t<K>& point, size_t & index) override;
+
+	/// Find a list of the nearest neighbours from the given point that fit within the radius
+	/// \param point
+	/// \param radius of the search from point
+	/// \param indices ref that gets assigned the closest indices
 	bool FindNearestNeighbors(const point_t<K>& point, float radius, std::vector<size_t>& indices) override;
  private:
+	typedef std::pair<point_t<K>,size_t> pair;
 	const uint32_t m_bucketSize;
-	std::unordered_map<size_t, std::vector<size_t>> m_buckets;
+	std::unordered_map<size_t, std::vector<pair>> m_buckets;
 
 	size_t getHashKey(point_t<K> point) const;
+	void getAllIndicesFromHashkey(size_t hashKey, std::vector<pair>& indices);
+	std::vector<glm::vec3> getAllBucketPointsWithinRange(const point_t<K>& origin, float radius) const;
 };
 
 template<size_t K>
@@ -36,22 +49,69 @@ void SpartialHash<K>::Build(const std::vector<point_t<K>>& points)
 	{
 		//get hash from point
 		size_t hash = getHashKey(points[i]);
-		m_buckets[hash].push_back(i);
-
+		m_buckets[hash].push_back(std::make_pair(points[i],i));
 	}
 }
 
 template<size_t K>
 bool SpartialHash<K>::FindNearestNeighbor(const point_t<K>& point, size_t & index)
 {
-	return false;
+	//hash point
+	size_t pointHashkey = getHashKey(point);
+	std::vector<pair> neighbors{};
+	getAllIndicesFromHashkey(pointHashkey,neighbors);
+
+	if(neighbors.empty())
+	{
+		return false;
+	}
+	else if(neighbors.size() == 1)
+	{
+		index = neighbors[0].second;
+		return true;
+	}
+
+	float closestDistance = std::numeric_limits<float>::infinity();
+	size_t closestIndex = 0;
+
+	for (int i = 0; i < neighbors.size(); ++i)
+	{
+		float distance = glm::distance2(neighbors[i].first,point);
+		if(distance < closestDistance)
+		{
+			closestDistance = distance;
+			closestIndex = i;
+		}
+	}
+
+	index = closestIndex;
+	return true;
 }
 
 template<size_t K>
 bool SpartialHash<K>::FindNearestNeighbors(const point_t<K>& point, float radius, std::vector<size_t>& indices)
 {
+	auto searchBuckets = getAllBucketPointsWithinRange(point,radius);
+
+	for(const auto& bucket : searchBuckets)
+	{
+		size_t hashKey = getHashKey(bucket);
+
+		std::vector<pair> neighbors{};
+		getAllIndicesFromHashkey(hashKey,neighbors);
+
+		for(const auto& hashPoint : neighbors)
+		{
+			//calc distance
+			float distance2 = glm::distance2(point,hashPoint.first);
+			if(distance2 <= radius)
+				indices.push_back(hashPoint.second);
+		}
+	}
+
 	return false;
 }
+
 template<size_t K>
 size_t SpartialHash<K>::getHashKey(point_t<K> point) const
 {
@@ -64,4 +124,44 @@ size_t SpartialHash<K>::getHashKey(point_t<K> point) const
 
 	size_t hash = std::hash<pointi_t<K>>{}(pointI);
 	return hash;
+}
+
+template<size_t K>
+void SpartialHash<K>::getAllIndicesFromHashkey(size_t hashKey, std::vector<pair>& indices)
+{
+	if(m_buckets.find(hashKey) != m_buckets.end())
+	{
+		indices = m_buckets[hashKey];
+	}
+}
+
+template<size_t K>
+std::vector<glm::vec3> SpartialHash<K>::getAllBucketPointsWithinRange(const point_t<K>& origin, float radius) const
+{
+	const glm::vec3 A{m_bucketSize,0.0f,0.0f};
+	const glm::vec3 B{0.0f,m_bucketSize,0.0f};
+	const glm::vec3 C{0.0f,0.0f,m_bucketSize};
+
+	uint32_t bucketSize2 = m_bucketSize * m_bucketSize;
+	int bucketRadius2 = static_cast<int>(ceil(bucketSize2));
+
+	int searchRadius = ceil(radius/bucketRadius2);
+	const glm::vec3 topLeft = origin - (float)(m_bucketSize*searchRadius);
+
+	int searchSize = searchRadius+2;
+	std::vector<glm::vec3> result;
+	result.reserve(searchSize * searchSize * searchSize);
+
+	for (int i = 0; i < searchSize; ++i)
+	{
+		for (int j = 0; j < searchSize; ++j)
+		{
+			for (int k = 0; k < searchSize; ++k)
+			{
+				result.emplace_back(topLeft + A * (float)i + B * (float)j + C * (float)k);
+			}
+		}
+	}
+
+	return result;
 }
