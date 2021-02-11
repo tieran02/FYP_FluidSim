@@ -37,6 +37,7 @@ void SPHSolverCPU::Reset()
 void SPHSolverCPU::BeginTimeStep()
 {
 	m_state = ParticleState(m_particles);
+	m_tree.Build(m_particles.Positions);
 }
 
 void SPHSolverCPU::ApplyForces()
@@ -79,7 +80,7 @@ void SPHSolverCPU::ResolveCollisions()
 
 			CollisionData collisionData{};
 
-			if (m_collisionPlane.CollisionOccured(pos, vel*TIMESTEP, collisionData))
+			if (m_collisionPlane.CollisionOccured(pos, vel, collisionData))
 			{
 				pos = collisionData.ContactPoint;
 				vel = glm::vec3(0, 0, 0);

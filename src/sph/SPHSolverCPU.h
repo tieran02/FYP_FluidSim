@@ -3,6 +3,7 @@
 #include <math/PlaneCollider.h>
 #include "Solver.h"
 #include "ParticleSet.h"
+#include "structures/KDTree.h"
 
 class SPHSolverCPU : public Solver
 {
@@ -25,4 +26,6 @@ class SPHSolverCPU : public Solver
 	ParticleSet m_particles;
 	ParticleState m_state;
 	const glm::vec3 GRAVITY{0.0f,-9.81f,0.0f};
+
+	KDTree<3> m_tree{m_particles.Positions,0};
 };
