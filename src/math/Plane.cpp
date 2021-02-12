@@ -54,7 +54,7 @@ bool Plane::LineIntersection(const glm::vec3& point, const glm::vec3& line, floa
 	//float fDist = fabs(d);
 	//float fLength = fabs(glm::length(line));
 
-	if (fabs(e) < std::numeric_limits<float>::epsilon() || distance < std::numeric_limits<float>::epsilon())
+	if (fabs(e) < std::numeric_limits<float>::epsilon() || e < 0.0f || distance < std::numeric_limits<float>::epsilon())
 	{
 		return false;
 	}

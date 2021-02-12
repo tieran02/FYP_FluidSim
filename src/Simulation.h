@@ -19,7 +19,7 @@ class Simulation
 	QuadPrimitive plane{ glm::vec2(1000.0f,1000.0f)};
 	PlaneCollider planeCollider{plane.GetPlane(),true};
 
-	SpherePrimitive sphere{0.5f,24,16};
+	SpherePrimitive sphere{0.1f,24,16};
 	Shader shader, m_instancedShader;
 
 	const size_t SPHERE_COUNT{10000};

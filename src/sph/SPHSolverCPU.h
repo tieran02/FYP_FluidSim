@@ -24,18 +24,22 @@ class SPHSolverCPU : public Solver
 	float sumOfKernelNearby(size_t pointIndex) const;
 	void computeDensities();
 	void pressureForces();
+	float computePressure(float density, float targetDensity, float eosScale, float eosExponent, float negativePressureScale) const;
 
 	//For now just have one collision plane
 	const PlaneCollider& m_collisionPlane;
 
 	const size_t PARTICLE_COUNT;
+	const float PARTICLE_RADIUS;
 	const float KERNEL_RADIUS;
 	ParticleSet m_particles;
 	ParticleState m_state;
 	std::vector<std::vector<size_t>> m_neighborList;
 
 	const glm::vec3 GRAVITY{0.0f,-9.81f,0.0f};
-	const float MASS{1.0f};
+	const float MASS{35.0f};
+	const float TargetDensitiy{1000.0f};
+	const float speedOfSound{1000.0f};
 
 	KDTree<3> m_tree{ };
 };
