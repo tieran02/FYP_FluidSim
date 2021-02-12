@@ -1,6 +1,9 @@
 #pragma once
 
 #include <glm.hpp>
+#include <chrono>
+
+using namespace std::chrono_literals;
 
 class Solver
 {
@@ -20,5 +23,8 @@ class Solver
 
 	const float TIMESTEP;
  private:
-	float m_tickTime;
+	const std::chrono::nanoseconds timestep{33ms};
+
+	std::chrono::time_point<std::chrono::high_resolution_clock> time_start;
+	std::chrono::nanoseconds lag;
 };

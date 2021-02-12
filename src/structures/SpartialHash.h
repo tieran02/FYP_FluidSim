@@ -2,16 +2,19 @@
 #include <glm.hpp>
 #include <memory>
 #include <vector>
+#include <unordered_map>
 #include "INearestNeighbor .h"
 #include "gtx/string_cast.hpp"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <gtx/hash.hpp>
+#include <omp.h>
 
 template<size_t K>
 class SpartialHash : public INearestNeighbor<K>
 {
  public:
+	SpartialHash(uint32_t bucketSize);
 	SpartialHash(const std::vector<point_t<K>>& points, uint32_t bucketSize);
 
 	void Build(const std::vector<point_t<K>>& points) override;
@@ -31,10 +34,19 @@ class SpartialHash : public INearestNeighbor<K>
 	const uint32_t m_bucketSize;
 	std::unordered_map<size_t, std::vector<pair>> m_buckets;
 
+	const int P1 = 73856093;
+	const int P2 = 19349663;
+	const int P3 = 83492791;
+
 	size_t getHashKey(point_t<K> point) const;
 	void getAllIndicesFromHashkey(size_t hashKey, std::vector<pair>& indices);
 	std::vector<glm::vec3> getAllBucketPointsWithinRange(const point_t<K>& origin, float radius) const;
 };
+
+template<size_t K>
+inline SpartialHash<K>::SpartialHash(uint32_t bucketSize) : m_bucketSize(bucketSize)
+{
+}
 
 template<size_t K>
 SpartialHash<K>::SpartialHash(const std::vector<point_t<K>>& points, uint32_t bucketSize) : m_bucketSize(bucketSize)
@@ -100,16 +112,18 @@ bool SpartialHash<K>::FindNearestNeighbors(const point_t<K>& point, float radius
 		std::vector<pair> neighbors{};
 		getAllIndicesFromHashkey(hashKey,neighbors);
 
-		for(const auto& hashPoint : neighbors)
+		for (int i = 0; i < neighbors.size(); i++)
 		{
 			//calc distance
-			float distance2 = glm::distance2(point,hashPoint.first);
-			if(distance2 <= radius)
-				indices.push_back(hashPoint.second);
+			float distance2 = glm::distance2(point, neighbors[i].first);
+			if (distance2 <= radius)
+			{
+				indices.push_back(neighbors[i].second);
+			}
 		}
 	}
 
-	return false;
+	return !indices.empty();
 }
 
 template<size_t K>
@@ -119,11 +133,12 @@ size_t SpartialHash<K>::getHashKey(point_t<K> point) const
 	pointi_t<K> pointI;
 	for (int i = 0; i < K; ++i)
 	{
-		pointI[i] = (int)floor(point[i] / m_bucketSize);
+		pointI[i] = static_cast<int>(floor(point[i] / m_bucketSize));
 	}
 
-	size_t hash = std::hash<pointi_t<K>>{}(pointI);
-	return hash;
+
+	//return (pointI.x * 73856093 ^ pointI.y * 19349663 ^ pointI.z * 83492791) % 1000;
+	return std::hash<pointi_t<K>>{}(pointI);
 }
 
 template<size_t K>

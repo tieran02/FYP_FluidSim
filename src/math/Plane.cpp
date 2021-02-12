@@ -45,30 +45,16 @@ bool Plane::IsPointWithinPlane(const glm::vec3& point) const
 bool Plane::LineIntersection(const glm::vec3& point, const glm::vec3& line, float& distance) const
 {
 	glm::vec3 N = GetNormal();
-	/*float d = glm::dot(N, A);
-
-	if (glm::dot(N, line) == 0)
-	{
-		return false; // No intersection, the line is parallel to the plane
-	}
-
-	float x = (d - glm::dot(N, point)) / glm::dot(N, line);
-	contactPoint = point + normalize(line)*x;*/
-
 	glm::vec3 diff = point - A;
 	float d = glm::dot(N,diff);
 	float e = glm::dot(N,line);
 
 	distance = d / e;
 
-	float fDist = fabs(d);
-	float fLength = fabs(glm::length(line));
+	//float fDist = fabs(d);
+	//float fLength = fabs(glm::length(line));
 
-	if (fabs(e) < std::numeric_limits<float>::epsilon())
-	{
-		return false;
-	}
-	if (distance < std::numeric_limits<float>::epsilon() || d*d > glm::dot(line,line))
+	if (fabs(e) < std::numeric_limits<float>::epsilon() || distance < std::numeric_limits<float>::epsilon())
 	{
 		return false;
 	}

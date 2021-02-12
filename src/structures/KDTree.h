@@ -26,6 +26,7 @@ template<size_t K>
 class KDTree : public INearestNeighbor<K>
 {
  public:
+	KDTree() = default;
 	KDTree(const std::vector<point_t<K>>& points, size_t leafLimit = 1);
 	const std::unique_ptr<KDNode<K>>& Root() const { return m_root; }
 
@@ -36,7 +37,7 @@ class KDTree : public INearestNeighbor<K>
 	typedef std::pair<point_t<K>,size_t> KDPair;
 	typedef typename std::vector<KDPair>::iterator point_Iterator;
 	std::unique_ptr<KDNode<K>> m_root;
-	const size_t m_leafLimit;
+	const size_t m_leafLimit{1};
 
 	std::unique_ptr<KDNode<K>> buildTree(const point_Iterator& begin, const point_Iterator& end, int currentLevel);
 	KDNode<K>* findNearestNode(KDNode<K>* branch,
@@ -191,8 +192,6 @@ bool KDTree<K>::FindNearestNeighbor(const point_t<K>& point, size_t & index)
 template<size_t K>
 bool KDTree<K>::FindNearestNeighbors(const point_t<K>& point, float radius, std::vector<size_t>& indices)
 {
-	indices = std::vector<size_t>();
-
 	findNearestNodesWithinRadius(m_root.get(),point,0,indices,radius);
 	return !indices.empty();
 }

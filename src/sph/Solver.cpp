@@ -1,9 +1,11 @@
 #include "Solver.h"
 #include <GLFW/glfw3.h>
+#include <chrono>
 
 Solver::Solver(float timeStep) : TIMESTEP(timeStep)
 {
-	m_tickTime = glfwGetTime();
+	lag = std::chrono::nanoseconds(0);
+	time_start = std::chrono::high_resolution_clock::now();
 }
 
 Solver::~Solver()
@@ -13,15 +15,19 @@ Solver::~Solver()
 
 void Solver::Update()
 {
-	while (m_tickTime < glfwGetTime())
+	auto delta_time = std::chrono::high_resolution_clock::now() - time_start;
+	time_start = std::chrono::high_resolution_clock::now();
+	lag += std::chrono::duration_cast<std::chrono::nanoseconds>(delta_time);
+
+	if (lag >= timestep)
 	{
+		lag -= timestep;
+
 		BeginTimeStep();
 		ApplyForces();
 		Integrate();
 		ResolveCollisions();
 		EndTimeStep();
-
-		m_tickTime += TIMESTEP;
 	}
 }
 

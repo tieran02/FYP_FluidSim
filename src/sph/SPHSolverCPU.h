@@ -4,6 +4,7 @@
 #include "Solver.h"
 #include "ParticleSet.h"
 #include "structures/KDTree.h"
+#include "structures/SpartialHash.h"
 
 class SPHSolverCPU : public Solver
 {
@@ -27,5 +28,5 @@ class SPHSolverCPU : public Solver
 	ParticleState m_state;
 	const glm::vec3 GRAVITY{0.0f,-9.81f,0.0f};
 
-	KDTree<3> m_tree{m_particles.Positions,0};
+	KDTree<3> m_tree{ };
 };

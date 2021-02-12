@@ -36,7 +36,8 @@ void KDTests()
 	sw.Start();
 	KDTree<3> tree(points, 1);
 	sw.Stop();
-	LOG_CORE_INFO("KD-Tree constuction time: {} seconds", sw.Time());
+	double constructionTime = sw.Time();
+	LOG_CORE_INFO("KD-Tree constuction time: {} seconds", constructionTime);
 
 	sw.Start();
 	size_t index = 0;
@@ -62,12 +63,13 @@ void KDTests()
 	}
 	sw.Stop();
 	LOG_CORE_INFO("KD-Tree find all neighbors of all indices time: {} seconds", sw.Time());
+	LOG_CORE_INFO("KD-Tree find all neighbors of all indices time with construction: {} seconds", sw.Time() + constructionTime);
 }
 
 void SpartialHashTests()
 {
 	LOG_CORE_INFO("--------------------------------------------------------------------------------------------------");
-	LOG_CORE_INFO("-------------------------------------Spartial-Hash------------------------------------------------");
+	LOG_CORE_INFO("-------------------------------------Spatial-Hash------------------------------------------------");
 	LOG_CORE_INFO("--------------------------------------------------------------------------------------------------");
 
 	auto points = randomPoints(POINT_COUNT);
@@ -76,20 +78,21 @@ void SpartialHashTests()
 	sw.Start();
 	SpartialHash<3> spartialHash(points,100);
 	sw.Stop();
-	LOG_CORE_INFO("Spartial hash constuction time: {} seconds", sw.Time());
+	double constructionTime = sw.Time();
+	LOG_CORE_INFO("Spatial hash constuction time: {} seconds", sw.Time());
 
 	sw.Start();
 	size_t index = 0;
 	bool found = spartialHash.FindNearestNeighbor(glm::vec3(20,41,4), index);
 	sw.Stop();
-	LOG_CORE_INFO("Spartial hash find closest index to point time: {} seconds", sw.Time());
+	LOG_CORE_INFO("Spatial hash find closest index to point time: {} seconds", sw.Time());
 
 
 	sw.Start();
 	std::vector<size_t> elements;
 	found = spartialHash.FindNearestNeighbors(glm::vec3(0,0,0), 100*100,elements);
 	sw.Stop();
-	LOG_CORE_INFO("Spartial hash find nearest neighbors to point within radius time: {} seconds", sw.Time());
+	LOG_CORE_INFO("Spatial hash find nearest neighbors to point within radius time: {} seconds", sw.Time());
 
 	sw.Start();
 	//find all neighbours of all elements
@@ -102,7 +105,8 @@ void SpartialHashTests()
 		neighbors[i] = e;
 	}
 	sw.Stop();
-	LOG_CORE_INFO("Spartial hash find all neighbors of all indices time: {} seconds", sw.Time());
+	LOG_CORE_INFO("Spatial hash find all neighbors of all indices time: {} seconds", sw.Time());
+	LOG_CORE_INFO("Spatial hash find all neighbors of all indices time with construction: {} seconds", sw.Time() + constructionTime);
 };
 
 int main()

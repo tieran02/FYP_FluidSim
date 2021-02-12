@@ -4,6 +4,7 @@
 #include <omp.h>
 #include <iterator>
 #include <iostream>
+#include <random>
 
 SPHSolverCPU::SPHSolverCPU(float timeStep, size_t particleCount, const PlaneCollider& CollisionPlane) :
 	Solver(timeStep),
@@ -16,14 +17,18 @@ SPHSolverCPU::SPHSolverCPU(float timeStep, size_t particleCount, const PlaneColl
 
 void SPHSolverCPU::Setup()
 {
-	constexpr int perRow = 64;
+	std::random_device rd;
+	std::mt19937 mt(rd());
+	std::uniform_real_distribution<float> dist(0.25f, 1.25f);
+
+	const int perRow = static_cast<int>(floor(sqrt(64)));
 	constexpr float spacing = 1.25f;
 
 	for (int i = 0; i < PARTICLE_COUNT; i++)
 	{
-		float x = ((i % perRow) * spacing) - (perRow / 2);
+		float x = ((i % perRow) * spacing) - (perRow / 2) + dist(mt);
 		float y = ((0 * spacing) + (float)(((i / perRow) / perRow) * spacing) * 1.1f) + 10.0f;
-		float z = (((i / perRow) % perRow) * spacing) - (perRow / 2);
+		float z = (((i / perRow) % perRow) * spacing) - (perRow / 2) + dist(mt);
 		m_particles.Positions[i] = glm::vec3(x, y, z);
 	}
 }
@@ -38,6 +43,17 @@ void SPHSolverCPU::BeginTimeStep()
 {
 	m_state = ParticleState(m_particles);
 	m_tree.Build(m_particles.Positions);
+
+	//find all neighbours of all elements
+	std::vector<std::vector<size_t>> neighbors(m_particles.Positions.size());
+	#pragma omp parallel for
+	for (int i = 0; i < m_particles.Positions.size(); ++i)
+	{
+		std::vector<size_t> e;
+		e.reserve(1000);
+		bool foundE = m_tree.FindNearestNeighbors(m_particles.Positions[i],1*1, e);
+		neighbors[i] = e;
+	}
 }
 
 void SPHSolverCPU::ApplyForces()
