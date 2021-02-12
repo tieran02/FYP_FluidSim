@@ -5,12 +5,15 @@
 #include <iterator>
 #include <iostream>
 #include <random>
+#include "math/SmoothedKernel.h"
 
 SPHSolverCPU::SPHSolverCPU(float timeStep, size_t particleCount, const PlaneCollider& CollisionPlane) :
 	Solver(timeStep),
 	PARTICLE_COUNT(particleCount),
 	m_particles(particleCount),
-	m_collisionPlane(CollisionPlane)
+	m_neighborList(particleCount),
+	m_collisionPlane(CollisionPlane),
+	KERNEL_RADIUS(0.2f)
 {
 
 }
@@ -44,16 +47,9 @@ void SPHSolverCPU::BeginTimeStep()
 	m_state = ParticleState(m_particles);
 	m_tree.Build(m_particles.Positions);
 
-	//find all neighbours of all elements
-	std::vector<std::vector<size_t>> neighbors(m_particles.Positions.size());
-	#pragma omp parallel for
-	for (int i = 0; i < m_particles.Positions.size(); ++i)
-	{
-		std::vector<size_t> e;
-		e.reserve(1000);
-		bool foundE = m_tree.FindNearestNeighbors(m_particles.Positions[i],1*1, e);
-		neighbors[i] = e;
-	}
+	computeNeighborList();
+
+	computeDensities();
 }
 
 void SPHSolverCPU::ApplyForces()
@@ -114,4 +110,57 @@ void SPHSolverCPU::EndTimeStep()
 const ParticleSet& SPHSolverCPU::Particles() const
 {
 	return m_particles;
+}
+
+void SPHSolverCPU::computeNeighborList()
+{
+	//find all neighbours of all elements
+	#pragma omp parallel for
+	for (int i = 0; i < m_particles.Positions.size(); ++i)
+	{
+		std::vector<size_t> e;
+		e.reserve(1000);
+		bool foundE = m_tree.FindNearestNeighbors(m_particles.Positions[i], KERNEL_RADIUS*KERNEL_RADIUS, e);
+		m_neighborList[i] = e;
+	}
+}
+
+void SPHSolverCPU::computeDensities()
+{
+	const auto& p = m_particles.Positions;
+	auto& d = m_particles.Densities;
+
+	#pragma omp parallel for
+	for (int i = 0; i < m_particles.Positions.size(); ++i)
+	{
+		float sum = sumOfKernelNearby(i);
+		d[i] = MASS * sum;
+	}
+}
+
+float SPHSolverCPU::sumOfKernelNearby(size_t pointIndex) const
+{
+	float sum = 0.0f;
+	SmoothedKernel kernal = SmoothedKernel(KERNEL_RADIUS);
+
+	for(const auto& neighbor : m_neighborList[pointIndex])
+	{
+		if(neighbor == pointIndex)
+			continue;
+
+		float dist = glm::distance(m_particles.Positions[pointIndex], m_particles.Positions[neighbor]); //TODO distance2
+		float weight = kernal.Value(dist);
+		sum += weight;
+	}
+
+	return sum;
+}
+
+void SPHSolverCPU::pressureForces()
+{
+	const auto& x = m_particles.Positions;
+	const auto& d = m_particles.Densities;
+	const auto& p = m_particles.Pressures;
+	const auto& f = m_particles.Forces;
+
 }

@@ -8,9 +8,11 @@ struct ParticleSet
 {
 	ParticleSet(size_t particleCount)
 	{
-		Positions = std::vector<glm::vec3>{particleCount};
-		Velocities = std::vector<glm::vec3>{particleCount};
-		Forces = std::vector<glm::vec3>{particleCount};
+		Positions = std::vector<glm::vec3>(particleCount);
+		Velocities = std::vector<glm::vec3>(particleCount);
+		Forces = std::vector<glm::vec3>(particleCount);
+		Densities = std::vector<float>(particleCount);
+		Pressures = std::vector<float>(particleCount);
 	}
 
 	void Integrate(ParticleState& state);
@@ -19,6 +21,8 @@ struct ParticleSet
 	std::vector<glm::vec3> Positions;
 	std::vector<glm::vec3> Velocities;
 	std::vector<glm::vec3> Forces;
+	std::vector<float> Densities;
+	std::vector<float> Pressures;
 
 	size_t Size() const {return Positions.size();}
 };

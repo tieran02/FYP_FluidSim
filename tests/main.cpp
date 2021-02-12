@@ -47,6 +47,7 @@ void KDTests()
 
 	sw.Start();
 	std::vector<size_t> elements;
+	elements.reserve(1000);
 	bool foundElements = tree.FindNearestNeighbors(glm::vec3(50,60,60),20*20, elements);
 	sw.Stop();
 	LOG_CORE_INFO("KD-Tree find nearest neighbors to point within radius time: {} seconds", sw.Time());
@@ -58,6 +59,7 @@ void KDTests()
 	for (int i = 0; i < points.size(); ++i)
 	{
 		std::vector<size_t> e;
+		e.reserve(1000);
 		bool foundE = tree.FindNearestNeighbors(points[i],25*25, e);
 		neighbors[i] = e;
 	}
