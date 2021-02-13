@@ -6,6 +6,7 @@
 #include <iostream>
 #include <random>
 #include "math/SmoothedKernel.h"
+#include "math/SpikedKernel.h"
 
 SPHSolverCPU::SPHSolverCPU(float timeStep, size_t particleCount, const PlaneCollider& CollisionPlane) :
 	Solver(timeStep),
@@ -181,7 +182,7 @@ void SPHSolverCPU::pressureForces()
 	}
 
 	const float massSquared = MASS * MASS;
-	SmoothedKernel kernal = SmoothedKernel(KERNEL_RADIUS); //TODO spiky kernel
+	SpikedKernel kernal = SpikedKernel(KERNEL_RADIUS); 
 
 	//now accumlate pressure
 	#pragma omp parallel for
