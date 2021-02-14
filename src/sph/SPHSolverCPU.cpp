@@ -8,12 +8,12 @@
 #include "math/SmoothedKernel.h"
 #include "math/SpikedKernel.h"
 
-SPHSolverCPU::SPHSolverCPU(float timeStep, size_t particleCount, const PlaneCollider& CollisionPlane) :
+SPHSolverCPU::SPHSolverCPU(float timeStep, size_t particleCount, const std::vector<PlaneCollider>& CollisionPlanes) :
 	Solver(timeStep),
 	PARTICLE_COUNT(particleCount),
 	m_particles(particleCount),
 	m_neighborList(particleCount),
-	m_collisionPlane(CollisionPlane),
+	m_collisionPlanes(CollisionPlanes),
 	PARTICLE_RADIUS(0.1f),
 	KERNEL_RADIUS(PARTICLE_RADIUS*4)
 {
@@ -26,13 +26,13 @@ void SPHSolverCPU::Setup()
 	std::mt19937 mt(rd());
 	std::uniform_real_distribution<float> dist(0.25f, 1.25f);
 
-	const int perRow = static_cast<int>(floor(sqrt(64)));
-	constexpr float spacing = 0.8f;
+	const int perRow = static_cast<int>(floor(cbrt(PARTICLE_COUNT)));
+	constexpr float spacing = 0.5f;
 
 	for (int i = 0; i < PARTICLE_COUNT; i++)
 	{
 		float x = ((i % perRow) * spacing) - (perRow / 2) + dist(mt);
-		float y = ((0 * spacing) + (float)(((i / perRow) / perRow) * spacing) * 1.1f) + 10.0f;
+		float y = ((0 * spacing) + (float)(((i / perRow) / perRow) * spacing) * 1.1f) + 0.25f;
 		float z = (((i / perRow) % perRow) * spacing) - (perRow / 2) + dist(mt);
 		m_particles.Positions[i] = glm::vec3(x, y, z);
 	}
@@ -48,6 +48,7 @@ void SPHSolverCPU::BeginTimeStep()
 {
 	m_state = ParticleState(m_particles);
 	m_tree.Build(m_particles.Positions);
+	//LOG_CORE_INFO(glm::to_string(m_state.Positions[0]));
 
 	computeNeighborList();
 
@@ -63,6 +64,7 @@ void SPHSolverCPU::ApplyForces()
 			m_particles.Forces[i] = GRAVITY;
 	}
 
+	viscosityForces();
 	pressureForces();
 }
 
@@ -82,12 +84,12 @@ void SPHSolverCPU::Integrate()
 			newPosition = m_particles.Positions[i] + (TIMESTEP * newVelocity);
 		}
 	}
-	LOG_CORE_INFO("vel= {}", glm::to_string(m_particles.Velocities[0]));
 }
 
 void SPHSolverCPU::ResolveCollisions()
 {
 	constexpr float damping = 0.25f;
+	constexpr float RestitutionCoefficient = 0.6f;
 	#pragma omp parallel
 	{
 		#pragma omp for
@@ -98,11 +100,32 @@ void SPHSolverCPU::ResolveCollisions()
 
 			CollisionData collisionData{};
 
-			if (m_collisionPlane.CollisionOccured(pos, vel, collisionData))
+			for (const auto& collisionPlane : m_collisionPlanes)
 			{
-				vel = glm::reflect(vel,collisionData.CollisionNormal) * damping;;
-				pos = collisionData.ContactPoint;
+				if (collisionPlane.CollisionOccured(pos, vel, collisionData))
+				{
+					vel *= 0;
+					pos = collisionData.ContactPoint;
 
+//					glm::vec3 targetNormal = collisionData.CollisionNormal;
+//
+//					float normalDotRelativeVelocity = glm::dot(targetNormal, vel);
+//					glm::vec3 relativeVelocityNormal = normalDotRelativeVelocity * targetNormal;
+//					glm::vec3 relativeVelocityT = vel - relativeVelocityNormal;
+//
+//					// Check if the velocity is facing opposite direction of the surface
+//					// normal
+//					if (normalDotRelativeVelocity < 0.0)
+//					{
+//						//Apply restitution coefficient to the surface normal component of the velocity
+//						glm::vec3 deltaRelativeVelocityNormal = (-RestitutionCoefficient - 1.0f) * relativeVelocityNormal;
+//						relativeVelocityNormal *= -RestitutionCoefficient;
+//
+//						// Reassemble the components
+//						vel = relativeVelocityNormal + relativeVelocityT;
+//					}
+//					pos = collisionData.ContactPoint;
+				}
 			}
 		}
 	}
@@ -182,7 +205,7 @@ void SPHSolverCPU::pressureForces()
 	}
 
 	const float massSquared = MASS * MASS;
-	SpikedKernel kernal = SpikedKernel(KERNEL_RADIUS); 
+	SpikedKernel kernal = SpikedKernel(KERNEL_RADIUS);
 
 	//now accumlate pressure
 	#pragma omp parallel for
@@ -221,4 +244,31 @@ float SPHSolverCPU::computePressure(float density,
 	if (p < 0)
 		p *= negativePressureScale;
 	return p;
+}
+
+void SPHSolverCPU::viscosityForces()
+{
+	const auto& x = m_particles.Positions;
+	const auto& d = m_particles.Densities;
+	const auto& v = m_particles.Velocities;
+	auto& f = m_particles.Forces;
+
+	float massSquared = MASS * MASS;
+	SpikedKernel kernal = SpikedKernel(KERNEL_RADIUS);
+
+	#pragma omp parallel for
+	for (int i = 0; i < m_particles.Forces.size(); ++i)
+	{
+		for(const auto& neighbor : m_neighborList[i])
+		{
+			if(neighbor == i)
+				continue;
+
+			float dist = glm::distance(m_particles.Positions[i], m_particles.Positions[neighbor]); //TODO distance2
+
+			f[i] += viscosityCoefficient * massSquared
+				* (v[neighbor] - v[i]) / d[neighbor]
+				* kernal.SecondDerivative(dist);
+		}
+	}
 }

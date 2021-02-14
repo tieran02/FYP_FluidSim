@@ -6,6 +6,7 @@ class PlaneCollider : public Collider
 {
  public:
 	PlaneCollider(const Plane& plane, bool IsInfinite = false );
+	PlaneCollider(const Plane& plane, const Transform& transform, bool IsInfinite = false );
 
 	bool CollisionOccured(const PlaneCollider& collider, const glm::vec3& velocity, CollisionData& collisionData) const override;
 	bool CollisionOccured(const glm::vec3& point, const glm::vec3& velocity, CollisionData& collisionData) const override;

@@ -10,14 +10,14 @@ add_subdirectory(vendor/glfw) #include glfw
 file(GLOB_RECURSE  SRC_FILES ${PROJECT_SOURCE_DIR}/src/*)
 list(REMOVE_ITEM SRC_FILES ${PROJECT_SOURCE_DIR}/src/main.cpp)
 
-file(GLOB_RECURSE  TEST_SRC_FILES ${PROJECT_SOURCE_DIR}/src/*)
+file(GLOB_RECURSE  TEST_SRC_FILES ${PROJECT_SOURCE_DIR}/tests/*)
 
 
 add_executable(FYP_FluidSim ${PROJECT_SOURCE_DIR}/src/main.cpp ${SRC_FILES})
 target_link_libraries(FYP_FluidSim OpenCL::OpenCL glfw glad OpenMP::OpenMP_CXX)
 target_compile_definitions(FYP_FluidSim PUBLIC "$<$<CONFIG:DEBUG>:CORE_DEBUG>")
 
-add_executable(FYP_FluidSimTests ${PROJECT_SOURCE_DIR}/tests/main.cpp ${SRC_FILES})
+add_executable(FYP_FluidSimTests ${TEST_SRC_FILES} ${SRC_FILES})
 target_link_libraries(FYP_FluidSimTests OpenCL::OpenCL glfw glad OpenMP::OpenMP_CXX)
 target_compile_definitions(FYP_FluidSimTests PUBLIC "$<$<CONFIG:DEBUG>:CORE_DEBUG>")
 

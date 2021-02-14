@@ -2,6 +2,7 @@
 #include <structures/KDTree.h>
 #include <structures/SpartialHash.h>
 #include "util/Stopwatch.h"
+#include "PlaneTests.h"
 #include <random>
 
 std::vector<glm::vec3> randomPoints(size_t count)
@@ -117,8 +118,10 @@ int main()
 
 	LOG_CORE_INFO("Number of points: {}", POINT_COUNT);
 
-	KDTests();
-	SpartialHashTests();
+	//KDTests();
+	//SpartialHashTests();
+
+	PlaneTests::NormalVectorTest();
 
 	return 0;
 }

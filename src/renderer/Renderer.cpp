@@ -43,6 +43,7 @@ Renderer::Renderer(uint32_t viewportWidth, uint32_t viewportHeight) : m_VAO(0)
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glEnable(GL_CULL_FACE);
+	//glFrontFace(GL_CW);
 
 	// We only need one VAO for now as we just use the Vertex struct as the layout,
 	// if decide to have another vertex layout then another VAO will be needed.

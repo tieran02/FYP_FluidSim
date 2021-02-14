@@ -6,6 +6,12 @@ PlaneCollider::PlaneCollider(const Plane& plane, bool IsInfinite) : Collider(Sha
 
 }
 
+PlaneCollider::PlaneCollider(const Plane& plane, const Transform& transform, bool IsInfinite) : Collider(Shape::PLANE), m_plane(plane), m_isInfinite(IsInfinite)
+{
+	SetTransform(transform);
+}
+
+
 bool PlaneCollider::CollisionOccured(const PlaneCollider& collider, const glm::vec3& velocity, CollisionData& collisionData) const
 {
 	//TODO: implement plane to plane collision
@@ -17,13 +23,15 @@ bool PlaneCollider::CollisionOccured(const glm::vec3& point, const glm::vec3& ve
 	glm::vec3 N = m_plane.GetNormal();
 
 	float distance = 0.0f;
+
 	bool collided = m_plane.LineIntersection(point,velocity,distance);
 	if(collided)
 	{
 		collisionData.CollisionNormal = N;
 		collisionData.ContactPoint = point - (velocity * distance);
 		collisionData.Distance = distance;
-		return true;
+
+		return m_plane.IsPointWithinPlane(collisionData.ContactPoint);
 	}
 
 	return false;
@@ -31,10 +39,7 @@ bool PlaneCollider::CollisionOccured(const glm::vec3& point, const glm::vec3& ve
 
 void PlaneCollider::SetTransform(const Transform& transform)
 {
-	glm::mat4 model = transform.ModelMatrix();
-	m_plane.A = glm::vec4(m_plane.A,1) * model;
-	m_plane.B = glm::vec4(m_plane.B,1) * model;
-	m_plane.C = glm::vec4(m_plane.C,1) * model;
+	//m_plane.SetTransform(transform);
 }
 
 const Plane& PlaneCollider::GetPlane() const
