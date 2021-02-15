@@ -18,9 +18,14 @@ struct Plane
 
 	const glm::vec3& GetNormal() const;
 	float GetD() const;
+
+	float Dot(const glm::vec3& v, bool isPoint = false) const;
 	bool IsPointWithinPlane(const glm::vec3& point) const;
-	bool LineIntersection(const glm::vec3& point, const glm::vec3& line, float& distance) const;
+	bool LineIntersection(const glm::vec3& point1, const glm::vec3& point2, float& distance) const;
 	Plane TransformedPlane(const Transform& transform) const;
+
+	float SignedDistance(const glm::vec3& point) const;
+	float UnsignedDistance(const glm::vec3& point) const;
 
  private:
 	glm::vec4 m_plane;

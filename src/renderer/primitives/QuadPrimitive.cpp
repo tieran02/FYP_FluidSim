@@ -44,5 +44,7 @@ Plane QuadPrimitive::GetPlane() const
 	glm::vec3 TR = glm::vec3(0.0f + (m_size.x * 0.5), 0.0f + (m_size.y * 0.5), 0.0f);
 	glm::vec3 BL = glm::vec3(0.0f - (m_size.x * 0.5), 0.0f - (m_size.y * 0.5), 0.0f);
 
-	return Plane{TL,TR,BL};
+	glm::vec3 p{0.0f};
+	glm::vec3 n{0,0,-1};
+	return Plane{p,n};
 }

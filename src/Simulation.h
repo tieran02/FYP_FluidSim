@@ -23,7 +23,7 @@ class Simulation
 	SpherePrimitive sphere{0.1f,24,16};
 	Shader shader, m_instancedShader;
 
-	const size_t SPHERE_COUNT{200};
+	const size_t SPHERE_COUNT{100};
 	SPHSolverCPU m_solver{ 1.0/30.0, SPHERE_COUNT, m_planeColliders};
 	Buffer particleBuffer{BufferType::STORAGE_BUFFER};
 

@@ -28,7 +28,7 @@ bool PlaneCollider::CollisionOccured(const glm::vec3& point, const glm::vec3& ve
 	if(collided)
 	{
 		collisionData.CollisionNormal = N;
-		collisionData.ContactPoint = point - (velocity * distance);
+		collisionData.ContactPoint = point - velocity * (distance*4); //TODO fix distance bug
 		collisionData.Distance = distance;
 
 		return m_plane.IsPointWithinPlane(collisionData.ContactPoint);

@@ -110,6 +110,7 @@ void SpartialHashTests()
 	sw.Stop();
 	LOG_CORE_INFO("Spatial hash find all neighbors of all indices time: {} seconds", sw.Time());
 	LOG_CORE_INFO("Spatial hash find all neighbors of all indices time with construction: {} seconds", sw.Time() + constructionTime);
+
 };
 
 int main()

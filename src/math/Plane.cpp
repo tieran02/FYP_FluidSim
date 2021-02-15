@@ -1,3 +1,4 @@
+#include <util/Log.h>
 #include "Plane.h"
 
 Plane::Plane(float nx, float ny, float nz, float d) : m_plane(glm::vec4{nx,ny,nz,d})
@@ -44,6 +45,15 @@ float Plane::GetD() const
 	return m_plane.w;
 }
 
+float Plane::Dot(const glm::vec3& v, bool isPoint) const
+{
+	if(isPoint)
+		return (m_plane.x * v.x + m_plane.y * v.y + m_plane.z * v.z + m_plane.w);
+
+	return (m_plane.x * v.x + m_plane.y * v.y + m_plane.z * v.z);
+}
+
+
 bool Plane::IsPointWithinPlane(const glm::vec3& point) const
 {
 //	glm::vec3 N = GetNormal();
@@ -64,33 +74,42 @@ bool Plane::IsPointWithinPlane(const glm::vec3& point) const
 //	if (u < 0.0f || u > 1.0f || v < 0.0f || v > 1.0f)
 //		return false;
 //
+
+
 	return true;
 }
 
 bool Plane::LineIntersection(const glm::vec3& point, const glm::vec3& line, float& distance) const
 {
-//	glm::vec3 N = GetNormal();
-//	glm::vec3 diff = point - m_A;
-//	float d = glm::dot(N,diff);
-//	float e = glm::dot(N,line);
-//
-//	if (d > std::numeric_limits<float>::epsilon() || e > std::numeric_limits<float>::epsilon())
-//		return false;
-//
-//	distance = d / e;
-//
+	glm::vec3 planeVector = GetNormal() * m_plane.w;
+
+	float fv = Dot(point + line);
+	if (fv >= std::numeric_limits<float>::epsilon())
+		return false;
+
+	float d = SignedDistance(point);
+	if(d > std::numeric_limits<float>::epsilon())
+		return false;
+
+	distance = d / fv;
+
+	if(distance <= 0 || fabs(fv) < fabs(m_plane.w))
+		return false;
+
 	return true;
 }
 
 Plane Plane::TransformedPlane(const Transform& transform) const
 {
-//	glm::mat4 model = transform.ModelMatrix();
-//	glm::vec4 O = glm::vec4(GetNormal() * GetD(), 1.0f);
-//	glm::vec4 N = glm::vec4(GetNormal(), 0.0f);
-//
-//	O = model * O;
-//	N = glm::transpose(glm::inverse(model)) * N;
-//
+	glm::mat4 model = transform.ModelMatrix();
+	glm::vec4 O = glm::vec4(GetNormal() * GetD(), 1.0f);
+	glm::vec4 N = glm::vec4(GetNormal(), 0.0f);
+
+	O = model * O;
+	N = glm::transpose(glm::inverse(model)) * N;
+
+	float d = dot(glm::vec3(O), -glm::vec3(N));
+
 //	auto p = Plane(O,N);
 //	auto normal = p.GetNormal();
 
@@ -100,10 +119,19 @@ Plane Plane::TransformedPlane(const Transform& transform) const
 		m_plane.x * m[0][0] + m_plane.y * m[1][0] + m_plane.z * m[2][0],
 		m_plane.x * m[0][1] + m_plane.y * m[1][1] + m_plane.z * m[2][1],
 		m_plane.x * m[0][2] + m_plane.y * m[1][2] + m_plane.z * m[2][2],
-		m_plane.x * m[0][3] + m_plane.y * m[1][3] + m_plane.z * m[2][3] + m_plane.w
+		d
 	);
-
+	//m_plane.x * m[0][3] + m_plane.y * m[1][3] + m_plane.z * m[2][3] + m_plane.w
 	return p;
 }
 
+float Plane::SignedDistance(const glm::vec3& point) const
+{
+	return Dot(point, true);
+}
+
+float Plane::UnsignedDistance(const glm::vec3& point) const
+{
+	return fabs(Dot(point, true));
+}
 

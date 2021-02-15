@@ -27,13 +27,14 @@ void SPHSolverCPU::Setup()
 	std::uniform_real_distribution<float> dist(0.25f, 1.25f);
 
 	const int perRow = static_cast<int>(floor(cbrt(PARTICLE_COUNT)));
-	constexpr float spacing = 0.5f;
+	constexpr float spacing = 0.25f;
 
 	for (int i = 0; i < PARTICLE_COUNT; i++)
 	{
 		float x = ((i % perRow) * spacing) - (perRow / 2) + dist(mt);
 		float y = ((0 * spacing) + (float)(((i / perRow) / perRow) * spacing) * 1.1f) + 0.25f;
 		float z = (((i / perRow) % perRow) * spacing) - (perRow / 2) + dist(mt);
+		z-= 1;
 		m_particles.Positions[i] = glm::vec3(x, y, z);
 	}
 }
@@ -88,7 +89,7 @@ void SPHSolverCPU::Integrate()
 
 void SPHSolverCPU::ResolveCollisions()
 {
-	constexpr float damping = 0.25f;
+	constexpr float damping = 0.2f;
 	constexpr float RestitutionCoefficient = 0.6f;
 	#pragma omp parallel
 	{
@@ -104,7 +105,7 @@ void SPHSolverCPU::ResolveCollisions()
 			{
 				if (collisionPlane.CollisionOccured(pos, vel, collisionData))
 				{
-					vel *= 0;
+					vel = glm::reflect(vel, collisionData.CollisionNormal) * damping;
 					pos = collisionData.ContactPoint;
 
 //					glm::vec3 targetNormal = collisionData.CollisionNormal;

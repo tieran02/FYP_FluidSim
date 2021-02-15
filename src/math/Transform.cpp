@@ -69,10 +69,11 @@ const glm::quat& Transform::Rotation() const
 glm::mat4 Transform::ModelMatrix() const
 {
 	glm::mat4 modelMatrix = glm::mat4(1);
+	glm::mat4 rotationMatrix = glm::toMat4(m_rotation);
 
 	modelMatrix = glm::translate(modelMatrix, m_position);
 	modelMatrix = glm::scale(modelMatrix, m_scale);
-	modelMatrix *=  glm::toMat4(m_rotation);
+	modelMatrix *= rotationMatrix;
 
 	return modelMatrix;
 }
