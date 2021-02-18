@@ -8,14 +8,15 @@
 #include "math/SmoothedKernel.h"
 #include "math/SpikedKernel.h"
 
-SPHSolverCPU::SPHSolverCPU(float timeStep, size_t particleCount, const std::vector<PlaneCollider>& CollisionPlanes) :
+SPHSolverCPU::SPHSolverCPU(float timeStep, size_t particleCount, const std::vector<PlaneCollider>& CollisionPlanes, const BoxCollider& boxCollider) :
 	Solver(timeStep),
 	PARTICLE_COUNT(particleCount),
 	m_particles(particleCount),
 	m_neighborList(particleCount),
 	m_collisionPlanes(CollisionPlanes),
 	PARTICLE_RADIUS(0.1f),
-	KERNEL_RADIUS(PARTICLE_RADIUS*4)
+	KERNEL_RADIUS(PARTICLE_RADIUS*4),
+	m_boxCollider(boxCollider)
 {
 
 }
@@ -34,7 +35,9 @@ void SPHSolverCPU::Setup()
 		float x = ((i % perRow) * spacing) - (perRow / 2) + dist(mt);
 		float y = ((0 * spacing) + (float)(((i / perRow) / perRow) * spacing) * 1.1f) + 0.25f;
 		float z = (((i / perRow) % perRow) * spacing) - (perRow / 2) + dist(mt);
-		z-= 1;
+
+		x+= -5 + perRow*0.5f;
+		z+= -5 + perRow*0.5f;
 		m_particles.Positions[i] = glm::vec3(x, y, z);
 	}
 }
@@ -78,11 +81,11 @@ void SPHSolverCPU::Integrate()
 		{
 			//integrate velocity
 			glm::vec3& newVelocity = m_state.Velocities[i];
-			newVelocity = m_particles.Velocities[i] + (TIMESTEP * m_particles.Forces[i]);
+			newVelocity = m_particles.Velocities[i] + TIMESTEP * m_particles.Forces[i];
 
 			//integrate position
 			glm::vec3& newPosition = m_state.Positions[i];
-			newPosition = m_particles.Positions[i] + (TIMESTEP * newVelocity);
+			newPosition = m_particles.Positions[i] + TIMESTEP * newVelocity;
 		}
 	}
 }
@@ -101,33 +104,50 @@ void SPHSolverCPU::ResolveCollisions()
 
 			CollisionData collisionData{};
 
-			for (const auto& collisionPlane : m_collisionPlanes)
+			if(m_boxCollider.GetAABB().IsPointInside(pos))
 			{
-				if (collisionPlane.CollisionOccured(pos, vel, collisionData))
+				if (m_boxCollider.CollisionOccured(pos, vel * TIMESTEP, collisionData))
 				{
-					vel = glm::reflect(vel, collisionData.CollisionNormal) * damping;
 					pos = collisionData.ContactPoint;
-
-//					glm::vec3 targetNormal = collisionData.CollisionNormal;
-//
-//					float normalDotRelativeVelocity = glm::dot(targetNormal, vel);
-//					glm::vec3 relativeVelocityNormal = normalDotRelativeVelocity * targetNormal;
-//					glm::vec3 relativeVelocityT = vel - relativeVelocityNormal;
-//
-//					// Check if the velocity is facing opposite direction of the surface
-//					// normal
-//					if (normalDotRelativeVelocity < 0.0)
-//					{
-//						//Apply restitution coefficient to the surface normal component of the velocity
-//						glm::vec3 deltaRelativeVelocityNormal = (-RestitutionCoefficient - 1.0f) * relativeVelocityNormal;
-//						relativeVelocityNormal *= -RestitutionCoefficient;
-//
-//						// Reassemble the components
-//						vel = relativeVelocityNormal + relativeVelocityT;
-//					}
-//					pos = collisionData.ContactPoint;
+					vel = -vel * damping;
 				}
 			}
+			else
+			{
+				if (m_boxCollider.CollisionOccured(pos, -vel, collisionData))
+				{
+					pos = collisionData.ContactPoint;
+					vel = -vel * damping;
+				}
+			}
+
+//			for (const auto& collisionPlane : m_collisionPlanes)
+//			{
+//				if (collisionPlane.CollisionOccured(pos, vel, collisionData))
+//				{
+//					vel = glm::reflect(vel, collisionData.CollisionNormal) * damping;
+//					pos = collisionData.ContactPoint;
+//
+////					glm::vec3 targetNormal = collisionData.CollisionNormal;
+////
+////					float normalDotRelativeVelocity = glm::dot(targetNormal, vel);
+////					glm::vec3 relativeVelocityNormal = normalDotRelativeVelocity * targetNormal;
+////					glm::vec3 relativeVelocityT = vel - relativeVelocityNormal;
+////
+////					// Check if the velocity is facing opposite direction of the surface
+////					// normal
+////					if (normalDotRelativeVelocity < 0.0)
+////					{
+////						//Apply restitution coefficient to the surface normal component of the velocity
+////						glm::vec3 deltaRelativeVelocityNormal = (-RestitutionCoefficient - 1.0f) * relativeVelocityNormal;
+////						relativeVelocityNormal *= -RestitutionCoefficient;
+////
+////						// Reassemble the components
+////						vel = relativeVelocityNormal + relativeVelocityT;
+////					}
+////					pos = collisionData.ContactPoint;
+//				}
+//			}
 		}
 	}
 }

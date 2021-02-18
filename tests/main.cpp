@@ -3,6 +3,7 @@
 #include <structures/SpartialHash.h>
 #include "util/Stopwatch.h"
 #include "PlaneTests.h"
+#include "AABBTests.h"
 #include <random>
 
 std::vector<glm::vec3> randomPoints(size_t count)
@@ -122,7 +123,8 @@ int main()
 	//KDTests();
 	//SpartialHashTests();
 
-	PlaneTests::NormalVectorTest();
+	//PlaneTests::NormalVectorTest();
+	AABBTests::IntersectionTests();
 
 	return 0;
 }

@@ -17,7 +17,8 @@ class Collider
 	//TODO add shpere collider
 	enum class Shape
 	{
-		PLANE
+		PLANE,
+		BOX
 	};
 
  public:
