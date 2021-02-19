@@ -28,6 +28,7 @@ class SPHSolverCPU : public Solver
 	float computePressure(float density, float targetDensity, float eosScale, float eosExponent, float negativePressureScale) const;
 
 	void viscosityForces();
+	void fakeViscosity();
 
 	//For now just have one collision plane
 	const std::vector<PlaneCollider>& m_collisionPlanes;
@@ -43,8 +44,9 @@ class SPHSolverCPU : public Solver
 	const glm::vec3 GRAVITY{0.0f,-9.81f,0.0f};
 	const float MASS{1.0f};
 	const float TargetDensitiy{1000.0f};
-	const float speedOfSound{100.0f};
-	const float viscosityCoefficient = 0.0025f;
+	const float speedOfSound{500.0f};
+	const float viscosityCoefficient = 0.0074f;
+	const float pseudoViscosityCoefficient = 1.0f;
 
 	KDTree<3> m_tree{ };
 };

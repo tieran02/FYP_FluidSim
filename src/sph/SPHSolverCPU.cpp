@@ -27,17 +27,18 @@ void SPHSolverCPU::Setup()
 	std::mt19937 mt(rd());
 	std::uniform_real_distribution<float> dist(0.25f, 1.25f);
 
-	const int perRow = static_cast<int>(floor(cbrt(PARTICLE_COUNT)));
+	const int perRow = (m_boxCollider.GetAABB().Max().x * 2) / KERNEL_RADIUS;
 	constexpr float spacing = 0.25f;
 
 	for (int i = 0; i < PARTICLE_COUNT; i++)
 	{
 		float x = ((i % perRow) * spacing) - (perRow / 2) + dist(mt);
-		float y = ((0 * spacing) + (float)(((i / perRow) / perRow) * spacing) * 1.1f) + 0.25f;
+		float y = ((0 * spacing) + (float)(((i / perRow) / perRow) * spacing) * 0.5f);
 		float z = (((i / perRow) % perRow) * spacing) - (perRow / 2) + dist(mt);
 
-		x+= -5 + perRow*0.5f;
-		z+= -5 + perRow*0.5f;
+		x+= -m_boxCollider.GetAABB().Max().x + perRow*0.5f;
+		z+= -m_boxCollider.GetAABB().Max().z + perRow*0.5f;
+		y+= m_boxCollider.GetAABB().Min().y;
 		m_particles.Positions[i] = glm::vec3(x, y, z);
 	}
 }
@@ -104,22 +105,15 @@ void SPHSolverCPU::ResolveCollisions()
 
 			CollisionData collisionData{};
 
-			if(m_boxCollider.GetAABB().IsPointInside(pos))
-			{
-				if (m_boxCollider.CollisionOccured(pos, vel * TIMESTEP, collisionData))
-				{
-					pos = collisionData.ContactPoint;
-					vel = -vel * damping;
-				}
-			}
-			else
+			if(m_boxCollider.GetAABB().IsPointOutside(pos))
 			{
 				if (m_boxCollider.CollisionOccured(pos, -vel, collisionData))
 				{
 					pos = collisionData.ContactPoint;
-					vel = -vel * damping;
+					vel = glm::reflect(vel, collisionData.CollisionNormal) * damping;
 				}
 			}
+
 
 //			for (const auto& collisionPlane : m_collisionPlanes)
 //			{
@@ -128,24 +122,24 @@ void SPHSolverCPU::ResolveCollisions()
 //					vel = glm::reflect(vel, collisionData.CollisionNormal) * damping;
 //					pos = collisionData.ContactPoint;
 //
-////					glm::vec3 targetNormal = collisionData.CollisionNormal;
-////
-////					float normalDotRelativeVelocity = glm::dot(targetNormal, vel);
-////					glm::vec3 relativeVelocityNormal = normalDotRelativeVelocity * targetNormal;
-////					glm::vec3 relativeVelocityT = vel - relativeVelocityNormal;
-////
-////					// Check if the velocity is facing opposite direction of the surface
-////					// normal
-////					if (normalDotRelativeVelocity < 0.0)
-////					{
-////						//Apply restitution coefficient to the surface normal component of the velocity
-////						glm::vec3 deltaRelativeVelocityNormal = (-RestitutionCoefficient - 1.0f) * relativeVelocityNormal;
-////						relativeVelocityNormal *= -RestitutionCoefficient;
-////
-////						// Reassemble the components
-////						vel = relativeVelocityNormal + relativeVelocityT;
-////					}
-////					pos = collisionData.ContactPoint;
+//					glm::vec3 targetNormal = collisionData.CollisionNormal;
+//
+//					float normalDotRelativeVelocity = glm::dot(targetNormal, vel);
+//					glm::vec3 relativeVelocityNormal = normalDotRelativeVelocity * targetNormal;
+//					glm::vec3 relativeVelocityT = vel - relativeVelocityNormal;
+//
+//					// Check if the velocity is facing opposite direction of the surface
+//					// normal
+//					if (normalDotRelativeVelocity < 0.0)
+//					{
+//						//Apply restitution coefficient to the surface normal component of the velocity
+//						glm::vec3 deltaRelativeVelocityNormal = (-RestitutionCoefficient - 1.0f) * relativeVelocityNormal;
+//						relativeVelocityNormal *= -RestitutionCoefficient;
+//
+//						// Reassemble the components
+//						vel = relativeVelocityNormal + relativeVelocityT;
+//					}
+//					pos = collisionData.ContactPoint;
 //				}
 //			}
 		}
@@ -156,6 +150,8 @@ void SPHSolverCPU::EndTimeStep()
 {
 	//move state into particles
 	m_particles.Integrate(m_state);
+
+	//fakeViscosity();
 }
 
 const ParticleSet& SPHSolverCPU::Particles() const
@@ -291,5 +287,54 @@ void SPHSolverCPU::viscosityForces()
 				* (v[neighbor] - v[i]) / d[neighbor]
 				* kernal.SecondDerivative(dist);
 		}
+	}
+}
+
+glm::vec3 lerp(glm::vec3 x, glm::vec3 y, float t) {
+	return x * (1.f - t) + y * t;
+}
+
+
+void SPHSolverCPU::fakeViscosity()
+{
+	const auto& x = m_particles.Positions;
+	const auto& d = m_particles.Densities;
+	auto& v = m_particles.Velocities;
+
+	SpikedKernel kernel = SpikedKernel(KERNEL_RADIUS);
+	std::vector<glm::vec3> smoothedVelocities(m_particles.Size());
+
+	#pragma omp parallel for
+	for (int i = 0; i < m_particles.Size(); ++i)
+	{
+		float weightSum = 0.0f;
+		glm::vec3 smoothedVelocity = glm::vec3(0.0f);
+
+		for(const auto& neighbor : m_neighborList[i])
+		{
+			float distance = glm::distance(x[i], x[neighbor]);
+			float wj = MASS / d[neighbor] * kernel.Value(distance);
+			weightSum += wj;
+			smoothedVelocity += wj * v[neighbor];
+		}
+
+		float wi = MASS / d[i];
+		weightSum += wi;
+		smoothedVelocity += wi * v[i];
+
+		if (weightSum > 0.0)
+		{
+			smoothedVelocity /= weightSum;
+		}
+
+		smoothedVelocities[i] = smoothedVelocity;
+	}
+
+	float factor = TIMESTEP * pseudoViscosityCoefficient;
+	factor = std::max(0.0f, std::min(factor, 1.0f));
+	#pragma omp parallel for
+	for (int i = 0; i < m_particles.Size(); ++i)
+	{
+		v[1] = lerp(v[i],smoothedVelocities[i], factor);
 	}
 }

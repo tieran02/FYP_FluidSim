@@ -21,7 +21,8 @@ bool BoxCollider::CollisionOccured(const glm::vec3& point,
 	if(!intersections.empty())
 	{
 		// TODO: collisionData.CollisionNormal
-		collisionData.ContactPoint = intersections[0];
+		collisionData.ContactPoint = intersections[0].first;
+		collisionData.CollisionNormal = intersections[0].second;
 		collisionData.Distance = glm::distance(point,collisionData.ContactPoint);
 		return true;
 	}
