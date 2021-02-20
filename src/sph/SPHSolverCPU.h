@@ -42,11 +42,11 @@ class SPHSolverCPU : public Solver
 	std::vector<std::vector<size_t>> m_neighborList;
 
 	const glm::vec3 GRAVITY{0.0f,-9.81f,0.0f};
-	const float MASS{1.0f};
+	const float MASS{0.4f};
 	const float TargetDensitiy{1000.0f};
-	const float speedOfSound{500.0f};
-	const float viscosityCoefficient = 0.0074f;
-	const float pseudoViscosityCoefficient = 1.0f;
+	const float speedOfSound{1000.0f};
+	const float viscosityCoefficient = 0.00074f;
+	const float pseudoViscosityCoefficient = 0.25f;
 
 	KDTree<3> m_tree{ };
 };

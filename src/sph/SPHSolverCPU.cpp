@@ -94,7 +94,9 @@ void SPHSolverCPU::Integrate()
 void SPHSolverCPU::ResolveCollisions()
 {
 	constexpr float damping = 0.2f;
-	constexpr float RestitutionCoefficient = 0.6f;
+	constexpr float RestitutionCoefficient = 0.2f;
+	constexpr float frictionCoeffient = std::numeric_limits<float>::epsilon();
+
 	#pragma omp parallel
 	{
 		#pragma omp for
@@ -109,8 +111,36 @@ void SPHSolverCPU::ResolveCollisions()
 			{
 				if (m_boxCollider.CollisionOccured(pos, -vel, collisionData))
 				{
+//					pos = collisionData.ContactPoint;
+//					vel = glm::reflect(vel, collisionData.CollisionNormal) * damping;
+
+					glm::vec3 targetNormal = collisionData.CollisionNormal;
+
+					float normalDotRelativeVelocity = glm::dot(targetNormal, vel);
+					glm::vec3 relativeVelocityNormal = normalDotRelativeVelocity * targetNormal;
+					glm::vec3 relativeVelocityT = vel - relativeVelocityNormal;
+
+					// Check if the velocity is facing opposite direction of the surface
+					// normal
+					if (normalDotRelativeVelocity < 0.0)
+					{
+						//Apply restitution coefficient to the surface normal component of the velocity
+						glm::vec3 deltaRelativeVelocityNormal = (-RestitutionCoefficient - 1.0f) * relativeVelocityNormal;
+						relativeVelocityNormal *= -RestitutionCoefficient;
+
+						// Apply friction to the tangential component of the velocity
+						if (glm::length2(relativeVelocityT) > 0.0f)
+						{
+
+							float frictionScale = std::max(1.0f - frictionCoeffient *
+								glm::length(deltaRelativeVelocityNormal) /  glm::length(relativeVelocityT), 0.0f);
+							relativeVelocityT *= frictionScale;
+						}
+
+						// Reassemble the components
+						vel = relativeVelocityNormal + relativeVelocityT;
+					}
 					pos = collisionData.ContactPoint;
-					vel = glm::reflect(vel, collisionData.CollisionNormal) * damping;
 				}
 			}
 
@@ -151,7 +181,7 @@ void SPHSolverCPU::EndTimeStep()
 	//move state into particles
 	m_particles.Integrate(m_state);
 
-	//fakeViscosity();
+	fakeViscosity();
 }
 
 const ParticleSet& SPHSolverCPU::Particles() const

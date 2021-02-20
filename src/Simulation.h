@@ -26,7 +26,7 @@ class Simulation
 	Shader shader, m_instancedShader;
 
 	const size_t SPHERE_COUNT{10000};
-	SPHSolverCPU m_solver{ 1.0/280.0, SPHERE_COUNT, m_planeColliders,boxCollider};
+	SPHSolverCPU m_solver{ 1.0/150.0, SPHERE_COUNT, m_planeColliders,boxCollider};
 	Buffer particleBuffer{BufferType::STORAGE_BUFFER};
 
 	void createRenderResources();
