@@ -8,12 +8,11 @@
 #include "math/SmoothedKernel.h"
 #include "math/SpikedKernel.h"
 
-SPHSolverCPU::SPHSolverCPU(float timeStep, size_t particleCount, const std::vector<PlaneCollider>& CollisionPlanes, const BoxCollider& boxCollider) :
+SPHSolverCPU::SPHSolverCPU(float timeStep, size_t particleCount, const BoxCollider& boxCollider) :
 	Solver(timeStep),
 	PARTICLE_COUNT(particleCount),
 	m_particles(particleCount),
 	m_neighborList(particleCount),
-	m_collisionPlanes(CollisionPlanes),
 	PARTICLE_RADIUS(0.1f),
 	KERNEL_RADIUS(PARTICLE_RADIUS*4),
 	m_boxCollider(boxCollider)

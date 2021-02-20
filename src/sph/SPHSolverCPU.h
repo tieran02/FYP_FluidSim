@@ -10,11 +10,13 @@
 class SPHSolverCPU : public Solver
 {
  public:
-	SPHSolverCPU(float timeStep, size_t particleCount, const std::vector<PlaneCollider>& CollisionPlanes, const BoxCollider& boxCollider);
+	SPHSolverCPU(float timeStep, size_t particleCount, const BoxCollider& boxCollider);
+	virtual ~SPHSolverCPU() = default;
+
 	void Setup() override;
 	void Reset() override;
 	const ParticleSet& Particles() const;
- private:
+ protected:
 	void BeginTimeStep() override;
 	void ApplyForces() override;
 	void Integrate() override;
@@ -24,14 +26,11 @@ class SPHSolverCPU : public Solver
 	void computeNeighborList();
 	float sumOfKernelNearby(size_t pointIndex) const;
 	void computeDensities();
-	void pressureForces();
+	virtual void pressureForces();
 	float computePressure(float density, float targetDensity, float eosScale, float eosExponent, float negativePressureScale) const;
 
 	void viscosityForces();
-	void fakeViscosity();
 
-	//For now just have one collision plane
-	const std::vector<PlaneCollider>& m_collisionPlanes;
 	const BoxCollider m_boxCollider;
 
 	const size_t PARTICLE_COUNT;
@@ -49,4 +48,7 @@ class SPHSolverCPU : public Solver
 	const float pseudoViscosityCoefficient = 0.25f;
 
 	KDTree<3> m_tree{ };
+
+ private:
+	void fakeViscosity();
 };

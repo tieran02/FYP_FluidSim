@@ -3,6 +3,7 @@
 #include <gtx/norm.hpp>
 #include <vector>
 #include <memory>
+#include <algorithm>
 #include "INearestNeighbor .h"
 
 #pragma region KDNode

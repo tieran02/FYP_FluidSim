@@ -8,33 +8,21 @@ Simulation::Simulation(Renderer& renderer) : m_renderer(renderer)
 
 	m_planeTransforms[0].SetRotation(glm::vec3(1,0,0),glm::radians(90.0f)); //floor
 	m_planeTransforms[0].SetPosition(glm::vec3(0,-2.5f,0));
-	m_planeColliders.emplace_back(PlaneCollider(plane.GetPlane().TransformedPlane(m_planeTransforms[0]), false));
-	LOG_CORE_INFO("Floor Nornmal {}", glm::to_string(m_planeColliders[0].GetPlane().GetNormal()));
 
 	m_planeTransforms[1].SetRotation(glm::vec3(1,0,0),glm::radians(-90.0f)); //ceil
 	m_planeTransforms[1].SetPosition(glm::vec3(0,2.5f,0));
-	m_planeColliders.emplace_back(PlaneCollider(plane.GetPlane().TransformedPlane(m_planeTransforms[1]), false));
-	LOG_CORE_INFO("Ceil Nornmal {}", glm::to_string(m_planeColliders[1].GetPlane().GetNormal()));
 
 	m_planeTransforms[2].SetRotation(glm::vec3(1,0,0),glm::radians(0.0f)); //back
 	m_planeTransforms[2].SetPosition(glm::vec3(0,0,2.5f));
-	m_planeColliders.emplace_back(PlaneCollider(plane.GetPlane().TransformedPlane(m_planeTransforms[2]), false));
-	LOG_CORE_INFO("Back Nornmal {}", glm::to_string(m_planeColliders[2].GetPlane().GetNormal()));
 
 	m_planeTransforms[3].SetRotation(glm::vec3(0,1,0),glm::radians(180.0f)); //front
 	m_planeTransforms[3].SetPosition(glm::vec3(0,0,-2.5f));
-	m_planeColliders.emplace_back(PlaneCollider(plane.GetPlane().TransformedPlane(m_planeTransforms[3]), false));
-	LOG_CORE_INFO("Front Nornmal {}", glm::to_string(m_planeColliders[3].GetPlane().GetNormal()));
 
 	m_planeTransforms[4].SetRotation(glm::vec3(0,1,0),glm::radians(90.0f)); //left
 	m_planeTransforms[4].SetPosition(glm::vec3(2.5f,0,0));
-	m_planeColliders.emplace_back(PlaneCollider(plane.GetPlane().TransformedPlane(m_planeTransforms[4]), false));
-	LOG_CORE_INFO("Left Nornmal {}", glm::to_string(m_planeColliders[4].GetPlane().GetNormal()));
 
 	m_planeTransforms[5].SetRotation(glm::vec3(0,1,0),glm::radians(-90.0f)); //right
 	m_planeTransforms[5].SetPosition(glm::vec3(-2.5f,0,0));
-	m_planeColliders.emplace_back(PlaneCollider(plane.GetPlane().TransformedPlane(m_planeTransforms[5]), false));
-	LOG_CORE_INFO("Right Nornmal {}", glm::to_string(m_planeColliders[5].GetPlane().GetNormal()));
 
 	m_solver.Setup();
 }
