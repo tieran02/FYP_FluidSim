@@ -119,7 +119,7 @@ void PCISPHSolverCPU::pressureForces()
 
 float PCISPHSolverCPU::computeDeltaPressure()
 {
-	const float targetSpacing = 0.05f;
+	const float targetSpacing = 0.09f;
 	glm::vec3 originPoint(0.0f);
 
 	//TODO fill an AABB box of particles where the size is 1.5 * Kernel radius and the spacing is equal to the target spacing

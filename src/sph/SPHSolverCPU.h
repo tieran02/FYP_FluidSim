@@ -45,7 +45,7 @@ class SPHSolverCPU : public Solver
 
 	const glm::vec3 GRAVITY{0.0f,-9.81f,0.0f};
 	const float MASS{0.4f};
-	const float TargetDensitiy{1000.0f};
+	const float TargetDensitiy{200.0f};
 	const float speedOfSound{1000.0f};
 	const float viscosityCoefficient = 0.5f;
 	const float pseudoViscosityCoefficient = 0.25f;

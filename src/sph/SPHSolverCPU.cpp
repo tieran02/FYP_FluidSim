@@ -32,7 +32,7 @@ void SPHSolverCPU::Setup()
 	for (int i = 0; i < PARTICLE_COUNT; i++)
 	{
 		float x = ((i % perRow) * spacing) - (perRow / 2) + dist(mt);
-		float y = ((0 * spacing) + (float)(((i / perRow) / perRow) * spacing) * 0.5f);
+		float y = ((0 * spacing) + (float)(((i / perRow) / perRow) * spacing) * 0.15f);
 		float z = (((i / perRow) % perRow) * spacing) - (perRow / 2) + dist(mt);
 
 		x+= -m_boxCollider.GetAABB().Max().x + perRow*0.5f;
@@ -250,7 +250,7 @@ void SPHSolverCPU::viscosityForces()
 
 void SPHSolverCPU::resolveCollisions(std::vector<glm::vec3>& positions, std::vector<glm::vec3>& velocities)
 {
-	constexpr float damping = 0.2f;
+	constexpr float damping = 0.6f;
 	constexpr float RestitutionCoefficient = 0.2f;
 	constexpr float frictionCoeffient = std::numeric_limits<float>::epsilon();
 

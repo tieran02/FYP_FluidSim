@@ -13,7 +13,7 @@ class PCISPHSolverCPU : public SPHSolverCPU
 
 
  private:
-	float m_maxErrorRatio{0.01f};
+	float m_maxErrorRatio{0.1f};
 	uint32_t m_maxItterations{5};
 
 	std::vector<glm::vec3> m_tempPositions;
