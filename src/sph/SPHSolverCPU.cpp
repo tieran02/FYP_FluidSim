@@ -92,87 +92,7 @@ void SPHSolverCPU::Integrate()
 
 void SPHSolverCPU::ResolveCollisions()
 {
-	constexpr float damping = 0.2f;
-	constexpr float RestitutionCoefficient = 0.2f;
-	constexpr float frictionCoeffient = std::numeric_limits<float>::epsilon();
-
-	#pragma omp parallel
-	{
-		#pragma omp for
-		for (int i = 0; i < PARTICLE_COUNT; i++)
-		{
-			glm::vec3& pos = m_state.Positions[i];
-			glm::vec3& vel = m_state.Velocities[i];
-
-			CollisionData collisionData{};
-
-			if(m_boxCollider.GetAABB().IsPointOutside(pos))
-			{
-				if (m_boxCollider.CollisionOccured(pos, -vel, collisionData))
-				{
-//					pos = collisionData.ContactPoint;
-//					vel = glm::reflect(vel, collisionData.CollisionNormal) * damping;
-
-					glm::vec3 targetNormal = collisionData.CollisionNormal;
-
-					float normalDotRelativeVelocity = glm::dot(targetNormal, vel);
-					glm::vec3 relativeVelocityNormal = normalDotRelativeVelocity * targetNormal;
-					glm::vec3 relativeVelocityT = vel - relativeVelocityNormal;
-
-					// Check if the velocity is facing opposite direction of the surface
-					// normal
-					if (normalDotRelativeVelocity < 0.0)
-					{
-						//Apply restitution coefficient to the surface normal component of the velocity
-						glm::vec3 deltaRelativeVelocityNormal = (-RestitutionCoefficient - 1.0f) * relativeVelocityNormal;
-						relativeVelocityNormal *= -RestitutionCoefficient;
-
-						// Apply friction to the tangential component of the velocity
-						if (glm::length2(relativeVelocityT) > 0.0f)
-						{
-
-							float frictionScale = std::max(1.0f - frictionCoeffient *
-								glm::length(deltaRelativeVelocityNormal) /  glm::length(relativeVelocityT), 0.0f);
-							relativeVelocityT *= frictionScale;
-						}
-
-						// Reassemble the components
-						vel = relativeVelocityNormal + relativeVelocityT;
-					}
-					pos = collisionData.ContactPoint;
-				}
-			}
-
-
-//			for (const auto& collisionPlane : m_collisionPlanes)
-//			{
-//				if (collisionPlane.CollisionOccured(pos, vel, collisionData))
-//				{
-//					vel = glm::reflect(vel, collisionData.CollisionNormal) * damping;
-//					pos = collisionData.ContactPoint;
-//
-//					glm::vec3 targetNormal = collisionData.CollisionNormal;
-//
-//					float normalDotRelativeVelocity = glm::dot(targetNormal, vel);
-//					glm::vec3 relativeVelocityNormal = normalDotRelativeVelocity * targetNormal;
-//					glm::vec3 relativeVelocityT = vel - relativeVelocityNormal;
-//
-//					// Check if the velocity is facing opposite direction of the surface
-//					// normal
-//					if (normalDotRelativeVelocity < 0.0)
-//					{
-//						//Apply restitution coefficient to the surface normal component of the velocity
-//						glm::vec3 deltaRelativeVelocityNormal = (-RestitutionCoefficient - 1.0f) * relativeVelocityNormal;
-//						relativeVelocityNormal *= -RestitutionCoefficient;
-//
-//						// Reassemble the components
-//						vel = relativeVelocityNormal + relativeVelocityT;
-//					}
-//					pos = collisionData.ContactPoint;
-//				}
-//			}
-		}
-	}
+	resolveCollisions(m_state.Positions, m_state.Velocities);
 }
 
 void SPHSolverCPU::EndTimeStep()
@@ -319,6 +239,63 @@ void SPHSolverCPU::viscosityForces()
 	}
 }
 
+
+void SPHSolverCPU::resolveCollisions(std::vector<glm::vec3>& positions, std::vector<glm::vec3>& velocities)
+{
+	constexpr float damping = 0.2f;
+	constexpr float RestitutionCoefficient = 0.2f;
+	constexpr float frictionCoeffient = std::numeric_limits<float>::epsilon();
+
+	#pragma omp parallel
+	{
+	#pragma omp for
+		for (int i = 0; i < PARTICLE_COUNT; i++)
+		{
+			glm::vec3& pos = positions[i];
+			glm::vec3& vel = velocities[i];
+
+			CollisionData collisionData{};
+
+			if(m_boxCollider.GetAABB().IsPointOutside(pos))
+			{
+				if (m_boxCollider.CollisionOccured(pos, -vel, collisionData))
+				{
+//					pos = collisionData.ContactPoint;
+//					vel = glm::reflect(vel, collisionData.CollisionNormal) * damping;
+
+					glm::vec3 targetNormal = collisionData.CollisionNormal;
+
+					float normalDotRelativeVelocity = glm::dot(targetNormal, vel);
+					glm::vec3 relativeVelocityNormal = normalDotRelativeVelocity * targetNormal;
+					glm::vec3 relativeVelocityT = vel - relativeVelocityNormal;
+
+					// Check if the velocity is facing opposite direction of the surface
+					// normal
+					if (normalDotRelativeVelocity < 0.0)
+					{
+						//Apply restitution coefficient to the surface normal component of the velocity
+						glm::vec3 deltaRelativeVelocityNormal = (-RestitutionCoefficient - 1.0f) * relativeVelocityNormal;
+						relativeVelocityNormal *= -RestitutionCoefficient;
+
+						// Apply friction to the tangential component of the velocity
+						if (glm::length2(relativeVelocityT) > 0.0f)
+						{
+
+							float frictionScale = std::max(1.0f - frictionCoeffient *
+								glm::length(deltaRelativeVelocityNormal) /  glm::length(relativeVelocityT), 0.0f);
+							relativeVelocityT *= frictionScale;
+						}
+
+						// Reassemble the components
+						vel = relativeVelocityNormal + relativeVelocityT;
+					}
+					pos = collisionData.ContactPoint;
+				}
+			}
+		}
+	}
+}
+
 glm::vec3 lerp(glm::vec3 x, glm::vec3 y, float t) {
 	return x * (1.f - t) + y * t;
 }
@@ -367,3 +344,4 @@ void SPHSolverCPU::fakeViscosity()
 		v[1] = lerp(v[i],smoothedVelocities[i], factor);
 	}
 }
+

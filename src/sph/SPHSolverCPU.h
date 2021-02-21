@@ -31,6 +31,8 @@ class SPHSolverCPU : public Solver
 
 	void viscosityForces();
 
+	void resolveCollisions(std::vector<glm::vec3>& positions,std::vector<glm::vec3>& velocities);
+
 	const BoxCollider m_boxCollider;
 
 	const size_t PARTICLE_COUNT;

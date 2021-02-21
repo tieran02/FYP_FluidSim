@@ -70,6 +70,12 @@ std::vector<std::pair<glm::vec3,glm::vec3>> AABB::Intersection(const glm::vec3& 
 	return intersections;
 }
 
+void AABB::Expand(float expandScalar)
+{
+	m_max += glm::vec3(expandScalar);
+	m_min -= glm::vec3(expandScalar);
+}
+
 glm::vec3 AABB::getNormal(const glm::vec3 boundedPoint) const
 {
 	if(boundedPoint.y == m_min.y)  //bottom
@@ -86,4 +92,27 @@ glm::vec3 AABB::getNormal(const glm::vec3 boundedPoint) const
 		return glm::vec3(0.0f,0.0f,-1.0f);
 
 	return glm::vec3(0.0f,0.0f,0.0f);
+}
+
+const glm::vec3& AABB::Min() const
+{
+	return m_min;
+}
+
+const glm::vec3& AABB::Max() const
+{
+	return m_max;
+}
+
+float AABB::Height() const
+{
+	return m_max.y - m_min.y;
+}
+float AABB::Width() const
+{
+	return m_max.x - m_min.x;
+}
+float AABB::Depth() const
+{
+	return m_max.z - m_min.z;
 }
