@@ -100,7 +100,7 @@ void SPHSolverCPU::EndTimeStep()
 	//move state into particles
 	m_particles.Integrate(m_state);
 
-	fakeViscosity();
+	//fakeViscosity();
 }
 
 const ParticleSet& SPHSolverCPU::Particles() const
@@ -154,6 +154,7 @@ float SPHSolverCPU::sumOfKernelNearby(size_t pointIndex) const
 
 void SPHSolverCPU::pressureForces()
 {
+
 	const auto& x = m_particles.Positions;
 	const auto& d = m_particles.Densities;
 	auto& p = m_particles.Pressures;
@@ -166,10 +167,16 @@ void SPHSolverCPU::pressureForces()
 	#pragma omp parallel for
 	for (int i = 0; i < m_particles.Pressures.size(); ++i)
 	{
-		p[i] = computePressure(d[i], targetDensity, eosScale, eosExponent, 0.0f);
+		p[i] = computePressure(d[i], targetDensity, eosScale, eosExponent, negativePressureScale);
 		//p[index] = 50.0f * (d[index] - 82.0f);
 	}
 
+
+	accumlatePressureForces(x,d,p,f);
+}
+
+void SPHSolverCPU::accumlatePressureForces(const std::vector<glm::vec3>& positions,const std::vector<float>& densities, std::vector<float>& pressures, const std::vector<glm::vec3>& forces)
+{
 	const float massSquared = MASS * MASS;
 	SpikedKernel kernal = SpikedKernel(KERNEL_RADIUS);
 
@@ -195,6 +202,7 @@ void SPHSolverCPU::pressureForces()
 		}
 	}
 }
+
 float SPHSolverCPU::computePressure(float density,
 	float targetDensity,
 	float eosScale,
@@ -288,6 +296,7 @@ void SPHSolverCPU::resolveCollisions(std::vector<glm::vec3>& positions, std::vec
 
 						// Reassemble the components
 						vel = relativeVelocityNormal + relativeVelocityT;
+						vel *= damping;
 					}
 					pos = collisionData.ContactPoint;
 				}

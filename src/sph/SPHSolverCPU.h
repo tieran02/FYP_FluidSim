@@ -27,6 +27,7 @@ class SPHSolverCPU : public Solver
 	float sumOfKernelNearby(size_t pointIndex) const;
 	void computeDensities();
 	virtual void pressureForces();
+	void accumlatePressureForces(const std::vector<glm::vec3>& positions,const std::vector<float>& densities, std::vector<float>& pressures, const std::vector<glm::vec3>& forces);
 	float computePressure(float density, float targetDensity, float eosScale, float eosExponent, float negativePressureScale) const;
 
 	void viscosityForces();
@@ -46,8 +47,9 @@ class SPHSolverCPU : public Solver
 	const float MASS{0.4f};
 	const float TargetDensitiy{1000.0f};
 	const float speedOfSound{1000.0f};
-	const float viscosityCoefficient = 0.00074f;
+	const float viscosityCoefficient = 0.5f;
 	const float pseudoViscosityCoefficient = 0.25f;
+	const float negativePressureScale = 0.0f;
 
 	KDTree<3> m_tree{ };
 

@@ -11,6 +11,7 @@ class PCISPHSolverCPU : public SPHSolverCPU
  protected:
 	void pressureForces() override;
 
+
  private:
 	float m_maxErrorRatio{0.01f};
 	uint32_t m_maxItterations{5};
@@ -18,6 +19,7 @@ class PCISPHSolverCPU : public SPHSolverCPU
 	std::vector<glm::vec3> m_tempPositions;
 	std::vector<glm::vec3> m_tempVelocities;
 	std::vector<glm::vec3> m_pressureForces;
+	std::vector<float> m_densitiyErrors;
 
 	float computeDeltaPressure();
 
