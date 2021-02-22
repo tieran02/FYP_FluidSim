@@ -10,7 +10,10 @@ PCISPHSolverCPU::PCISPHSolverCPU(float timeStep, size_t particleCount, const Box
 	m_pressureForces(particleCount),
 	m_densitiyErrors(particleCount)
 {
-
+	MASS = 0.4f;
+	TargetDensitiy = 200.0f;
+	viscosityCoefficient = 0.5f;
+	deltaDensitity = computeDeltaPressure();
 }
 
 void PCISPHSolverCPU::pressureForces()
@@ -20,9 +23,6 @@ void PCISPHSolverCPU::pressureForces()
 	auto x = m_particles.Positions;
 	auto v = m_particles.Velocities;
 	auto f = m_particles.Forces;
-
-	//compute delta density error
-	float delta = computeDeltaPressure();
 
 	//estimated density
 	std::vector<float> ds(PARTICLE_COUNT, 0.0f);
@@ -72,7 +72,7 @@ void PCISPHSolverCPU::pressureForces()
 
 			float density = MASS * weightSum;
 			float densityError = (density - TargetDensitiy);
-			float pressure = delta * densityError;
+			float pressure = deltaDensitity * densityError;
 
 			if(pressure < 0.0f)
 			{
