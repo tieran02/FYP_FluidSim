@@ -10,9 +10,9 @@ PCISPHSolverCPU::PCISPHSolverCPU(float timeStep, size_t particleCount, const Box
 	m_pressureForces(particleCount),
 	m_densitiyErrors(particleCount)
 {
-	MASS = 0.4f;
-	TargetDensitiy = 200.0f;
-	viscosityCoefficient = 0.5f;
+	m_mass = 0.4f;
+	m_targetDensitiy = 200.0f;
+	m_viscosityCoefficient = 0.5f;
 	deltaDensitity = computeDeltaPressure();
 }
 
@@ -48,7 +48,7 @@ void PCISPHSolverCPU::pressureForces()
 		for (int i = 0; i < m_particles.Size(); ++i) //Maybe we could just do a mem copy?
 		{
 			m_tempVelocities[i] = v[i]
-				+ TIMESTEP / MASS
+				+ TIMESTEP / m_mass
 				+ (f[i] + m_pressureForces[i]);
 
 			m_tempPositions[i] = x[i] + TIMESTEP * m_tempVelocities[i];
@@ -70,14 +70,14 @@ void PCISPHSolverCPU::pressureForces()
 			}
 			weightSum += kernel.Value(0.0f);
 
-			float density = MASS * weightSum;
-			float densityError = (density - TargetDensitiy);
+			float density = m_mass * weightSum;
+			float densityError = (density - m_targetDensitiy);
 			float pressure = deltaDensitity * densityError;
 
 			if(pressure < 0.0f)
 			{
-				pressure *= negativePressureScale;
-				densityError *= negativePressureScale;
+				pressure *= m_negativePressureScale;
+				densityError *= m_negativePressureScale;
 			}
 
 			m_particles.Pressures[i] = pressure;
@@ -96,11 +96,11 @@ void PCISPHSolverCPU::pressureForces()
 			maxDensityError = std::max(maxDensityError, fabs(m_densitiyErrors[i]));
 		}
 
-		densityErrorRatio = maxDensityError / TargetDensitiy;
+		densityErrorRatio = maxDensityError / m_targetDensitiy;
 		maxNumIter = i + 1;
 
 		//float maxDensityError =
-		float densitiyErrorRatio = m_maxErrorRatio / TargetDensitiy;
+		float densitiyErrorRatio = m_maxErrorRatio / m_targetDensitiy;
 
 		if(fabs(densitiyErrorRatio) < m_maxErrorRatio)
 		{
@@ -155,7 +155,7 @@ float PCISPHSolverCPU::computeDeltaPressure()
 
 	if(fabs(denom) > std::numeric_limits<float>::epsilon())
 	{
-		float integratedDensity2 = (MASS * TIMESTEP / TargetDensitiy) * (MASS * TIMESTEP / TargetDensitiy);
+		float integratedDensity2 = (m_mass * TIMESTEP / m_targetDensitiy) * (m_mass * TIMESTEP / m_targetDensitiy);
 		float beta = 2.0f * integratedDensity2;
 
 		return -1.0f / (beta * denom);

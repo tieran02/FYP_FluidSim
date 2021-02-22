@@ -17,6 +17,21 @@ class SPHSolverCPU : public Solver
 	void Reset() override;
 	const ParticleSet& Particles() const;
  protected:
+	virtual void pressureForces();
+	void accumlatePressureForces(const std::vector<glm::vec3>& positions,const std::vector<float>& densities, std::vector<float>& pressures, const std::vector<glm::vec3>& forces);
+	void resolveCollisions(std::vector<glm::vec3>& positions,std::vector<glm::vec3>& velocities);
+
+	const BoxCollider BOX_COLLIDER;
+	const size_t PARTICLE_COUNT;
+	const float PARTICLE_RADIUS;
+	const float KERNEL_RADIUS;
+	ParticleSet m_particles;
+	std::vector<std::vector<size_t>> m_neighborList;
+	float m_mass{ 1.0f};
+	float m_targetDensitiy{ 200.0f};
+	float m_viscosityCoefficient = 0.0074f;
+	float m_negativePressureScale = 0.0f;
+ private:
 	void BeginTimeStep() override;
 	void ApplyForces() override;
 	void Integrate() override;
@@ -26,33 +41,14 @@ class SPHSolverCPU : public Solver
 	void computeNeighborList();
 	float sumOfKernelNearby(size_t pointIndex) const;
 	void computeDensities();
-	virtual void pressureForces();
-	void accumlatePressureForces(const std::vector<glm::vec3>& positions,const std::vector<float>& densities, std::vector<float>& pressures, const std::vector<glm::vec3>& forces);
 	float computePressure(float density, float targetDensity, float eosScale, float eosExponent, float negativePressureScale) const;
-
 	void viscosityForces();
 
-	void resolveCollisions(std::vector<glm::vec3>& positions,std::vector<glm::vec3>& velocities);
-
-	const BoxCollider m_boxCollider;
-
-	const size_t PARTICLE_COUNT;
-	const float PARTICLE_RADIUS;
-	const float KERNEL_RADIUS;
-	ParticleSet m_particles;
-	ParticleState m_state;
-	std::vector<std::vector<size_t>> m_neighborList;
-
-	const glm::vec3 GRAVITY{0.0f,-9.81f,0.0f};
-	float MASS{1.0f};
-	float TargetDensitiy{200.0f};
-	const float speedOfSound{500.0f};
-	float viscosityCoefficient = 0.0074f;
-	const float pseudoViscosityCoefficient = 1.0f;
-	float negativePressureScale = 0.0f;
-
-	KDTree<3> m_tree{ };
-
- private:
 	void fakeViscosity();
+
+	ParticleState m_state;
+	const glm::vec3 GRAVITY{0.0f,-9.81f,0.0f};
+	const float PSEUDO_VISCOSITY_COEFFICIENT = 1.0f;
+	const float SPEED_OF_SOUND{ 500.0f};
+	KDTree<3> m_tree{ };
 };

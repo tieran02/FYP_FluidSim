@@ -15,7 +15,7 @@ SPHSolverCPU::SPHSolverCPU(float timeStep, size_t particleCount, const BoxCollid
 	m_neighborList(particleCount),
 	PARTICLE_RADIUS(0.1f),
 	KERNEL_RADIUS(PARTICLE_RADIUS*4),
-	m_boxCollider(boxCollider)
+	BOX_COLLIDER(boxCollider)
 {
 
 }
@@ -26,7 +26,7 @@ void SPHSolverCPU::Setup()
 	std::mt19937 mt(rd());
 	std::uniform_real_distribution<float> dist(0.25f, 1.25f);
 
-	const int perRow = (m_boxCollider.GetAABB().Max().x * 2) / KERNEL_RADIUS;
+	const int perRow = (BOX_COLLIDER.GetAABB().Max().x * 2) / KERNEL_RADIUS;
 	constexpr float spacing = 0.25f;
 
 	for (int i = 0; i < PARTICLE_COUNT; i++)
@@ -35,9 +35,9 @@ void SPHSolverCPU::Setup()
 		float y = ((0 * spacing) + (float)(((i / perRow) / perRow) * spacing) * 0.15f);
 		float z = (((i / perRow) % perRow) * spacing) - (perRow / 2) + dist(mt);
 
-		x+= -m_boxCollider.GetAABB().Max().x + perRow*0.5f;
-		z+= -m_boxCollider.GetAABB().Max().z + perRow*0.5f;
-		y+= m_boxCollider.GetAABB().Min().y;
+		x+= -BOX_COLLIDER.GetAABB().Max().x + perRow*0.5f;
+		z+= -BOX_COLLIDER.GetAABB().Max().z + perRow*0.5f;
+		y+= BOX_COLLIDER.GetAABB().Min().y;
 		m_particles.Positions[i] = glm::vec3(x, y, z);
 	}
 }
@@ -130,7 +130,7 @@ void SPHSolverCPU::computeDensities()
 	for (int i = 0; i < m_particles.Positions.size(); ++i)
 	{
 		float sum = sumOfKernelNearby(i);
-		d[i] = MASS * sum;
+		d[i] = m_mass * sum;
 	}
 }
 
@@ -160,14 +160,14 @@ void SPHSolverCPU::pressureForces()
 	auto& p = m_particles.Pressures;
 	const auto& f = m_particles.Forces;
 
-	float targetDensity = TargetDensitiy;
-	float eosScale = targetDensity * (speedOfSound * speedOfSound);
+	float targetDensity = m_targetDensitiy;
+	float eosScale = targetDensity * (SPEED_OF_SOUND * SPEED_OF_SOUND);
 	constexpr float eosExponent = 7.0f;
 
 	#pragma omp parallel for
 	for (int i = 0; i < m_particles.Pressures.size(); ++i)
 	{
-		p[i] = computePressure(d[i], targetDensity, eosScale, eosExponent, negativePressureScale);
+		p[i] = computePressure(d[i], targetDensity, eosScale, eosExponent, m_negativePressureScale);
 		//p[index] = 50.0f * (d[index] - 82.0f);
 	}
 
@@ -177,7 +177,7 @@ void SPHSolverCPU::pressureForces()
 
 void SPHSolverCPU::accumlatePressureForces(const std::vector<glm::vec3>& positions,const std::vector<float>& densities, std::vector<float>& pressures, const std::vector<glm::vec3>& forces)
 {
-	const float massSquared = MASS * MASS;
+	const float massSquared = m_mass * m_mass;
 	SpikedKernel kernal = SpikedKernel(KERNEL_RADIUS);
 
 	//now accumlate pressure
@@ -227,7 +227,7 @@ void SPHSolverCPU::viscosityForces()
 	const auto& v = m_particles.Velocities;
 	auto& f = m_particles.Forces;
 
-	float massSquared = MASS * MASS;
+	float massSquared = m_mass * m_mass;
 	SpikedKernel kernal = SpikedKernel(KERNEL_RADIUS);
 
 	#pragma omp parallel for
@@ -240,7 +240,7 @@ void SPHSolverCPU::viscosityForces()
 
 			float dist = glm::distance(m_particles.Positions[i], m_particles.Positions[neighbor]); //TODO distance2
 
-			f[i] += viscosityCoefficient * massSquared
+			f[i] += m_viscosityCoefficient * massSquared
 				* (v[neighbor] - v[i]) / d[neighbor]
 				* kernal.SecondDerivative(dist);
 		}
@@ -264,9 +264,9 @@ void SPHSolverCPU::resolveCollisions(std::vector<glm::vec3>& positions, std::vec
 
 			CollisionData collisionData{};
 
-			if(m_boxCollider.GetAABB().IsPointOutside(pos))
+			if(BOX_COLLIDER.GetAABB().IsPointOutside(pos))
 			{
-				if (m_boxCollider.CollisionOccured(pos, -vel, collisionData))
+				if (BOX_COLLIDER.CollisionOccured(pos, -vel, collisionData))
 				{
 //					pos = collisionData.ContactPoint;
 //					vel = glm::reflect(vel, collisionData.CollisionNormal) * damping;
@@ -328,12 +328,12 @@ void SPHSolverCPU::fakeViscosity()
 		for(const auto& neighbor : m_neighborList[i])
 		{
 			float distance = glm::distance(x[i], x[neighbor]);
-			float wj = MASS / d[neighbor] * kernel.Value(distance);
+			float wj = m_mass / d[neighbor] * kernel.Value(distance);
 			weightSum += wj;
 			smoothedVelocity += wj * v[neighbor];
 		}
 
-		float wi = MASS / d[i];
+		float wi = m_mass / d[i];
 		weightSum += wi;
 		smoothedVelocity += wi * v[i];
 
@@ -345,7 +345,7 @@ void SPHSolverCPU::fakeViscosity()
 		smoothedVelocities[i] = smoothedVelocity;
 	}
 
-	float factor = TIMESTEP * pseudoViscosityCoefficient;
+	float factor = TIMESTEP * PSEUDO_VISCOSITY_COEFFICIENT;
 	factor = std::max(0.0f, std::min(factor, 1.0f));
 	#pragma omp parallel for
 	for (int i = 0; i < m_particles.Size(); ++i)
