@@ -12,7 +12,7 @@ PCISPHSolverCPU::PCISPHSolverCPU(float timeStep, size_t particleCount, const Box
 {
 	m_mass = 0.4f;
 	m_targetDensitiy = 200.0f;
-	m_viscosityCoefficient = 0.5f;
+	m_viscosityCoefficient = 0.06f;
 	deltaDensitity = computeDeltaPressure();
 }
 

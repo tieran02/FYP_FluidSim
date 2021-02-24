@@ -119,20 +119,20 @@ void SpartialHashTests(uint32_t PointCount)
 int main()
 {
 	Log::Init();
-
-	for (int i = 128; i <= 1048576; i *=2)
-	{
-		KDTests(i);
-	}
-
-	for (int i = 128; i <= 1048576; i *=2)
-	{
-		SpartialHashTests(i);
-	}
+//
+//	for (int i = 128; i <= 1048576; i *=2)
+//	{
+//		KDTests(i);
+//	}
+//
+//	for (int i = 128; i <= 1048576; i *=2)
+//	{
+//		SpartialHashTests(i);
+//	}
 
 
 	//PlaneTests::NormalVectorTest();
-	//AABBTests::IntersectionTests();
+	AABBTests::IntersectionTests();
 
 	return 0;
 }

@@ -9,6 +9,7 @@ void AABBTests::IntersectionTests()
 	glm::vec3 max{5,5,5};
 	glm::vec3 centerPoint{0,0,0};
 	glm::vec3 insidePoint{3,1.5f,2};
+	glm::vec3 insidePoint2{4,3.0f,0.0f};
 	glm::vec3 outsidePoint{6,1.5f,3.0f};
 	glm::vec3 outsidePoint1{0,6.5f,0};
 
@@ -48,5 +49,10 @@ void AABBTests::IntersectionTests()
 	points = box.Intersection(outsidePoint1, glm::vec3(0.0f,-1.5f,0.0f));
 	CORE_ASSERT(points.size() == 1, "point intersection AABB  Failed");
 
+	//closest point
+	auto closestPoint = box.GetClosestPoint(outsidePoint, true);
+	auto actualValue = glm::vec3{5.0f,1.5f,3.0f};
+	auto equals = glm::all(glm::equal(closestPoint.first, actualValue, glm::epsilon<float>()));
+	CORE_ASSERT(equals, "closest point AABB  Failed");
 
 }

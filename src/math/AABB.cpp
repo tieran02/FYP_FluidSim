@@ -21,10 +21,50 @@ bool AABB::IsPointOutside(const glm::vec3& point) const
 std::vector<std::pair<glm::vec3,glm::vec3>> AABB::Intersection(const glm::vec3& point, const glm::vec3& dir) const
 {
 	auto diff = (point + dir) - point;
-	auto pointToMin = m_min - point;
-	auto pointToMax = m_max - point;
 	auto near = std::numeric_limits<float>::min();
 	auto far = std::numeric_limits<float>::max();
+
+	std::vector<std::pair<glm::vec3,glm::vec3>> intersections;
+
+	getNearFar(point,dir,near,far, diff);
+
+	if (near >= std::numeric_limits<float>::epsilon() && near <= 1.0f)
+	{
+		glm::vec3 intersectionPoint = point + diff * near;
+		glm::vec3 intersectionNormal = getNormal(intersectionPoint);
+		intersections.emplace_back(intersectionPoint,intersectionNormal);
+	}
+	if (far >= std::numeric_limits<float>::epsilon()  && far <= 1.0f)
+	{
+		glm::vec3 intersectionPoint = point + diff * far;
+		glm::vec3 intersectionNormal = getNormal(intersectionPoint);
+		intersections.emplace_back(intersectionPoint,intersectionNormal);
+	}
+
+	return intersections;
+}
+
+std::pair<glm::vec3, glm::vec3> AABB::GetClosestPoint(const glm::vec3& point, bool flipNormal) const
+{
+	auto result = point;
+	result.x = (result.x < m_min.x) ? m_min.x : result.x;
+	result.y = (result.y < m_min.y) ? m_min.y : result.y;
+	result.z = (result.z < m_min.z) ? m_min.z : result.z;
+	//clamp with max
+	result.x = (result.x > m_max.x) ? m_max.x : result.x;
+	result.y = (result.y > m_max.y) ? m_max.y : result.y;
+	result.z = (result.z > m_max.z) ? m_max.z : result.z;
+
+	glm::vec3 intersectionNormal = flipNormal ? -getNormal(result) : getNormal(result);
+	return std::make_pair(result,intersectionNormal);
+}
+
+void AABB::getNearFar(const glm::vec3& point, const glm::vec3& dir, float& near, float& far, glm::vec3& diff) const
+{
+	auto pointToMin = m_min - point;
+	auto pointToMax = m_max - point;
+	near = std::numeric_limits<float>::min();
+	far = std::numeric_limits<float>::max();
 	glm::vec3 normal{0.0f}; //TODO calculate hit normal
 
 	std::vector<std::pair<glm::vec3,glm::vec3>> intersections;
@@ -33,7 +73,7 @@ std::vector<std::pair<glm::vec3,glm::vec3>> AABB::Intersection(const glm::vec3& 
 		if(fabs(diff[axis]) <= std::numeric_limits<float>::epsilon()) // point on axis is parallel
 		{
 			if(pointToMin[axis] > 0.0f || pointToMax[axis] < 0.0f)
-				return intersections; //segment is not on planes
+				return;
 		}
 		else
 		{
@@ -50,25 +90,10 @@ std::vector<std::pair<glm::vec3,glm::vec3>> AABB::Intersection(const glm::vec3& 
 			{
 				far = uvMax;
 			}
-			if(near > far || far < 0.0f)
-				return intersections;
 		}
 	}
-	if (near >= std::numeric_limits<float>::epsilon() && near <= 1.0f)
-	{
-		glm::vec3 intersectionPoint = point + diff * near;
-		glm::vec3 intersectionNormal = getNormal(intersectionPoint);
-		intersections.emplace_back(intersectionPoint,intersectionNormal);
-	}
-	if (far >= std::numeric_limits<float>::epsilon()  && far <= 1.0f)
-	{
-		glm::vec3 intersectionPoint = point + diff * far;
-		glm::vec3 intersectionNormal = getNormal(intersectionPoint);
-		intersections.emplace_back(intersectionPoint,intersectionNormal);
-	}
-
-	return intersections;
 }
+
 
 void AABB::Expand(float expandScalar)
 {
@@ -116,3 +141,4 @@ float AABB::Depth() const
 {
 	return m_max.z - m_min.z;
 }
+

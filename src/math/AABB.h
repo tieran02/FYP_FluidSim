@@ -10,6 +10,7 @@ struct AABB
 	bool IsPointInside(const glm::vec3& point) const;
 	bool IsPointOutside(const glm::vec3& point) const;
 	std::vector<std::pair<glm::vec3,glm::vec3>> Intersection(const glm::vec3& point, const glm::vec3& dir) const;
+	std::pair<glm::vec3, glm::vec3> GetClosestPoint(const glm::vec3& point, bool flipNormal) const;
 
 	void Expand(float expandScalar);
 
@@ -22,4 +23,6 @@ struct AABB
  private:
 	glm::vec3 m_min, m_max;
 	glm::vec3 getNormal(const glm::vec3 boundedPoint) const;
+
+	void getNearFar(const glm::vec3& point, const glm::vec3& dir, float& near, float& far, glm::vec3& diff) const;
 };

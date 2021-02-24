@@ -27,17 +27,17 @@ void SPHSolverCPU::Setup()
 	std::uniform_real_distribution<float> dist(0.25f, 1.25f);
 
 	const int perRow = (BOX_COLLIDER.GetAABB().Max().x * 2) / KERNEL_RADIUS;
-	constexpr float spacing = 0.25f;
+	constexpr float spacing = 0.2f;
 
 	for (int i = 0; i < PARTICLE_COUNT; i++)
 	{
 		float x = ((i % perRow) * spacing) - (perRow / 2) + dist(mt);
-		float y = ((0 * spacing) + (float)(((i / perRow) / perRow) * spacing) * 0.15f);
+		float y = ((0 * spacing) + (float)(((i / perRow) / perRow) * spacing) * 0.05f);
 		float z = (((i / perRow) % perRow) * spacing) - (perRow / 2) + dist(mt);
 
 		x+= -BOX_COLLIDER.GetAABB().Max().x + perRow*0.5f;
 		z+= -BOX_COLLIDER.GetAABB().Max().z + perRow*0.5f;
-		y+= BOX_COLLIDER.GetAABB().Min().y;
+		y+= BOX_COLLIDER.GetAABB().Min().y + 0.5f;
 		m_particles.Positions[i] = glm::vec3(x, y, z);
 	}
 }
@@ -250,9 +250,9 @@ void SPHSolverCPU::viscosityForces()
 
 void SPHSolverCPU::resolveCollisions(std::vector<glm::vec3>& positions, std::vector<glm::vec3>& velocities)
 {
-	constexpr float damping = 0.6f;
+	constexpr float damping = 0.2f;
 	constexpr float RestitutionCoefficient = 0.2f;
-	constexpr float frictionCoeffient = std::numeric_limits<float>::epsilon();
+	constexpr float frictionCoeffient = 0.0001f;
 
 	#pragma omp parallel
 	{
@@ -260,7 +260,7 @@ void SPHSolverCPU::resolveCollisions(std::vector<glm::vec3>& positions, std::vec
 		for (int i = 0; i < PARTICLE_COUNT; i++)
 		{
 			glm::vec3& pos = positions[i];
-			glm::vec3& vel = velocities[i];
+			glm::vec3& vel = velocities[i];;
 
 			CollisionData collisionData{};
 
@@ -296,9 +296,11 @@ void SPHSolverCPU::resolveCollisions(std::vector<glm::vec3>& positions, std::vec
 
 						// Reassemble the components
 						vel = relativeVelocityNormal + relativeVelocityT;
-						vel *= damping;
+						auto cross = glm::cross(vel,targetNormal);
+						//vel = (glm::dot(vel,targetNormal) / glm::length2(targetNormal)) * targetNormal;
+						//vel *= damping;
 					}
-					pos = collisionData.ContactPoint;
+					pos = collisionData.ContactPoint + (vel * TIMESTEP);
 				}
 			}
 		}

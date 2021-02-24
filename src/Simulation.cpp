@@ -1,7 +1,7 @@
 #include <util/Log.h>
 #include "Simulation.h"
 
-Simulation::Simulation(Renderer& renderer) : m_renderer(renderer)
+Simulation::Simulation(Renderer& renderer) : m_renderer(renderer), m_isPaused(false)
 {
 	m_camera.LootAt(glm::vec3(0,25.0f,0.0f));
 	createRenderResources();
@@ -30,7 +30,8 @@ Simulation::Simulation(Renderer& renderer) : m_renderer(renderer)
 void Simulation::Update()
 {
 	//run simulation
-	m_solver.Update();
+	if(!m_isPaused)
+		m_solver.Update();
 
 	//Render
 	m_renderer.BeginFrame();
@@ -111,6 +112,10 @@ void Simulation::KeyCallback(int key, int action, int mode)
 		break;
 	case GLFW_KEY_F5:
 		restart();
+		break;
+	case GLFW_KEY_P:
+		if(action == GLFW_RELEASE)
+			m_isPaused = !m_isPaused;
 		break;
 	}
 }
