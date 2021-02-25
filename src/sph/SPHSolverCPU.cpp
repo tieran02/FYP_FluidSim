@@ -252,7 +252,8 @@ void SPHSolverCPU::resolveCollisions(std::vector<glm::vec3>& positions, std::vec
 {
 	constexpr float damping = 0.2f;
 	constexpr float RestitutionCoefficient = 0.2f;
-	constexpr float frictionCoeffient = 0.0001f;
+	constexpr float frictionCoeffient = 0.01f;
+	constexpr float radius = 0.05f;
 
 	#pragma omp parallel
 	{
@@ -272,6 +273,7 @@ void SPHSolverCPU::resolveCollisions(std::vector<glm::vec3>& positions, std::vec
 //					vel = glm::reflect(vel, collisionData.CollisionNormal) * damping;
 
 					glm::vec3 targetNormal = collisionData.CollisionNormal;
+					auto targetPoint = collisionData.ContactPoint + radius * targetNormal;
 
 					float normalDotRelativeVelocity = glm::dot(targetNormal, vel);
 					glm::vec3 relativeVelocityNormal = normalDotRelativeVelocity * targetNormal;
@@ -279,7 +281,7 @@ void SPHSolverCPU::resolveCollisions(std::vector<glm::vec3>& positions, std::vec
 
 					// Check if the velocity is facing opposite direction of the surface
 					// normal
-					if (normalDotRelativeVelocity < 0.0)
+					if (normalDotRelativeVelocity < 0.0f)
 					{
 						//Apply restitution coefficient to the surface normal component of the velocity
 						glm::vec3 deltaRelativeVelocityNormal = (-RestitutionCoefficient - 1.0f) * relativeVelocityNormal;
@@ -288,7 +290,6 @@ void SPHSolverCPU::resolveCollisions(std::vector<glm::vec3>& positions, std::vec
 						// Apply friction to the tangential component of the velocity
 						if (glm::length2(relativeVelocityT) > 0.0f)
 						{
-
 							float frictionScale = std::max(1.0f - frictionCoeffient *
 								glm::length(deltaRelativeVelocityNormal) /  glm::length(relativeVelocityT), 0.0f);
 							relativeVelocityT *= frictionScale;
@@ -296,11 +297,10 @@ void SPHSolverCPU::resolveCollisions(std::vector<glm::vec3>& positions, std::vec
 
 						// Reassemble the components
 						vel = relativeVelocityNormal + relativeVelocityT;
-						auto cross = glm::cross(vel,targetNormal);
 						//vel = (glm::dot(vel,targetNormal) / glm::length2(targetNormal)) * targetNormal;
 						//vel *= damping;
 					}
-					pos = collisionData.ContactPoint + (vel * TIMESTEP);
+					pos = targetPoint;
 				}
 			}
 		}
