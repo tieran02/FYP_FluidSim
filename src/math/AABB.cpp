@@ -18,6 +18,26 @@ bool AABB::IsPointOutside(const glm::vec3& point) const
 	return !IsPointInside(point);
 }
 
+bool AABB::IsSphereInside(const glm::vec3& point, float radius) const
+{
+	if(IsPointOutside(point))
+		return false;
+
+	//TODO closet point only only works when the point is outside the AABB
+	auto closestPoint = GetClosestPoint(point, false);
+	float distance2 = glm::distance2(closestPoint.first, point);
+
+	if(distance2 <= radius * radius)
+		return false;
+
+	return true;
+}
+
+bool AABB::IsSphereOutside(const glm::vec3& point, float radius) const
+{
+	return !IsSphereInside(point,radius);
+}
+
 std::vector<std::pair<glm::vec3,glm::vec3>> AABB::Intersection(const glm::vec3& point, const glm::vec3& dir) const
 {
 	auto diff = (point + dir) - point;
@@ -46,14 +66,41 @@ std::vector<std::pair<glm::vec3,glm::vec3>> AABB::Intersection(const glm::vec3& 
 
 std::pair<glm::vec3, glm::vec3> AABB::GetClosestPoint(const glm::vec3& point, bool flipNormal) const
 {
+	//TODO closest point should use euclidean distance instead of a Manhattan approach with clamping on the axis
 	auto result = point;
-	result.x = (result.x < m_min.x) ? m_min.x : result.x;
-	result.y = (result.y < m_min.y) ? m_min.y : result.y;
-	result.z = (result.z < m_min.z) ? m_min.z : result.z;
-	//clamp with max
-	result.x = (result.x > m_max.x) ? m_max.x : result.x;
-	result.y = (result.y > m_max.y) ? m_max.y : result.y;
-	result.z = (result.z > m_max.z) ? m_max.z : result.z;
+	if(IsPointOutside(point))
+	{
+		result.x = std::max(m_min.x, std::min(result.x ,m_max.x));
+		result.y = std::max(m_min.y, std::min(result.y ,m_max.y));
+		result.z = std::max(m_min.z, std::min(result.z ,m_max.z));
+	}
+	else
+	{
+		float max = std::numeric_limits<float>::min();
+		float min = std::numeric_limits<float>::max();
+		int minAxis = 0;
+		int maxAxis = 0;
+
+		for (int axis = 0; axis < 3; ++axis)
+		{
+			if(point[axis] < min)
+			{
+				min = point[axis];
+				minAxis = axis;
+			}
+			if(point[axis] > max)
+			{
+				max = point[axis];
+				maxAxis = axis;
+			}
+		}
+
+		//check if closest to min or max
+		if(fabs(min) > fabs(max))
+			result[minAxis] = m_min[minAxis];
+		else
+			result[maxAxis] = m_max[maxAxis];
+	}
 
 	glm::vec3 intersectionNormal = flipNormal ? -getNormal(result) : getNormal(result);
 	return std::make_pair(result,intersectionNormal);

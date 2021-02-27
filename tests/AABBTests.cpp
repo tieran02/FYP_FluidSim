@@ -9,9 +9,11 @@ void AABBTests::IntersectionTests()
 	glm::vec3 max{5,5,5};
 	glm::vec3 centerPoint{0,0,0};
 	glm::vec3 insidePoint{3,1.5f,2};
+	glm::vec3 insidePoint1{4,4.9f,0.0f};
 	glm::vec3 insidePoint2{4,3.0f,0.0f};
 	glm::vec3 outsidePoint{6,1.5f,3.0f};
 	glm::vec3 outsidePoint1{0,6.5f,0};
+	glm::vec3 minCorner = min + 0.1f;
 
 	AABB box{min,max};
 
@@ -55,4 +57,23 @@ void AABBTests::IntersectionTests()
 	auto equals = glm::all(glm::equal(closestPoint.first, actualValue, glm::epsilon<float>()));
 	CORE_ASSERT(equals, "closest point AABB  Failed");
 
+	closestPoint = box.GetClosestPoint(insidePoint, true);
+	actualValue = glm::vec3{5.0f,1.5f,2.0f};
+	equals = glm::all(glm::equal(closestPoint.first, actualValue, glm::epsilon<float>()));
+	CORE_ASSERT(equals, "closest point AABB  Failed");
+
+	closestPoint = box.GetClosestPoint(insidePoint1, true);
+	actualValue = glm::vec3{4.0f,5.0f,0.0f};
+	equals = glm::all(glm::equal(closestPoint.first, actualValue, glm::epsilon<float>()));
+	CORE_ASSERT(equals, "closest point AABB  Failed");
+
+	//sphere tests
+	CORE_ASSERT(box.IsSphereOutside(insidePoint1, 0.01) == false, "sphere point AABB  Failed");
+	CORE_ASSERT(box.IsSphereOutside(insidePoint1, 0.1) == true, "sphere point AABB  Failed");
+
+	CORE_ASSERT(box.IsSphereOutside(outsidePoint, 0.1) == true, "sphere point AABB  Failed");
+	CORE_ASSERT(box.IsSphereOutside(outsidePoint, 0.1) == true, "sphere point AABB  Failed");
+
+	CORE_ASSERT(box.IsSphereInside(minCorner, 0.1) == true, "sphere point AABB  Failed");
+	CORE_ASSERT(box.IsSphereInside(minCorner, 0.15) == false, "sphere point AABB  Failed");
 }

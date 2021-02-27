@@ -252,8 +252,8 @@ void SPHSolverCPU::resolveCollisions(std::vector<glm::vec3>& positions, std::vec
 {
 	constexpr float damping = 0.2f;
 	constexpr float RestitutionCoefficient = 0.2f;
-	constexpr float frictionCoeffient = 0.01f;
-	constexpr float radius = 0.05f;
+	constexpr float frictionCoeffient = 0.2f;
+	constexpr float radius = 0.1f;
 
 	#pragma omp parallel
 	{
@@ -265,9 +265,10 @@ void SPHSolverCPU::resolveCollisions(std::vector<glm::vec3>& positions, std::vec
 
 			CollisionData collisionData{};
 
-			if(BOX_COLLIDER.GetAABB().IsPointOutside(pos))
+			if(BOX_COLLIDER.GetAABB().IsSphereOutside(pos, radius))
 			{
-				if (BOX_COLLIDER.CollisionOccured(pos, -vel, collisionData))
+
+				if (BOX_COLLIDER.CollisionOccured(pos, vel, collisionData))
 				{
 //					pos = collisionData.ContactPoint;
 //					vel = glm::reflect(vel, collisionData.CollisionNormal) * damping;

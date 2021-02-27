@@ -9,6 +9,8 @@ struct AABB
 	AABB(const glm::vec3& Min, const glm::vec3& Max);
 	bool IsPointInside(const glm::vec3& point) const;
 	bool IsPointOutside(const glm::vec3& point) const;
+	bool IsSphereInside(const glm::vec3& point, float radius) const;
+	bool IsSphereOutside(const glm::vec3& point, float radius) const;
 	std::vector<std::pair<glm::vec3,glm::vec3>> Intersection(const glm::vec3& point, const glm::vec3& dir) const;
 	std::pair<glm::vec3, glm::vec3> GetClosestPoint(const glm::vec3& point, bool flipNormal) const;
 

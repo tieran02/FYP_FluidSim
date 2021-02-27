@@ -12,7 +12,7 @@ PCISPHSolverCPU::PCISPHSolverCPU(float timeStep, size_t particleCount, const Box
 {
 	m_mass = 0.4f;
 	m_targetDensitiy = 200.0f;
-	m_viscosityCoefficient = 0.06f;
+	m_viscosityCoefficient = 0.5f;
 	deltaDensitity = computeDeltaPressure();
 }
 
@@ -65,7 +65,7 @@ void PCISPHSolverCPU::pressureForces()
 
 			for(const auto& neighbor : m_neighborList[i])
 			{
-				float dist = glm::distance(m_particles.Positions[i], m_particles.Positions[neighbor]);
+				float dist = glm::distance(m_tempPositions[i], m_tempPositions[neighbor]);
 				weightSum += kernel.Value(dist);
 			}
 			weightSum += kernel.Value(0.0f);
