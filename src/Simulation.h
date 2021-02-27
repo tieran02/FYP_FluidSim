@@ -18,7 +18,7 @@ class Simulation
 	Renderer& m_renderer;
 	bool m_isPaused;
 
-	Camera m_camera{glm::vec3(0,50.0f,-50.5f),0.1f,1000.0f,65.0f};
+	Camera m_camera{glm::vec3(0,5.0f,-20.5f),0.1f,1000.0f,65.0f};
 	QuadPrimitive plane{ glm::vec2(5.0f,5.0f)};
 	BoxCollider boxCollider{glm::vec3{-2.5,-2.5,-2.5}, glm::vec3{2.5,2.5,2.5}};
 	std::array<Transform,6> m_planeTransforms;
@@ -26,7 +26,7 @@ class Simulation
 	SpherePrimitive sphere{0.1f,24,16};
 	Shader shader, m_instancedShader;
 
-	const size_t SPHERE_COUNT{10000};
+	const size_t SPHERE_COUNT{20000};
 	//SPHSolverCPU m_solver{ 1.0/150.0, SPHERE_COUNT,boxCollider};
 	PCISPHSolverCPU m_solver{ 1.0/60.0, SPHERE_COUNT,boxCollider};
 	Buffer particleBuffer{BufferType::STORAGE_BUFFER};

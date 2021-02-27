@@ -10,11 +10,10 @@ PCISPHSolverCPU::PCISPHSolverCPU(float timeStep, size_t particleCount, const Box
 	m_pressureForces(particleCount),
 	m_densitiyErrors(particleCount)
 {
-	m_mass = 0.4f;
-	m_targetDensitiy = 200.0f;
-	m_viscosityCoefficient = 0.1f;
+	m_mass = 2.0f;
+	m_targetDensitiy = 1000.0f;
+	m_viscosityCoefficient = 0.01f;
 	deltaDensitity = computeDeltaPressure();
-	m_negativePressureScale = 0.1f;
 }
 
 void PCISPHSolverCPU::pressureForces()
@@ -125,7 +124,7 @@ void PCISPHSolverCPU::pressureForces()
 
 float PCISPHSolverCPU::computeDeltaPressure()
 {
-	const float targetSpacing = 0.1f;
+	const float targetSpacing = 0.08f;
 	glm::vec3 originPoint(0.0f);
 
 	//TODO fill an AABB box of particles where the size is 1.5 * Kernel radius and the spacing is equal to the target spacing

@@ -2,8 +2,8 @@
 #include <gtc/matrix_transform.hpp>
 #include <platform/Window.h>
 
-Camera::Camera(glm::vec3&& pos, float nearClip, float farClip, float fov) :
-	m_position(std::move(pos)),
+Camera::Camera(const glm::vec3& pos, float nearClip, float farClip, float fov) :
+	m_position(pos),
 	m_nearClip(nearClip),
 	m_farClip(farClip),
 	m_fov(glm::radians(fov)),
@@ -15,7 +15,7 @@ Camera::Camera(glm::vec3&& pos, float nearClip, float farClip, float fov) :
 	yaw(-90.0f)
 {
 	m_perspective = calculatePerspective();
-	m_view = glm::lookAt(m_position, glm::vec3(0,0,0), m_up);
+	LootAt(m_position + m_front);
 }
 
 void Camera::LootAt(const glm::vec3& target)
