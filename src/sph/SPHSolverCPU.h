@@ -20,6 +20,7 @@ class SPHSolverCPU : public Solver
 	virtual void pressureForces();
 	void accumlatePressureForces(const std::vector<glm::vec3>& positions,const std::vector<float>& densities, std::vector<float>& pressures, const std::vector<glm::vec3>& forces);
 	void resolveCollisions(std::vector<glm::vec3>& positions,std::vector<glm::vec3>& velocities);
+	void resolveCollision(const glm::vec3 startPos, glm::vec3& pos, glm::vec3& vel);
 
 	const BoxCollider BOX_COLLIDER;
 	const size_t PARTICLE_COUNT;

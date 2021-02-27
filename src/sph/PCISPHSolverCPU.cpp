@@ -12,17 +12,18 @@ PCISPHSolverCPU::PCISPHSolverCPU(float timeStep, size_t particleCount, const Box
 {
 	m_mass = 0.4f;
 	m_targetDensitiy = 200.0f;
-	m_viscosityCoefficient = 0.5f;
+	m_viscosityCoefficient = 0.1f;
 	deltaDensitity = computeDeltaPressure();
+	m_negativePressureScale = 0.1f;
 }
 
 void PCISPHSolverCPU::pressureForces()
 {
-	auto p = m_particles.Pressures;
-	auto d = m_particles.Densities;
-	auto x = m_particles.Positions;
-	auto v = m_particles.Velocities;
-	auto f = m_particles.Forces;
+	auto& p = m_particles.Pressures;
+	auto& d = m_particles.Densities;
+	auto& x = m_particles.Positions;
+	auto& v = m_particles.Velocities;
+	auto& f = m_particles.Forces;
 
 	//estimated density
 	std::vector<float> ds(PARTICLE_COUNT, 0.0f);
@@ -47,11 +48,16 @@ void PCISPHSolverCPU::pressureForces()
 		#pragma omp parallel for
 		for (int i = 0; i < m_particles.Size(); ++i) //Maybe we could just do a mem copy?
 		{
-			m_tempVelocities[i] = v[i]
+			m_tempVelocities[i]
+				= v[i]
 				+ TIMESTEP / m_mass
-				+ (f[i] + m_pressureForces[i]);
+				* (f[i] + m_pressureForces[i]);
 
-			m_tempPositions[i] = x[i] + TIMESTEP * m_tempVelocities[i];
+			auto newPos = x[i] + TIMESTEP * m_tempVelocities[i];
+
+			//resolveCollision(m_tempPositions[i],newPos,m_tempVelocities[i]);
+
+			m_tempPositions[i] = newPos;
 		}
 
 		//resolve collisions
@@ -65,7 +71,7 @@ void PCISPHSolverCPU::pressureForces()
 
 			for(const auto& neighbor : m_neighborList[i])
 			{
-				float dist = glm::distance(m_tempPositions[i], m_tempPositions[neighbor]);
+				float dist = glm::distance(m_tempPositions[neighbor], m_tempPositions[i]);
 				weightSum += kernel.Value(dist);
 			}
 			weightSum += kernel.Value(0.0f);
@@ -80,7 +86,7 @@ void PCISPHSolverCPU::pressureForces()
 				densityError *= m_negativePressureScale;
 			}
 
-			m_particles.Pressures[i] = pressure;
+			p[i] += pressure;
 			ds[i] = density;
 			m_densitiyErrors[i] = densityError;
 		}
@@ -119,7 +125,7 @@ void PCISPHSolverCPU::pressureForces()
 
 float PCISPHSolverCPU::computeDeltaPressure()
 {
-	const float targetSpacing = 0.09f;
+	const float targetSpacing = 0.1f;
 	glm::vec3 originPoint(0.0f);
 
 	//TODO fill an AABB box of particles where the size is 1.5 * Kernel radius and the spacing is equal to the target spacing

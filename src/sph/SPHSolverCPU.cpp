@@ -250,11 +250,6 @@ void SPHSolverCPU::viscosityForces()
 
 void SPHSolverCPU::resolveCollisions(std::vector<glm::vec3>& positions, std::vector<glm::vec3>& velocities)
 {
-	constexpr float damping = 0.2f;
-	constexpr float RestitutionCoefficient = 0.2f;
-	constexpr float frictionCoeffient = 0.2f;
-	constexpr float radius = 0.1f;
-
 	#pragma omp parallel
 	{
 	#pragma omp for
@@ -263,49 +258,56 @@ void SPHSolverCPU::resolveCollisions(std::vector<glm::vec3>& positions, std::vec
 			glm::vec3& pos = positions[i];
 			glm::vec3& vel = velocities[i];;
 
-			CollisionData collisionData{};
-
-			if(BOX_COLLIDER.GetAABB().IsSphereOutside(pos, radius))
-			{
-
-				if (BOX_COLLIDER.CollisionOccured(pos, vel, collisionData))
-				{
-//					pos = collisionData.ContactPoint;
-//					vel = glm::reflect(vel, collisionData.CollisionNormal) * damping;
-
-					glm::vec3 targetNormal = collisionData.CollisionNormal;
-					auto targetPoint = collisionData.ContactPoint + radius * targetNormal;
-
-					float normalDotRelativeVelocity = glm::dot(targetNormal, vel);
-					glm::vec3 relativeVelocityNormal = normalDotRelativeVelocity * targetNormal;
-					glm::vec3 relativeVelocityT = vel - relativeVelocityNormal;
-
-					// Check if the velocity is facing opposite direction of the surface
-					// normal
-					if (normalDotRelativeVelocity < 0.0f)
-					{
-						//Apply restitution coefficient to the surface normal component of the velocity
-						glm::vec3 deltaRelativeVelocityNormal = (-RestitutionCoefficient - 1.0f) * relativeVelocityNormal;
-						relativeVelocityNormal *= -RestitutionCoefficient;
-
-						// Apply friction to the tangential component of the velocity
-						if (glm::length2(relativeVelocityT) > 0.0f)
-						{
-							float frictionScale = std::max(1.0f - frictionCoeffient *
-								glm::length(deltaRelativeVelocityNormal) /  glm::length(relativeVelocityT), 0.0f);
-							relativeVelocityT *= frictionScale;
-						}
-
-						// Reassemble the components
-						vel = relativeVelocityNormal + relativeVelocityT;
-						//vel = (glm::dot(vel,targetNormal) / glm::length2(targetNormal)) * targetNormal;
-						//vel *= damping;
-					}
-					pos = targetPoint;
-				}
-			}
+			resolveCollision(m_particles.Positions[i],pos,vel);
 		}
 	}
+}
+
+void SPHSolverCPU::resolveCollision(const glm::vec3 startPos, glm::vec3& pos, glm::vec3& vel)
+{
+	constexpr float RestitutionCoefficient = 0.2f;
+	constexpr float frictionCoeffient = 0.1f;
+	constexpr float radius = 0.1f;
+
+	CollisionData collisionData{};
+
+	if(BOX_COLLIDER.GetAABB().IsSphereOutside(pos, radius))
+	{
+		auto clostestPoint = BOX_COLLIDER.GetAABB().GetClosestPoint(pos,true);
+		//add radius to velocity
+		auto velocityRadius = (vel * TIMESTEP) + clostestPoint.second * radius;
+		if (BOX_COLLIDER.CollisionOccured(startPos, velocityRadius, collisionData))
+		{
+			glm::vec3 targetNormal = collisionData.CollisionNormal;
+			auto targetPoint = collisionData.ContactPoint + radius * targetNormal;
+
+			float normalDotRelativeVelocity = glm::dot(targetNormal, vel);
+			glm::vec3 relativeVelocityNormal = normalDotRelativeVelocity * targetNormal;
+			glm::vec3 relativeVelocityT = vel - relativeVelocityNormal;
+
+			// Check if the velocity is facing opposite direction of the surface
+			// normal
+			if (normalDotRelativeVelocity < 0.0f)
+			{
+				//Apply restitution coefficient to the surface normal component of the velocity
+				glm::vec3 deltaRelativeVelocityNormal = (-RestitutionCoefficient - 1.0f) * relativeVelocityNormal;
+				relativeVelocityNormal *= -RestitutionCoefficient;
+
+				// Apply friction to the tangential component of the velocity
+				if (glm::length2(relativeVelocityT) > 0.0f)
+				{
+					float frictionScale = std::max(1.0f - frictionCoeffient *
+						glm::length(deltaRelativeVelocityNormal) /  glm::length(relativeVelocityT), 0.0f);
+					relativeVelocityT *= frictionScale;
+				}
+
+				// Reassemble the components
+				vel = relativeVelocityNormal + relativeVelocityT;
+			}
+			pos = targetPoint;
+		}
+	}
+
 }
 
 glm::vec3 lerp(glm::vec3 x, glm::vec3 y, float t) {
