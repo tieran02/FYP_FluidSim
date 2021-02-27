@@ -4,6 +4,7 @@
 #include <sph/PCISPHSolverCPU.h>
 #include <math/PlaneCollider.h>
 #include <math/BoxCollider.h>
+#include "opencl/OpenCLContext.h"
 
 class Simulation
 {
@@ -16,6 +17,7 @@ class Simulation
 	void MouseButtonCallback(int key, int action, int mod);
  private:
 	Renderer& m_renderer;
+	OpenCLContext m_openCLContext;
 	bool m_isPaused;
 
 	Camera m_camera{glm::vec3(0,5.0f,-20.5f),0.1f,1000.0f,65.0f};
