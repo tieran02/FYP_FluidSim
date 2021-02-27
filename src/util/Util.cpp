@@ -1,4 +1,5 @@
 #include "Util.h"
+#include "Log.h"
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -17,7 +18,7 @@ std::string Util::ReadFile(const std::string& path)
 	}
 	catch(std::ifstream::failure& e)
 	{
-		std::cout << e.code() << "	" << e.what() << std::endl;
+		LOG_CORE_ERROR("Failed to read file: {0} - error: {1}  {2}",path, e.code(), e.what());
 		throw;
 	}
 

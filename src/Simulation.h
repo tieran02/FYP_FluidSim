@@ -5,6 +5,7 @@
 #include <math/PlaneCollider.h>
 #include <math/BoxCollider.h>
 #include "opencl/OpenCLContext.h"
+#include "opencl/OpenCLProgram.h"
 
 class Simulation
 {
@@ -18,6 +19,8 @@ class Simulation
  private:
 	Renderer& m_renderer;
 	OpenCLContext m_openCLContext;
+	OpenCLProgram m_helloWorldKernel{"resources/kernels/helloWorld.cl", m_openCLContext};
+
 	bool m_isPaused;
 
 	Camera m_camera{glm::vec3(0,5.0f,-20.5f),0.1f,1000.0f,65.0f};

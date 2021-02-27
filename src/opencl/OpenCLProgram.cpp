@@ -46,7 +46,7 @@ void OpenCLProgram::build(const std::string& path, const OpenCLContext& context)
 				// Get the build log
 				std::string name = dev.getInfo<CL_DEVICE_NAME>();
 				std::string buildlog = m_program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(dev);
-				LOG_CORE_ERROR("Build log for {0} : {1}", name, buildlog);
+				LOG_CORE_ERROR("Kernel: {0}, build log for device {1} : {2}",path, name, buildlog);
 			}
 		}
 		throw;
