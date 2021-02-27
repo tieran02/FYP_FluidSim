@@ -7,6 +7,15 @@ OpenCLContext::OpenCLContext()
 	initilise();
 }
 
+const cl::Context& OpenCLContext::Context() const
+{
+	return m_context;
+}
+const cl::Device& OpenCLContext::Device() const
+{
+	return m_device;
+}
+
 void OpenCLContext::initilise()
 {
 

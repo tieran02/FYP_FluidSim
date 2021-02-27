@@ -15,6 +15,8 @@ class OpenCLContext : NonCopyable, NonMovable
 	OpenCLContext();
 	~OpenCLContext() = default;
 
+	const cl::Context& Context() const;
+	const cl::Device& Device() const;
  private:
 	cl::Context m_context;
 	cl::Device m_device;
