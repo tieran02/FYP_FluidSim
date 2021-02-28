@@ -8,6 +8,13 @@ OpenCLProgram::OpenCLProgram(const std::string& path, const OpenCLContext& conte
 	build(path,context);
 }
 
+OpenCLProgram::OpenCLProgram(OpenCLProgram&& other) noexcept
+{
+	m_program = std::move(other.m_program);
+	m_kernels = std::move(other.m_kernels);
+}
+
+
 void OpenCLProgram::AddKernel(const std::string& kernelName)
 {
 	if(m_kernels.find(kernelName) != m_kernels.end())

@@ -63,3 +63,19 @@ void OpenCLContext::initilise()
 
 	}
 }
+
+void OpenCLContext::AddProgram(const std::string& name, const std::string& path)
+{
+	if(m_programs.find(name) != m_programs.end())
+		return;
+
+	m_programs.emplace(name, OpenCLProgram(path,*this));
+}
+
+const OpenCLProgram* OpenCLContext::GetProgram(const std::string& name) const
+{
+	if(m_programs.find(name) != m_programs.end())
+		return nullptr;
+
+	return &m_programs.at(name);
+}

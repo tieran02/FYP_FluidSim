@@ -14,11 +14,12 @@
 
 class OpenCLContext;
 
-class OpenCLProgram : NonCopyable, NonMovable
+class OpenCLProgram : NonCopyable
 {
  public:
 	OpenCLProgram(const std::string& path, const OpenCLContext& context);
 	~OpenCLProgram() = default;
+	OpenCLProgram(OpenCLProgram&& other) noexcept;
 
 	void AddKernel(const std::string& kernelName);
 	const cl::Kernel* GetKernel(const std::string& kernelName) const;
