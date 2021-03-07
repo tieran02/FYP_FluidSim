@@ -20,9 +20,11 @@ class OpenCLContext : NonCopyable, NonMovable
 
 	const cl::Context& Context() const;
 	const cl::Device& Device() const;
+	const cl::CommandQueue& Queue() const;
 
 	void AddProgram(const std::string& name, const std::string& path);
 	const OpenCLProgram* GetProgram(const std::string& name) const;
+	OpenCLProgram* GetProgram(const std::string& name);
  private:
 	cl::Context m_context;
 	cl::Device m_device;

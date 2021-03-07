@@ -2,6 +2,7 @@
 
 template<size_t K>
 using point_t = glm::vec<K, float, glm::defaultp>;
+using point4_t = glm::vec<4, float, glm::defaultp>;
 
 template<size_t K>
 using pointi_t = glm::vec<K, int32_t, glm::defaultp>;

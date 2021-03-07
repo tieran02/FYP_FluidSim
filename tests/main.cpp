@@ -4,6 +4,8 @@
 #include "util/Stopwatch.h"
 #include "PlaneTests.h"
 #include "AABBTests.h"
+#include "OpenCLHashmapTests.h"
+#include "OpenCLBruteForceNNTests.h"
 #include <random>
 
 std::vector<glm::vec3> randomPoints(size_t count)
@@ -12,13 +14,31 @@ std::vector<glm::vec3> randomPoints(size_t count)
 
 	std::random_device rd;
 	std::mt19937 mt(rd());
-	std::uniform_int_distribution<int> dist(-100000, 100000);
+	std::uniform_int_distribution<int> dist(-1000, 1000);
 
 	for (int i = 0; i < count; ++i)
 	{
 		points[i].x = dist(mt);
 		points[i].y = dist(mt);
 		points[i].z = dist(mt);
+	}
+	return points;
+}
+
+std::vector<glm::vec4> randomPoints4(size_t count)
+{
+	std::vector<glm::vec4> points(count);
+
+	std::random_device rd;
+	std::mt19937 mt(rd());
+	std::uniform_int_distribution<int> dist(-1000, 1000);
+
+	for (int i = 0; i < count; ++i)
+	{
+		points[i].x = dist(mt);
+		points[i].y = dist(mt);
+		points[i].z = dist(mt);
+		points[i].w = 0.0f;
 	}
 	return points;
 }
@@ -132,7 +152,11 @@ int main()
 
 
 	//PlaneTests::NormalVectorTest();
-	AABBTests::IntersectionTests();
+	//AABBTests::IntersectionTests();
+
+	//OpenCL hash map tests
+	OpenCLBruteForceNNTests bruteNN;
+	bruteNN.BuildTests(randomPoints4(30720));
 
 	return 0;
 }

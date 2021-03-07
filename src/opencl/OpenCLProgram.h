@@ -22,7 +22,7 @@ class OpenCLProgram : NonCopyable
 	OpenCLProgram(OpenCLProgram&& other) noexcept;
 
 	void AddKernel(const std::string& kernelName);
-	const cl::Kernel* GetKernel(const std::string& kernelName) const;
+	cl::Kernel* GetKernel(const std::string& kernelName);
  private:
 	cl::Program m_program;
  	std::unordered_map<std::string, cl::Kernel> m_kernels;

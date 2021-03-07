@@ -16,6 +16,11 @@ const cl::Device& OpenCLContext::Device() const
 	return m_device;
 }
 
+const cl::CommandQueue& OpenCLContext::Queue() const
+{
+	return m_queue;
+}
+
 void OpenCLContext::initilise()
 {
 
@@ -74,7 +79,15 @@ void OpenCLContext::AddProgram(const std::string& name, const std::string& path)
 
 const OpenCLProgram* OpenCLContext::GetProgram(const std::string& name) const
 {
-	if(m_programs.find(name) != m_programs.end())
+	if(m_programs.find(name) == m_programs.end())
+		return nullptr;
+
+	return &m_programs.at(name);
+}
+
+OpenCLProgram* OpenCLContext::GetProgram(const std::string& name)
+{
+	if(m_programs.find(name) == m_programs.end())
 		return nullptr;
 
 	return &m_programs.at(name);

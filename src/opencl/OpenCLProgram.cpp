@@ -19,10 +19,19 @@ void OpenCLProgram::AddKernel(const std::string& kernelName)
 {
 	if(m_kernels.find(kernelName) != m_kernels.end())
 		return;
-	m_kernels[kernelName] = cl::Kernel(m_program, kernelName.c_str());
+
+	try
+	{
+		m_kernels[kernelName] = cl::Kernel(m_program, kernelName.c_str());
+	}
+	catch (cl::Error& err)
+	{
+		LOG_CORE_ERROR("Add Kernel ({0}) exception: {1}, {2}", kernelName,Util::GetCLErrorString(err.err()), err.what());
+		throw;
+	}
 }
 
-const cl::Kernel* OpenCLProgram::GetKernel(const std::string& kernelName) const
+cl::Kernel* OpenCLProgram::GetKernel(const std::string& kernelName)
 {
 	if(m_kernels.find(kernelName) == m_kernels.end())
 		return nullptr;
