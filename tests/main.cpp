@@ -156,7 +156,7 @@ int main()
 
 	//OpenCL hash map tests
 	OpenCLBruteForceNNTests bruteNN;
-	bruteNN.BuildTests(randomPoints4(30720));
+	bruteNN.BuildTests(randomPoints4(512));
 
 	return 0;
 }

@@ -17,7 +17,7 @@ void OpenCLBruteForceNNTests::BuildTests(const std::vector<glm::vec4>& points)
 
 	Stopwatch sw;
 	sw.Start();
-	gpuNN.FindNearestNeighbors(glm::vec4(0,0,0,0),100.0f,indices);
+	gpuNN.FindNearestNeighbors(glm::vec4(0,0,0,0),1000.0f,indices);
 	sw.Stop();
 
 	LOG_CORE_INFO("OpenCLBruteForceNNTests find all neighbors of point: {0}", sw.Time());
