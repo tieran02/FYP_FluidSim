@@ -155,8 +155,11 @@ int main()
 	//AABBTests::IntersectionTests();
 
 	//OpenCL hash map tests
-	OpenCLBruteForceNNTests bruteNN;
-	bruteNN.BuildTests(randomPoints4(512));
+	OpenCLHashmapTests gpuHashmap;
+	AABB m_aabb(glm::vec3(-1000),glm::vec3(1000));
+	gpuHashmap.InsertTests(randomPoints4(32768),m_aabb);
+//	OpenCLBruteForceNNTests bruteNN;
+//	bruteNN.BuildTests(randomPoints4(512));
 
 	return 0;
 }

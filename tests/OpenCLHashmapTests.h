@@ -1,7 +1,8 @@
 #pragma once
 
 #include <opencl/OpenCLContext.h>
-#include "vec3.hpp"
+#include <math/AABB.h>
+#include "glm.hpp"
 
 class OpenCLHashmapTests
 {
@@ -16,10 +17,10 @@ class OpenCLHashmapTests
 	OpenCLHashmapTests();
 	~OpenCLHashmapTests() = default;
 
-	void InsertTests(const std::vector<glm::vec3>& points);
+	void InsertTests(const std::vector<glm::vec4>& points, const AABB& aabb);
 
  private:
 	OpenCLContext m_context;
 
-	void compileProgram();
+	void buildProgram();
 };

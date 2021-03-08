@@ -1,42 +1,65 @@
-typedef struct st_hash_pair
+#define MAX_LOCAL_SIZE 256
+
+typedef struct _GpuHashPoint
 {
-    int key;
-    int points[256];
-    int pointsInBucket;
-} hash_pair;
+	uint Hash;
+	uint SourceIndex;
+} GpuHashPoint;
 
 
-uint getHashKey(__global const float3* point, float radius, int numberOfBuckets)
+float4 getCellPoint(float4 point, float4 lowerBound, float4 upperBound, int subdivisions)
 {
-    int ix = floor(point->x / radius);
-    int iy = floor(point->y / radius);
-    int iz = floor(point->z / radius);
-
-    int hash = ((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % numberOfBuckets;
-    //uint hash = ((uint)(point->x * 73856093) ^ (uint)(point->y * 19349663) ^ (uint)(point->z * 83492791)) % gridSize;
-    return hash;
+    return ((point - lowerBound)/(upperBound-lowerBound)) * subdivisions;
 }
 
-__kernel void build_hashmap(__global const float3* points, __global hash_pair* pairs, const int size, float radius)
+int getHash(float4 point, float4 lowerBound, float4 upperBound, int subdivisions)
 {
-    const int numberOfBuckets = 125; //80% of max point count (size/ 256*0.8)^3
+    float4 cell = getCellPoint(point,lowerBound,upperBound,subdivisions);
+    float subdiv2 = subdivisions * subdivisions;
 
-    // Get the index of the current element to be processed
-    int i = get_global_id(0);
-
-    long hashkey = getHashKey(&points[i], radius , numberOfBuckets);
-    int row = hashkey;
-
-    pairs[i].key = hashkey;
-    pairs[i].points[pairs[i].pointsInBucket++] = i;
+    return cell.x * subdiv2 + cell.y * subdivisions + cell.z;
 }
 
-__kernel void hash(__global const float3* points, const int size)
+/// 0: __global const float4* points: Input points
+/// 1: __global GpuHashPoint* sortedPoints: sorted point in a way that points from the same cell will be placed sequentially in memory.
+/// 2: __global uint* cellStartIndex: The start index in the sorted points for the points contained in the cell
+/// 3: __global uint* cellSize: The size (amount) of points contained in the cell
+/// 4: lowerBound: lower bound of the AABB grid (used to hash the point)
+/// 5: upperBound: upper bound of the AABB grid (used to hash the point)
+/// 6: subdivisions: number of subdivisions on each dimension of the grid
+__kernel void Build(__global const float4* points, __global GpuHashPoint* sortedPoints, __global uint* cellStartIndex, __global uint* cellSize, float4 lowerBound, float4 upperBound, int subdivisions)
 {
+    __local float4 blockA[MAX_LOCAL_SIZE];
+    __local GpuHashPoint localPoints[MAX_LOCAL_SIZE];
+
     int i = get_local_id(0); //index of workgroup
     int wg = get_local_size(0); //get workgroup size
-    
-    int offset = get_group_id(0) * wg;
+    int offset = get_group_id(0) * wg; //offset from global points memory
 
-    
+    //copy data from global to local
+    event_t evt = async_work_group_copy(blockA,points+offset,wg,0);
+    wait_group_events(1,&evt);
+
+    for(int j=get_local_id(0); j < wg;j++)
+    {
+        for(int k=0;k < wg; k++)
+        {
+            if(j==k) continue;
+
+            localPoints[j].Hash = getHash(blockA[j],lowerBound,upperBound,subdivisions);
+            localPoints[j].SourceIndex = j+offset;
+        }
+    }
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    //copy local points into sorted (Note: the points are not currently sorted at this stage)
+    __global char* dst = (global char *)sortedPoints+offset;
+    local char* src = (local char *)localPoints;
+    size_t size = sizeof(GpuHashPoint) * wg;
+    evt = async_work_group_copy(dst,src,size,0);
+    wait_group_events(1,&evt);
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    //Since we have all the points p∈P hashed through the getHash(p) function,
+    //we sort them in a way that points from the same cell will be placed sequentially in memory.
 }
