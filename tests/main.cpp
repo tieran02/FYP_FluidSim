@@ -156,8 +156,9 @@ int main()
 
 	//OpenCL hash map tests
 	OpenCLHashmapTests gpuHashmap;
-	AABB m_aabb(glm::vec3(-1000),glm::vec3(1000));
-	gpuHashmap.InsertTests(randomPoints4(32768),m_aabb);
+	//Add 1% padding because if a point is max value the hash function exceeds the size.
+	AABB m_aabb(glm::vec3(-1010),glm::vec3(1010));
+	gpuHashmap.BuildTests(randomPoints4(128), m_aabb);
 //	OpenCLBruteForceNNTests bruteNN;
 //	bruteNN.BuildTests(randomPoints4(512));
 

@@ -15,14 +15,16 @@ void GpuSpatialHash::Build(const std::vector<point4_t>& points)
 	//check if the OpenCL context has the Brute NN search program
 	OpenCLProgram* NNProgram = m_openCLContext.GetProgram("spatialHash");
 	CORE_ASSERT(NNProgram, "Failed to find OpenCLProgram for spatialHash (Make sure its compiled)");
-	cl::Kernel* kernel = NNProgram->GetKernel("Build");
-	CORE_ASSERT(kernel, "Failed to find OpenCL Kernel ('Build') for spatialHash (Make sure its compiled)");
+	cl::Kernel* buildKernel = NNProgram->GetKernel("Build");
+	CORE_ASSERT(buildKernel, "Failed to find OpenCL Kernel ('Build') for spatialHash (Make sure its compiled)");
+	cl::Kernel* indexSizeKernel = NNProgram->GetKernel("GetStartSize");
+	CORE_ASSERT(indexSizeKernel, "Failed to find OpenCL Kernel ('indexSizeKernel') for spatialHash (Make sure its compiled)");
 
 	m_pointCount = points.size();
 
 	glm::vec4 lowerBound = glm::vec4(m_aabb.Min(),1.0f);
 	glm::vec4 upperBound = glm::vec4(m_aabb.Max(),1.0f);
-	int subdivisions = 16;
+	int subdivisions = 2;
 
 	cl_int err = CL_SUCCESS;
 	try
@@ -47,6 +49,7 @@ void GpuSpatialHash::Build(const std::vector<point4_t>& points)
 				&err);
 		}
 
+		cl_uint maxValue = std::numeric_limits<cl_uint>::max();
 		if(!m_cellStartIndexBuffer)
 		{
 			m_cellStartIndexBuffer = std::make_unique<cl::Buffer>(m_openCLContext.Context(),
@@ -55,15 +58,17 @@ void GpuSpatialHash::Build(const std::vector<point4_t>& points)
 				nullptr,
 				&err);
 		}
+		m_openCLContext.Queue().enqueueFillBuffer(*m_cellStartIndexBuffer, maxValue,0,subdivisions * subdivisions * subdivisions * sizeof(cl_uint));
 
 		if(!m_cellSizeIndexBuffer)
 		{
-			m_cellStartIndexBuffer = std::make_unique<cl::Buffer>(m_openCLContext.Context(),
+			m_cellSizeIndexBuffer = std::make_unique<cl::Buffer>(m_openCLContext.Context(),
 				CL_MEM_READ_WRITE,
 				subdivisions * subdivisions * subdivisions * sizeof(cl_uint),
 				nullptr,
 				&err);
 		}
+		//m_openCLContext.Queue().enqueueFillBuffer(*m_cellSizeIndexBuffer, &maxValue,0,sizeof(cl_uint));
 	}
 	catch (cl::Error& err)
 	{
@@ -74,32 +79,61 @@ void GpuSpatialHash::Build(const std::vector<point4_t>& points)
 
 
 	std::vector<GpuHashPoint> hashPoints(m_pointCount);
+	std::vector<cl_uint> index(subdivisions * subdivisions * subdivisions);
 	try
 	{
-		kernel->setArg(0, *m_pointBuffer);
-		kernel->setArg(1, *m_sortedPointBuffer);
-		kernel->setArg(2, *m_cellStartIndexBuffer);
-		kernel->setArg(3, *m_cellSizeIndexBuffer);
-		kernel->setArg(4, lowerBound);
-		kernel->setArg(5, upperBound);
-		kernel->setArg(6, subdivisions);
+		buildKernel->setArg(0, *m_pointBuffer);
+		buildKernel->setArg(1, *m_sortedPointBuffer);
+		buildKernel->setArg(2, *m_cellStartIndexBuffer);
+		buildKernel->setArg(3, *m_cellSizeIndexBuffer);
+		buildKernel->setArg(4, lowerBound);
+		buildKernel->setArg(5, upperBound);
+		buildKernel->setArg(6, subdivisions);
 
 		m_openCLContext.Queue().enqueueNDRangeKernel(
-			*kernel,
+			*buildKernel,
 			cl::NDRange(0),
 			cl::NDRange(m_pointCount),
 			cl::NDRange(64));
 
-//		cl::Event event;
-//		m_openCLContext.Queue().enqueueReadBuffer(*m_sortedPointBuffer,
-//			true,
-//			0,
-//			m_pointCount * sizeof(GpuHashPoint),
-//			hashPoints.data(),
-//			nullptr,
-//			&event);
-//		//wait for event to finish
-//		event.wait();
+		cl::Event event;
+		m_openCLContext.Queue().enqueueReadBuffer(*m_sortedPointBuffer,
+			true,
+			0,
+			m_pointCount * sizeof(GpuHashPoint),
+			hashPoints.data(),
+			nullptr,
+			&event);
+		//wait for event to finish
+		event.wait();
+
+		//Temp replace with a radix sort on gpu
+		std::sort(hashPoints.begin(),
+			hashPoints.end(),
+			[](GpuHashPoint& a, GpuHashPoint& b) {return a.Hash < b.Hash; });
+		m_openCLContext.Queue().enqueueWriteBuffer(*m_sortedPointBuffer, CL_TRUE, 0, m_pointCount * sizeof(GpuHashPoint), hashPoints.data());
+
+		//find index and size
+		indexSizeKernel->setArg(0, *m_sortedPointBuffer);
+		indexSizeKernel->setArg(1, *m_cellStartIndexBuffer);
+		indexSizeKernel->setArg(2, *m_cellSizeIndexBuffer);
+
+		m_openCLContext.Queue().enqueueNDRangeKernel(
+			*indexSizeKernel,
+			cl::NDRange(0),
+			cl::NDRange(m_pointCount),
+			cl::NDRange(64));
+
+		m_openCLContext.Queue().enqueueReadBuffer(*m_cellStartIndexBuffer,
+			true,
+			0,
+			subdivisions * subdivisions * subdivisions * sizeof(cl_uint),
+			index.data(),
+			nullptr,
+			&event);
+		//wait for event to finish
+		event.wait();
+
 	}catch (cl::Error& err)
 	{
 		LOG_CORE_ERROR("OpenCL Error: {0}, {1}", err.what(), Util::GetCLErrorString(err.err()));

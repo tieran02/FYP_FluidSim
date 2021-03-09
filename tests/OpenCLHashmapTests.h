@@ -17,7 +17,7 @@ class OpenCLHashmapTests
 	OpenCLHashmapTests();
 	~OpenCLHashmapTests() = default;
 
-	void InsertTests(const std::vector<glm::vec4>& points, const AABB& aabb);
+	void BuildTests(const std::vector<glm::vec4>& points, const AABB& aabb);
 
  private:
 	OpenCLContext m_context;

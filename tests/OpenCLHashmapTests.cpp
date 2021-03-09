@@ -11,7 +11,7 @@ OpenCLHashmapTests::OpenCLHashmapTests()
 	buildProgram();
 }
 
-void OpenCLHashmapTests::InsertTests(const std::vector<glm::vec4>& points, const AABB& aabb)
+void OpenCLHashmapTests::BuildTests(const std::vector<glm::vec4>& points, const AABB& aabb)
 {
 	GpuSpatialHash gpuNN(points,aabb, m_context);
 
@@ -28,5 +28,6 @@ void OpenCLHashmapTests::buildProgram()
 {
 	m_context.AddProgram("spatialHash", "resources/kernels/hashmap.cl");
 	m_context.GetProgram("spatialHash")->AddKernel("Build");
+	m_context.GetProgram("spatialHash")->AddKernel("GetStartSize");
 }
 
