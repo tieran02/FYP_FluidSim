@@ -24,7 +24,7 @@ void GpuSpatialHash::Build(const std::vector<point4_t>& points)
 
 	glm::vec4 lowerBound = glm::vec4(m_aabb.Min(),1.0f);
 	glm::vec4 upperBound = glm::vec4(m_aabb.Max(),1.0f);
-	int subdivisions = 2;
+	int subdivisions = 8;
 
 	cl_int err = CL_SUCCESS;
 	try
@@ -80,6 +80,7 @@ void GpuSpatialHash::Build(const std::vector<point4_t>& points)
 
 	std::vector<GpuHashPoint> hashPoints(m_pointCount);
 	std::vector<cl_uint> index(subdivisions * subdivisions * subdivisions);
+	std::vector<cl_uint> sizes(subdivisions * subdivisions * subdivisions);
 	try
 	{
 		buildKernel->setArg(0, *m_pointBuffer);
@@ -132,7 +133,18 @@ void GpuSpatialHash::Build(const std::vector<point4_t>& points)
 			nullptr,
 			&event);
 		//wait for event to finish
+
+		cl::Event event1;
+		m_openCLContext.Queue().enqueueReadBuffer(*m_cellSizeIndexBuffer,
+			true,
+			0,
+			subdivisions * subdivisions * subdivisions * sizeof(cl_uint),
+			sizes.data(),
+			nullptr,
+			&event1);
+		//wait for event to finish
 		event.wait();
+		event1.wait();
 
 	}catch (cl::Error& err)
 	{

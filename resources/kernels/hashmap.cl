@@ -35,23 +35,16 @@ void sort(__global GpuHashPoint* points, __global uint* cellStartIndex, __global
 
 __kernel void GetStartSize(const __global GpuHashPoint* points, __global uint* cellStartIndex, __global uint* cellSize)
 {
-    __local GpuHashPoint localPoints[MAX_LOCAL_SIZE];
+    //TODO to speed this up we can use local memory and remove the need of the atomic methods
+    //Atomics are slow due to accessing global memory
+    
     int i = get_local_id(0); //index of workgroup
     int wg = get_local_size(0); //get workgroup size
     int offset = get_group_id(0) * wg; //offset from global points memory
 
-    localPoints[i] = points[i+offset];
-    barrier(CLK_LOCAL_MEM_FENCE);
-
-    // // event_t events[3];
-    // event_t events[3];
-    // events[0] = async_work_group_copy( (__local uint2*)localPoints, (__global uint2*)points+offset, wg, 0);
-    // events[1] = async_work_group_copy(startIndex, cellStartIndex+offset,wg,0);
-    // events[2] = async_work_group_copy(size, cellSize+offset,wg,0);
-    // wait_group_events(3,events);
-
-    int cellIndex = localPoints[i].Hash;
+    int cellIndex = points[i+offset].Hash;
     atomic_min(&cellStartIndex[cellIndex], i+offset);
+    atomic_inc(&cellSize[cellIndex]);
     barrier(CLK_GLOBAL_MEM_FENCE);
 }
 
@@ -90,4 +83,5 @@ __kernel void Build(__global const float4* points, __global GpuHashPoint* sorted
     //Since we have all the points p∈P hashed through the getHash(p) function,
     //we sort them in a way that points from the same cell will be placed sequentially in memory.
     //Radix sort would be ideal here as values are unsigned ints
+    //Currently sorting on the host (CPU) to test the data structure, we can speed it up alot by doing the sorting on the GPU
 }
