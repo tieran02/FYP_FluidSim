@@ -32,7 +32,7 @@ void OpenCLHashmapTests::NearestNeighborTests(const std::vector<glm::vec4>& poin
 	Stopwatch sw;
 	sw.Start();
 
-	gpuNN.FindNearestNeighbors(points[0], 500.0f,indices);
+	gpuNN.FindNearestNeighbors(points[0], 3000.0f,indices);
 
 	sw.Stop();
 

@@ -1,6 +1,7 @@
 #include "GpuSpatialHash.h"
 #include <util/Log.h>
 #include <util/Util.h>
+#include <numeric>
 
 constexpr uint32_t MAX_NEIGHBORS = 256;
 
@@ -69,7 +70,7 @@ void GpuSpatialHash::Build(const std::vector<point4_t>& points)
 				nullptr,
 				&err);
 		}
-		//m_openCLContext.Queue().enqueueFillBuffer(*m_cellSizeIndexBuffer, &maxValue,0,sizeof(cl_uint));
+		m_openCLContext.Queue().enqueueFillBuffer(*m_cellSizeIndexBuffer, 0,0,m_subdivisions * m_subdivisions * m_subdivisions * sizeof(cl_uint));
 	}
 	catch (cl::Error& err)
 	{
@@ -81,7 +82,7 @@ void GpuSpatialHash::Build(const std::vector<point4_t>& points)
 
 	std::vector<GpuHashPoint> hashPoints(m_pointCount);
 //	std::vector<cl_uint> index(subdivisions * subdivisions * subdivisions);
-//	std::vector<cl_uint> sizes(subdivisions * subdivisions * subdivisions);
+//	std::vector<cl_uint> sizes(m_subdivisions * m_subdivisions * m_subdivisions);
 	try
 	{
 		buildKernel->setArg(0, *m_pointBuffer);
@@ -139,13 +140,14 @@ void GpuSpatialHash::Build(const std::vector<point4_t>& points)
 //		m_openCLContext.Queue().enqueueReadBuffer(*m_cellSizeIndexBuffer,
 //			true,
 //			0,
-//			subdivisions * subdivisions * subdivisions * sizeof(cl_uint),
+//			m_subdivisions * m_subdivisions * m_subdivisions * sizeof(cl_uint),
 //			sizes.data(),
 //			nullptr,
 //			&event1);
-//		//wait for event to finish
-//		event.wait();
-//		event1.wait();
+		//wait for event to finish
+		//event.wait();
+		//event1.wait();
+
 
 	}catch (cl::Error& err)
 	{
@@ -205,6 +207,8 @@ bool GpuSpatialHash::FindNearestNeighbors(const point4_t& point, float radius, s
 			&event);
 		//wait for event to finish
 		event.wait();
+
+		LOG_CORE_INFO("Neighbor Count: {0}", std::count_if(neighbours.begin(),neighbours.end(), [](int next_val){return next_val < std::numeric_limits<cl_uint>::max();}));
 	}
 	catch (cl::Error& err)
 	{

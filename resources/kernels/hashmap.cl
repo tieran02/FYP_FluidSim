@@ -8,6 +8,13 @@ typedef struct _GpuHashPoint
 } GpuHashPoint;
 
 
+bool pointInBounds(float4 point, float4 lowerBound, float4 upperBound)
+{
+    	return (point.x >= lowerBound.x && point.x <= upperBound.x) &&
+		(point.y >= lowerBound.y && point.y <= upperBound.y) &&
+		(point.z >= lowerBound.z && point.z <= upperBound.z);
+}
+
 float4 getCellPoint(float4 point, float4 lowerBound, float4 upperBound, int subdivisions)
 {
     return ((point - lowerBound)/(upperBound-lowerBound)) * subdivisions;
@@ -111,51 +118,65 @@ __kernel void GetNearestNeighbours(__global const float4* points, __global const
     float4 C = (float4)(0.0f, 0.0f, bucketSize.z, 0.0f);
 
     int searchSize = ceil(radius/bucketSize.x) + 2;
+
+    float4 queryCellPoint = getCellPoint(queryPoint,lowerBound,upperBound,subdivisions);
+    queryCellPoint.x = floor(queryCellPoint.x) * bucketSize.x;
+    queryCellPoint.y = floor(queryCellPoint.y) * bucketSize.y;
+    queryCellPoint.z = floor(queryCellPoint.z) * bucketSize.z;
+
+    float4 topLeft = queryCellPoint - (bucketSize * searchSize);
     float radius2 = radius * radius;
     uint localNeighbors[MAX_NEIGHBORS];
     uint neighborCount = 0;
 
-    for(int x = 0; x < searchSize; x++)
+    for(int x = 0; x <= searchSize; x++)
     {
         if(neighborCount == MAX_NEIGHBORS)
             break;
 
-        for(int y = 0; y < searchSize; y++)
+        for(int y = 0; y <= searchSize; y++)
         {
             if(neighborCount == MAX_NEIGHBORS)
                 break;
 
-            for(int z = 0; z < searchSize; z++)
+            for(int z = 0; z <= searchSize; z++)
             {
                 if(neighborCount == MAX_NEIGHBORS)
                     break;
 
-                float4 point = (float4)(queryPoint + A * (float)x + B * (float)y + C * (float)z);
+                float4 point = (float4)(topLeft + A * (float)x + B * (float)y + C * (float)z);
+                if(!pointInBounds(point,lowerBound,upperBound))
+                    continue;
+
                 uint cellHash = getHash(point,lowerBound,upperBound,subdivisions);
 
+                // printf("point =%f,%f,%f hash=%d \n", point.x,point.y,point.z,cellHash);
                 //check bounds of hash
                 if(cellHash >= (subdivisions * subdivisions * subdivisions))
                     continue;
 
-                
+                //printf("%d \n", cellHash);
 
                 uint startIndex = cellStartIndex[cellHash];
                 uint cellPointCount = cellSize[cellHash];
                 if(cellPointCount == 0)
                     continue;
 
-                //printf("hash = %d startIndex =%d cellPointCount = %d neighborCount = %d\n", cellHash,startIndex,cellPointCount,neighborCount);
+                printf("hash = %d startIndex =%d cellPointCount = %d neighborCount = %d\n", cellHash,startIndex,cellPointCount,neighborCount);
 
                 //now loop through all the points in the cell and caluate the distance
                 for(int s = 0; s < cellPointCount; s++)
                 {
+                    if(neighborCount >= MAX_NEIGHBORS)
+                        break;
+                        
                     float4 cellPoint = points[sortedPoints[startIndex+s].SourceIndex];
-                    float distance = fast_distance(queryPoint, cellPoint);
-                    //printf("queryPoint =%f,%f,%f  cellPoint=%f,%f,%f  distance=%f \n", queryPoint.x,queryPoint.y,queryPoint.z,cellPoint.x,cellPoint.y,cellPoint.z,distance);
-                    //printf("neighbour visited index=%d with distance=%f \n", sortedPoints[startIndex+s].SourceIndex, distance);
-                    if(distance <= radius)
+                    float dist = distance(queryPoint, cellPoint);
+                    //printf("queryPoint =%f,%f,%f  cellPoint=%f,%f,%f  distance=%f \n", queryPoint.x,queryPoint.y,queryPoint.z,cellPoint.x,cellPoint.y,cellPoint.z,dist);
+                    //printf("neighbour visited index=%d with distance=%f \n", sortedPoints[startIndex+s].SourceIndex, dist);
+                    if(dist <= radius)
                     {
-                        printf("neighbour added index=%d with distance=%f \n", sortedPoints[startIndex+s].SourceIndex, distance);
+                        //printf("neighbour added index=%d with distance=%f \n", sortedPoints[startIndex+s].SourceIndex, dist);
                         localNeighbors[neighborCount++] = sortedPoints[startIndex+s].SourceIndex;
                         //atomic_inc(&neighborCount);
                     }
@@ -163,9 +184,11 @@ __kernel void GetNearestNeighbours(__global const float4* points, __global const
             }
         }
     }
+    barrier(CLK_LOCAL_MEM_FENCE);
 
     for(int n = 0; n < neighborCount; n++)
     {
         neighbours[n] = localNeighbors[n];
     }
+    barrier(CLK_GLOBAL_MEM_FENCE);
 }
