@@ -34,4 +34,5 @@ class GpuSpatialHash: public INearestNeighbor<4>
 	std::unique_ptr<cl::Buffer> m_cellStartIndexBuffer;
 	std::unique_ptr<cl::Buffer> m_cellSizeIndexBuffer;
 	cl_uint m_pointCount;
+	cl_uint m_subdivisions;
 };

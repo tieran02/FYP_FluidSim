@@ -2,10 +2,13 @@
 #include <util/Log.h>
 #include <util/Util.h>
 
+constexpr uint32_t MAX_NEIGHBORS = 256;
+
 GpuSpatialHash::GpuSpatialHash(const std::vector<point4_t>& points, const AABB& aabb, OpenCLContext& context) :
 	m_pointCount(points.size()),
 	m_openCLContext(context),
-	m_aabb(aabb)
+	m_aabb(aabb),
+	m_subdivisions(16)
 {
 
 }
@@ -24,8 +27,6 @@ void GpuSpatialHash::Build(const std::vector<point4_t>& points)
 
 	glm::vec4 lowerBound = glm::vec4(m_aabb.Min(),1.0f);
 	glm::vec4 upperBound = glm::vec4(m_aabb.Max(),1.0f);
-	int subdivisions = 8;
-
 	cl_int err = CL_SUCCESS;
 	try
 	{
@@ -54,17 +55,17 @@ void GpuSpatialHash::Build(const std::vector<point4_t>& points)
 		{
 			m_cellStartIndexBuffer = std::make_unique<cl::Buffer>(m_openCLContext.Context(),
 				CL_MEM_READ_WRITE,
-				subdivisions * subdivisions * subdivisions * sizeof(cl_uint),
+				m_subdivisions * m_subdivisions * m_subdivisions * sizeof(cl_uint),
 				nullptr,
 				&err);
 		}
-		m_openCLContext.Queue().enqueueFillBuffer(*m_cellStartIndexBuffer, maxValue,0,subdivisions * subdivisions * subdivisions * sizeof(cl_uint));
+		m_openCLContext.Queue().enqueueFillBuffer(*m_cellStartIndexBuffer, maxValue,0,m_subdivisions * m_subdivisions * m_subdivisions * sizeof(cl_uint));
 
 		if(!m_cellSizeIndexBuffer)
 		{
 			m_cellSizeIndexBuffer = std::make_unique<cl::Buffer>(m_openCLContext.Context(),
 				CL_MEM_READ_WRITE,
-				subdivisions * subdivisions * subdivisions * sizeof(cl_uint),
+				m_subdivisions * m_subdivisions * m_subdivisions * sizeof(cl_uint),
 				nullptr,
 				&err);
 		}
@@ -79,8 +80,8 @@ void GpuSpatialHash::Build(const std::vector<point4_t>& points)
 
 
 	std::vector<GpuHashPoint> hashPoints(m_pointCount);
-	std::vector<cl_uint> index(subdivisions * subdivisions * subdivisions);
-	std::vector<cl_uint> sizes(subdivisions * subdivisions * subdivisions);
+//	std::vector<cl_uint> index(subdivisions * subdivisions * subdivisions);
+//	std::vector<cl_uint> sizes(subdivisions * subdivisions * subdivisions);
 	try
 	{
 		buildKernel->setArg(0, *m_pointBuffer);
@@ -89,7 +90,7 @@ void GpuSpatialHash::Build(const std::vector<point4_t>& points)
 		buildKernel->setArg(3, *m_cellSizeIndexBuffer);
 		buildKernel->setArg(4, lowerBound);
 		buildKernel->setArg(5, upperBound);
-		buildKernel->setArg(6, subdivisions);
+		buildKernel->setArg(6, m_subdivisions);
 
 		m_openCLContext.Queue().enqueueNDRangeKernel(
 			*buildKernel,
@@ -125,26 +126,26 @@ void GpuSpatialHash::Build(const std::vector<point4_t>& points)
 			cl::NDRange(m_pointCount),
 			cl::NDRange(64));
 
-		m_openCLContext.Queue().enqueueReadBuffer(*m_cellStartIndexBuffer,
-			true,
-			0,
-			subdivisions * subdivisions * subdivisions * sizeof(cl_uint),
-			index.data(),
-			nullptr,
-			&event);
-		//wait for event to finish
-
-		cl::Event event1;
-		m_openCLContext.Queue().enqueueReadBuffer(*m_cellSizeIndexBuffer,
-			true,
-			0,
-			subdivisions * subdivisions * subdivisions * sizeof(cl_uint),
-			sizes.data(),
-			nullptr,
-			&event1);
-		//wait for event to finish
-		event.wait();
-		event1.wait();
+//		m_openCLContext.Queue().enqueueReadBuffer(*m_cellStartIndexBuffer,
+//			true,
+//			0,
+//			subdivisions * subdivisions * subdivisions * sizeof(cl_uint),
+//			index.data(),
+//			nullptr,
+//			&event);
+//		//wait for event to finish
+//
+//		cl::Event event1;
+//		m_openCLContext.Queue().enqueueReadBuffer(*m_cellSizeIndexBuffer,
+//			true,
+//			0,
+//			subdivisions * subdivisions * subdivisions * sizeof(cl_uint),
+//			sizes.data(),
+//			nullptr,
+//			&event1);
+//		//wait for event to finish
+//		event.wait();
+//		event1.wait();
 
 	}catch (cl::Error& err)
 	{
@@ -155,11 +156,59 @@ void GpuSpatialHash::Build(const std::vector<point4_t>& points)
 
 bool GpuSpatialHash::FindNearestNeighbor(const point4_t& point, size_t& index)
 {
-	return false;
+	throw std::logic_error{"FindNearestNeighbor not yet implemented."};
 }
 
 bool GpuSpatialHash::FindNearestNeighbors(const point4_t& point, float radius, std::vector<size_t>& indices)
 {
-	return false;
+	//check if the OpenCL context has the Brute NN search program
+	OpenCLProgram* NNProgram = m_openCLContext.GetProgram("spatialHash");
+	CORE_ASSERT(NNProgram, "Failed to find OpenCLProgram for spatialHash (Make sure its compiled)");
+	cl::Kernel* nnKernel = NNProgram->GetKernel("GetNearestNeighbours");
+	CORE_ASSERT(nnKernel, "Failed to find OpenCL Kernel ('GetNearestNeighbours') for spatialHash (Make sure its compiled)");
+
+	try
+	{
+		std::vector<cl_uint> neighbours(MAX_NEIGHBORS);
+		//create neighbour buffer
+		cl::Buffer neighbourBuffer(m_openCLContext.Context(),CL_MEM_READ_WRITE, sizeof(cl_uint) * MAX_NEIGHBORS);
+		glm::vec4 lowerBound = glm::vec4(m_aabb.Min(),1.0f);
+		glm::vec4 upperBound = glm::vec4(m_aabb.Max(),1.0f);
+
+		nnKernel->setArg(0, *m_pointBuffer);
+		nnKernel->setArg(1, *m_sortedPointBuffer);
+		nnKernel->setArg(2, *m_cellStartIndexBuffer);
+		nnKernel->setArg(3, *m_cellSizeIndexBuffer);
+		nnKernel->setArg(4, neighbourBuffer);
+		nnKernel->setArg(5, lowerBound);
+		nnKernel->setArg(6, upperBound);
+		nnKernel->setArg(7, m_subdivisions);
+		nnKernel->setArg(8, point);
+		nnKernel->setArg(9, radius);
+
+		m_openCLContext.Queue().enqueueNDRangeKernel(
+			*nnKernel,
+			cl::NDRange(0),
+			cl::NDRange(1),
+			cl::NDRange(1));
+
+		cl::Event event;
+		m_openCLContext.Queue().enqueueReadBuffer(neighbourBuffer,
+			true,
+			0,
+			sizeof(cl_uint) * MAX_NEIGHBORS,
+			neighbours.data(),
+			nullptr,
+			&event);
+		//wait for event to finish
+		event.wait();
+	}
+	catch (cl::Error& err)
+	{
+		LOG_CORE_ERROR("OpenCL Error: {0}, {1}", err.what(), Util::GetCLErrorString(err.err()));
+		throw;
+	}
+
+	return !indices.empty();
 }
 

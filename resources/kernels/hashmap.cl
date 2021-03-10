@@ -1,4 +1,5 @@
 #define MAX_LOCAL_SIZE 256
+#define MAX_NEIGHBORS 256
 
 typedef struct _GpuHashPoint
 {
@@ -84,4 +85,86 @@ __kernel void Build(__global const float4* points, __global GpuHashPoint* sorted
     //we sort them in a way that points from the same cell will be placed sequentially in memory.
     //Radix sort would be ideal here as values are unsigned ints
     //Currently sorting on the host (CPU) to test the data structure, we can speed it up alot by doing the sorting on the GPU
+}
+
+/// 0: __global const float4* points: Input points
+/// 1: __global const GpuHashPoint* sortedPoints: sorted points in a way that points from the same cell will be placed sequentially in memory.
+/// 2: __global const uint* cellStartIndex: The start index in the sorted points for the points contained in the cell
+/// 3: __global const uint* cellSize: The size (amount) of points contained in the cell
+/// 4: __global uint* neighbours: An array containing all the neighbouring points within radius (MAX neighbours defined as 256)
+/// 5: lowerBound: lower bound of the AABB grid (used to hash the point)
+/// 6: upperBound: upper bound of the AABB grid (used to hash the point)
+/// 7: subdivisions: number of subdivisions on each dimension of the grid
+/// 8: float4 queryPoint : the point to find the nighbors for
+/// 9: float radius : radius to find neighbors 
+__kernel void GetNearestNeighbours(__global const float4* points, __global const GpuHashPoint* sortedPoints, __global const uint* cellStartIndex, __global const uint* cellSize, __global uint* neighbours, float4 lowerBound, float4 upperBound, int subdivisions, float4 queryPoint, float radius)
+{
+    //This should only be called by a single local thread
+
+    int i = get_local_id(0); //index of workgroup
+    int wg = get_local_size(0); //get workgroup size
+    int offset = get_group_id(0) * wg; //offset from global points memory
+
+    float4 bucketSize = (upperBound-lowerBound)/subdivisions;
+    float4 A = (float4)(bucketSize.x ,0.0f, 0.0f, 0.0f);
+    float4 B = (float4)(0.0f, bucketSize.y ,0.0f, 0.0f);
+    float4 C = (float4)(0.0f, 0.0f, bucketSize.z, 0.0f);
+
+    int searchSize = ceil(radius/bucketSize.x) + 2;
+    float radius2 = radius * radius;
+    uint localNeighbors[MAX_NEIGHBORS];
+    uint neighborCount = 0;
+
+    for(int x = 0; x < searchSize; x++)
+    {
+        if(neighborCount == MAX_NEIGHBORS)
+            break;
+
+        for(int y = 0; y < searchSize; y++)
+        {
+            if(neighborCount == MAX_NEIGHBORS)
+                break;
+
+            for(int z = 0; z < searchSize; z++)
+            {
+                if(neighborCount == MAX_NEIGHBORS)
+                    break;
+
+                float4 point = (float4)(queryPoint + A * (float)x + B * (float)y + C * (float)z);
+                uint cellHash = getHash(point,lowerBound,upperBound,subdivisions);
+
+                //check bounds of hash
+                if(cellHash >= (subdivisions * subdivisions * subdivisions))
+                    continue;
+
+                
+
+                uint startIndex = cellStartIndex[cellHash];
+                uint cellPointCount = cellSize[cellHash];
+                if(cellPointCount == 0)
+                    continue;
+
+                //printf("hash = %d startIndex =%d cellPointCount = %d neighborCount = %d\n", cellHash,startIndex,cellPointCount,neighborCount);
+
+                //now loop through all the points in the cell and caluate the distance
+                for(int s = 0; s < cellPointCount; s++)
+                {
+                    float4 cellPoint = points[sortedPoints[startIndex+s].SourceIndex];
+                    float3 diff = cellPoint.xyz - queryPoint.zyz;
+                    float distance2 = dot(diff,diff);
+                    if(distance2 <= radius2)
+                    {
+                        printf("neighbour added index=%d\n", sortedPoints[startIndex+s].SourceIndex);
+                        localNeighbors[neighborCount++] = sortedPoints[startIndex+s].SourceIndex;
+                        //atomic_inc(&neighborCount);
+                    }
+                }
+            }
+        }
+    }
+
+    for(int n = 0; n < neighborCount; n++)
+    {
+        neighbours[n] = localNeighbors[n];
+    }
 }

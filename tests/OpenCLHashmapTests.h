@@ -18,6 +18,7 @@ class OpenCLHashmapTests
 	~OpenCLHashmapTests() = default;
 
 	void BuildTests(const std::vector<glm::vec4>& points, const AABB& aabb);
+	void NearestNeighborTests(const std::vector<glm::vec4>& points, const AABB& aabb);
 
  private:
 	OpenCLContext m_context;
