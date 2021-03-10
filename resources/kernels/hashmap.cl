@@ -150,11 +150,12 @@ __kernel void GetNearestNeighbours(__global const float4* points, __global const
                 for(int s = 0; s < cellPointCount; s++)
                 {
                     float4 cellPoint = points[sortedPoints[startIndex+s].SourceIndex];
-                    float3 diff = cellPoint.xyz - queryPoint.zyz;
-                    float distance2 = dot(diff,diff);
-                    if(distance2 <= radius2)
+                    float distance = fast_distance(queryPoint, cellPoint);
+                    //printf("queryPoint =%f,%f,%f  cellPoint=%f,%f,%f  distance=%f \n", queryPoint.x,queryPoint.y,queryPoint.z,cellPoint.x,cellPoint.y,cellPoint.z,distance);
+                    //printf("neighbour visited index=%d with distance=%f \n", sortedPoints[startIndex+s].SourceIndex, distance);
+                    if(distance <= radius)
                     {
-                        printf("neighbour added index=%d\n", sortedPoints[startIndex+s].SourceIndex);
+                        printf("neighbour added index=%d with distance=%f \n", sortedPoints[startIndex+s].SourceIndex, distance);
                         localNeighbors[neighborCount++] = sortedPoints[startIndex+s].SourceIndex;
                         //atomic_inc(&neighborCount);
                     }

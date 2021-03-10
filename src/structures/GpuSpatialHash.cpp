@@ -172,6 +172,9 @@ bool GpuSpatialHash::FindNearestNeighbors(const point4_t& point, float radius, s
 		std::vector<cl_uint> neighbours(MAX_NEIGHBORS);
 		//create neighbour buffer
 		cl::Buffer neighbourBuffer(m_openCLContext.Context(),CL_MEM_READ_WRITE, sizeof(cl_uint) * MAX_NEIGHBORS);
+		cl_uint maxValue = std::numeric_limits<cl_uint>::max();
+		m_openCLContext.Queue().enqueueFillBuffer(neighbourBuffer, maxValue,0,MAX_NEIGHBORS * sizeof(cl_uint));
+
 		glm::vec4 lowerBound = glm::vec4(m_aabb.Min(),1.0f);
 		glm::vec4 upperBound = glm::vec4(m_aabb.Max(),1.0f);
 
