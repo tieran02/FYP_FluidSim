@@ -169,9 +169,9 @@ __kernel void GetNearestNeighbours(__global const float4* points, __global const
                 {
                     if(neighborCount >= MAX_NEIGHBORS)
                         break;
-                        
+
                     float4 cellPoint = points[sortedPoints[startIndex+s].SourceIndex];
-                    float dist = distance(queryPoint, cellPoint);
+                    float dist = fast_distance(queryPoint, cellPoint);
                     //printf("queryPoint =%f,%f,%f  cellPoint=%f,%f,%f  distance=%f \n", queryPoint.x,queryPoint.y,queryPoint.z,cellPoint.x,cellPoint.y,cellPoint.z,dist);
                     //printf("neighbour visited index=%d with distance=%f \n", sortedPoints[startIndex+s].SourceIndex, dist);
                     if(dist <= radius)
