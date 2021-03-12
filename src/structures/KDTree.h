@@ -51,7 +51,7 @@ class KDTree : public INearestNeighbor<K>
 		const point_t<K>& point,
 		size_t depth,
 		std::vector<size_t>& nearestNodes,
-		float radius) const;
+		float radius2) const;
 };
 
 template<size_t K>
@@ -193,7 +193,7 @@ bool KDTree<K>::FindNearestNeighbor(const point_t<K>& point, size_t & index)
 template<size_t K>
 bool KDTree<K>::FindNearestNeighbors(const point_t<K>& point, float radius, std::vector<size_t>& indices)
 {
-	findNearestNodesWithinRadius(m_root.get(),point,0,indices,radius);
+	findNearestNodesWithinRadius(m_root.get(),point,0,indices,radius * radius);
 	return !indices.empty();
 }
 
@@ -202,7 +202,7 @@ void KDTree<K>::findNearestNodesWithinRadius(KDNode<K>* branch,
 	const point_t<K>& point,
 	size_t depth,
 	std::vector<size_t>& nearestNodes,
-	float radius) const
+	float radius2) const
 {
 
 	float d, dx, dx2;
@@ -215,7 +215,7 @@ void KDTree<K>::findNearestNodesWithinRadius(KDNode<K>* branch,
 	dx = branchPoint[depth] - point[depth];
 	dx2 = dx * dx;
 
-	if(d <= radius)
+	if(d <= radius2)
 		nearestNodes.push_back(branch->Index);
 
 	size_t next_lv = (depth + 1) % K;
@@ -231,10 +231,10 @@ void KDTree<K>::findNearestNodesWithinRadius(KDNode<K>* branch,
 		other = branch->Left.get();
 	}
 
-	findNearestNodesWithinRadius(section, point, next_lv, nearestNodes, radius);
+	findNearestNodesWithinRadius(section, point, next_lv, nearestNodes, radius2);
 
 	// only check the other branch if it makes sense to do so
-	if (dx2 <= radius) {
-		findNearestNodesWithinRadius(other, point, next_lv, nearestNodes, radius);
+	if (dx2 <= radius2) {
+		findNearestNodesWithinRadius(other, point, next_lv, nearestNodes, radius2);
 	}
 }

@@ -103,7 +103,8 @@ bool SpartialHash<K>::FindNearestNeighbor(const point_t<K>& point, size_t & inde
 template<size_t K>
 bool SpartialHash<K>::FindNearestNeighbors(const point_t<K>& point, float radius, std::vector<size_t>& indices)
 {
-	auto searchBuckets = getAllBucketPointsWithinRange(point,radius);
+	float radius2 = radius * radius;
+	auto searchBuckets = getAllBucketPointsWithinRange(point,radius2);
 
 	for(const auto& bucket : searchBuckets)
 	{
@@ -116,7 +117,7 @@ bool SpartialHash<K>::FindNearestNeighbors(const point_t<K>& point, float radius
 		{
 			//calc distance
 			float distance2 = glm::distance2(point, neighbors[i].first);
-			if (distance2 <= radius)
+			if (distance2 <= radius2)
 			{
 				indices.push_back(neighbors[i].second);
 			}

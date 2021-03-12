@@ -116,7 +116,7 @@ void SPHSolverCPU::computeNeighborList()
 	{
 		std::vector<size_t> e;
 		e.reserve(1000);
-		bool foundE = m_tree.FindNearestNeighbors(m_particles.Positions[i], KERNEL_RADIUS*KERNEL_RADIUS, e);
+		bool foundE = m_tree.FindNearestNeighbors(m_particles.Positions[i], KERNEL_RADIUS, e);
 		m_neighborList[i] = e;
 	}
 }
