@@ -9,6 +9,8 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <gtx/hash.hpp>
 #include <omp.h>
+#include <unordered_set>
+
 
 template<size_t K>
 class SpartialHash : public INearestNeighbor<K>
@@ -105,6 +107,7 @@ bool SpartialHash<K>::FindNearestNeighbors(const point_t<K>& point, float radius
 {
 	float radius2 = radius * radius;
 	auto searchBuckets = getAllBucketPointsWithinRange(point,radius2);
+	std::unordered_set<size_t> visitedPoints;
 
 	for(const auto& bucket : searchBuckets)
 	{
@@ -115,6 +118,10 @@ bool SpartialHash<K>::FindNearestNeighbors(const point_t<K>& point, float radius
 
 		for (int i = 0; i < neighbors.size(); i++)
 		{
+			if(visitedPoints.find(neighbors[i].second) != visitedPoints.end())
+				continue;
+
+			visitedPoints.insert(neighbors[i].second);
 			//calc distance
 			float distance2 = glm::distance2(point, neighbors[i].first);
 			if (distance2 <= radius2)

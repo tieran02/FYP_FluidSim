@@ -6,6 +6,7 @@
 #include "AABBTests.h"
 #include "OpenCLHashmapTests.h"
 #include "OpenCLBruteForceNNTests.h"
+#include "TestData.h"
 #include <random>
 
 std::vector<glm::vec3> randomPoints(size_t count)
@@ -154,13 +155,27 @@ int main()
 	//PlaneTests::NormalVectorTest();
 	//AABBTests::IntersectionTests();
 
+	auto points3 = TestData::Vec3Points256();
+	auto points4 = TestData::Vec4Points256();
+	auto randomPoints4f = randomPoints4(30720);
+	//KD Tree
+	KDTree<3> KDTree;
+	KDTree.Build(points3);
+	std::vector<size_t> indices;
+	KDTree.FindNearestNeighbors(glm::vec3(0.0f,0.0f,0.0f),40.0f,indices);
+
+	//Spatial hash
+	SpartialHash<3> spartialHash(points3,50);
+	spartialHash.Build(points3);
+	std::vector<size_t> indices1;
+	spartialHash.FindNearestNeighbors(glm::vec3(0.0f,0.0f,0.0f),40.0f,indices1);
+
 	//OpenCL hash map tests
 	OpenCLHashmapTests gpuHashmap;
 	//Add 1% padding because if a point is max value the hash function exceeds the size.
-	AABB m_aabb(glm::vec3(-1010),glm::vec3(1010));
-	auto randomPoints = randomPoints4(256);
-	gpuHashmap.BuildTests(randomPoints, m_aabb);
-	gpuHashmap.NearestNeighborTests(randomPoints, m_aabb);
+	AABB m_aabb(glm::vec3(-110),glm::vec3(110));
+	gpuHashmap.BuildTests(points4, m_aabb);
+	gpuHashmap.NearestNeighborTests(points4, m_aabb);
 //	OpenCLBruteForceNNTests bruteNN;
 //	bruteNN.BuildTests(randomPoints4(512));
 

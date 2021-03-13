@@ -28,13 +28,23 @@ void OpenCLHashmapTests::NearestNeighborTests(const std::vector<glm::vec4>& poin
 	GpuSpatialHash gpuNN(points,aabb, m_context);
 	gpuNN.Build(points);
 
+	std::vector<glm::vec4> queryPoints{
+		glm::vec4(0.0f)
+	};
+
 	std::vector<size_t> indices(points.size());
+	std::vector<uint32_t> indices32(queryPoints.size() * 16);
 	Stopwatch sw;
 	sw.Start();
 
-	gpuNN.FindNearestNeighbors(points[0], 3000.0f,indices);
-
+	//gpuNN.FindNearestNeighbors(glm::vec4(0.0f,0.0f,0.0f,1.0f), 30.0f,indices);
+	gpuNN.KNN(points,queryPoints, aabb,16, 40.0f,indices32);
 	sw.Stop();
+
+	size_t neighborCount = std::count_if(indices32.begin(),indices32.end(), [](int next_val){return next_val < std::numeric_limits<cl_uint>::max();});
+	LOG_CORE_TRACE("FindNearestNeighbors target:{0} actual:{1}", 7, neighborCount);
+	CORE_ASSERT(neighborCount == 7, "OpenCL hashmap FindNearestNeighbors returned wrong value");
+
 
 	LOG_CORE_INFO("OpenCLHashmapTests NN for single point: {0}", sw.Time());
 }
@@ -45,6 +55,8 @@ void OpenCLHashmapTests::buildProgram()
 	m_context.GetProgram("spatialHash")->AddKernel("Build");
 	m_context.GetProgram("spatialHash")->AddKernel("GetStartSize");
 	m_context.GetProgram("spatialHash")->AddKernel("GetNearestNeighbours");
+	m_context.GetProgram("spatialHash")->AddKernel("KNN");
 }
+
 
 

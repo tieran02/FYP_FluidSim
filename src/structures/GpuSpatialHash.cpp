@@ -9,7 +9,7 @@ GpuSpatialHash::GpuSpatialHash(const std::vector<point4_t>& points, const AABB& 
 	m_pointCount(points.size()),
 	m_openCLContext(context),
 	m_aabb(aabb),
-	m_subdivisions(16)
+	m_subdivisions(9)
 {
 
 }
@@ -208,7 +208,83 @@ bool GpuSpatialHash::FindNearestNeighbors(const point4_t& point, float radius, s
 		//wait for event to finish
 		event.wait();
 
-		LOG_CORE_INFO("Neighbor Count: {0}", std::count_if(neighbours.begin(),neighbours.end(), [](int next_val){return next_val < std::numeric_limits<cl_uint>::max();}));
+		//TODO make neighbours uint32 instead of size_t;
+		for (int i = 0; i < neighbours.size(); ++i)
+		{
+			indices[i] = neighbours[i];
+		}
+	}
+	catch (cl::Error& err)
+	{
+		LOG_CORE_ERROR("OpenCL Error: {0}, {1}", err.what(), Util::GetCLErrorString(err.err()));
+		throw;
+	}
+
+	return !indices.empty();
+}
+bool GpuSpatialHash::KNN(const std::vector<glm::vec4>& points,
+	const std::vector<glm::vec4>& queryPoints,
+	const AABB& aabb,
+	uint32_t K,
+	float radius,
+	std::vector<uint32_t>& indices)
+{
+	//check if the OpenCL context has the Brute NN search program
+	OpenCLProgram* hashProgram = m_openCLContext.GetProgram("spatialHash");
+	CORE_ASSERT(hashProgram, "Failed to find OpenCLProgram for spatialHash (Make sure its compiled)");
+	cl::Kernel* knnKernel = hashProgram->GetKernel("KNN");
+	CORE_ASSERT(knnKernel, "Failed to find OpenCL Kernel ('KNN') for spatialHash (Make sure its compiled)");
+
+	try
+	{
+		std::vector<cl_uint> kNeighbours(queryPoints.size() * K);
+
+		cl::Buffer queryPointBuffer(m_openCLContext.Context(),CL_MEM_READ_ONLY, queryPoints.size() * sizeof(cl_float4));
+		m_openCLContext.Queue().enqueueWriteBuffer(queryPointBuffer,CL_TRUE,0,queryPoints.size() * sizeof(cl_float4), queryPoints.data());
+
+		//create neighbour buffer
+		cl::Buffer neighbourBuffer(m_openCLContext.Context(),CL_MEM_READ_WRITE, queryPoints.size() * K * sizeof(cl_uint));
+		cl_uint maxValue = std::numeric_limits<cl_uint>::max();
+		m_openCLContext.Queue().enqueueFillBuffer(neighbourBuffer, maxValue,0,queryPoints.size() * K * sizeof(cl_uint));
+
+		glm::vec4 lowerBound = glm::vec4(m_aabb.Min(),1.0f);
+		glm::vec4 upperBound = glm::vec4(m_aabb.Max(),1.0f);
+
+		knnKernel->setArg(0, *m_pointBuffer);
+		knnKernel->setArg(1, *m_sortedPointBuffer);
+		knnKernel->setArg(2, *m_cellStartIndexBuffer);
+		knnKernel->setArg(3, *m_cellSizeIndexBuffer);
+		knnKernel->setArg(4, queryPointBuffer);
+		knnKernel->setArg(5, neighbourBuffer);
+		knnKernel->setArg(6, lowerBound);
+		knnKernel->setArg(7, upperBound);
+		knnKernel->setArg(8, m_subdivisions);
+		knnKernel->setArg(9, K); // K
+		knnKernel->setArg(10, radius); // K
+
+		m_openCLContext.Queue().enqueueNDRangeKernel(
+			*knnKernel,
+			cl::NDRange(0),
+			cl::NDRange(queryPoints.size()),
+			cl::NDRange(1));
+
+		cl::Event event;
+		m_openCLContext.Queue().enqueueReadBuffer(neighbourBuffer,
+			true,
+			0,
+			queryPoints.size() * K * sizeof(cl_uint),
+			kNeighbours.data(),
+			nullptr,
+			&event);
+		//wait for event to finish
+		event.wait();
+
+		//TODO make neighbours uint32 instead of size_t;
+		for (int i = 0; i < kNeighbours.size(); ++i)
+		{
+			indices[i] = kNeighbours[i];
+		}
+
 	}
 	catch (cl::Error& err)
 	{
