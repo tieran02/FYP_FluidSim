@@ -114,7 +114,7 @@ void SPHSolverCPU::computeNeighborList()
 	#pragma omp parallel for
 	for (int i = 0; i < m_particles.Positions.size(); ++i)
 	{
-		std::vector<size_t> e;
+		std::vector<uint32_t> e;
 		e.reserve(1000);
 		bool foundE = m_tree.FindNearestNeighbors(m_particles.Positions[i], KERNEL_RADIUS, e);
 		m_neighborList[i] = e;

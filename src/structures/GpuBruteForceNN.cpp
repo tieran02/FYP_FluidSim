@@ -53,12 +53,12 @@ void GpuBruteForceNN::Build(const std::vector<point4_t>& points)
 	m_pointCount = points.size();
 }
 
-bool GpuBruteForceNN::FindNearestNeighbor(const point4_t& point, size_t& index)
+bool GpuBruteForceNN::FindNearestNeighbor(const point4_t& point, uint32_t& index)
 {
 	return false;
 }
 
-bool GpuBruteForceNN::FindNearestNeighbors(const point4_t& point, float radius, std::vector<size_t>& indices)
+bool GpuBruteForceNN::FindNearestNeighbors(const point4_t& point, float radius, std::vector<uint32_t>& indices)
 {
 	//The NN search is off-loaded to the GPU with OpenCL and follows the following algorithm:
 	//1 Compute all the distances between the point and all other points

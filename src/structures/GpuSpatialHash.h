@@ -21,10 +21,10 @@ class GpuSpatialHash: public INearestNeighbor<4>
 	/// \param points
 	void Build(const std::vector<point4_t>& points) override;
 
-	bool FindNearestNeighbor(const point4_t& point, size_t& index) override;
+	bool FindNearestNeighbor(const point4_t& point, uint32_t& index) override;
 	bool FindNearestNeighbors(const point4_t& point,
-		float radius,
-		std::vector<size_t>& indices) override;
+	                          float radius,
+	                          std::vector<uint32_t>& indices) override;
 
 	bool KNN(const std::vector<glm::vec4>& points,const std::vector<glm::vec4>& queryPoints, const AABB& aabb, uint32_t K, float radius, std::vector<uint32_t>& indices);
  private:

@@ -27,7 +27,7 @@ class SPHSolverCPU : public Solver
 	const float PARTICLE_RADIUS;
 	const float KERNEL_RADIUS;
 	ParticleSet m_particles;
-	std::vector<std::vector<size_t>> m_neighborList;
+	std::vector<std::vector<uint32_t>> m_neighborList;
 	float m_mass{ 1.0f};
 	float m_targetDensitiy{ 200.0f};
 	float m_viscosityCoefficient = 0.0074f;

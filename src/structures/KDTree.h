@@ -32,8 +32,8 @@ class KDTree : public INearestNeighbor<K>
 	const std::unique_ptr<KDNode<K>>& Root() const { return m_root; }
 
 	void Build(const std::vector<point_t<K>>& points) override;
-	bool FindNearestNeighbor(const point_t<K>& point, size_t& index) override;
-	bool FindNearestNeighbors(const point_t<K>& point, float radius, std::vector<size_t>& indices) override;
+	bool FindNearestNeighbor(const point_t<K>& point, uint32_t& index) override;
+	bool FindNearestNeighbors(const point_t<K>& point, float radius, std::vector<uint32_t>& indices) override;
  private:
 	typedef std::pair<point_t<K>,size_t> KDPair;
 	typedef typename std::vector<KDPair>::iterator point_Iterator;
@@ -50,7 +50,7 @@ class KDTree : public INearestNeighbor<K>
 	void findNearestNodesWithinRadius(KDNode<K>* branch,
 		const point_t<K>& point,
 		size_t depth,
-		std::vector<size_t>& nearestNodes,
+		std::vector<uint32_t>& nearestNodes,
 		float radius2) const;
 };
 
@@ -178,7 +178,7 @@ KDNode<K>* KDTree<K>::findNearestNode(KDNode<K>* branch,
 }
 
 template<size_t K>
-bool KDTree<K>::FindNearestNeighbor(const point_t<K>& point, size_t & index)
+bool KDTree<K>::FindNearestNeighbor(const point_t<K>& point, uint32_t& index)
 {
 	auto node = findNearestNode(m_root.get(),point,0, nullptr,std::numeric_limits<float>::infinity());
 
@@ -191,7 +191,7 @@ bool KDTree<K>::FindNearestNeighbor(const point_t<K>& point, size_t & index)
 }
 
 template<size_t K>
-bool KDTree<K>::FindNearestNeighbors(const point_t<K>& point, float radius, std::vector<size_t>& indices)
+bool KDTree<K>::FindNearestNeighbors(const point_t<K>& point, float radius, std::vector<uint32_t>& indices)
 {
 	findNearestNodesWithinRadius(m_root.get(),point,0,indices,radius * radius);
 	return !indices.empty();
@@ -201,7 +201,7 @@ template<size_t K>
 void KDTree<K>::findNearestNodesWithinRadius(KDNode<K>* branch,
 	const point_t<K>& point,
 	size_t depth,
-	std::vector<size_t>& nearestNodes,
+	std::vector<uint32_t>& nearestNodes,
 	float radius2) const
 {
 

@@ -12,6 +12,6 @@ class INearestNeighbor
 {
  public:
 	virtual void Build(const std::vector<point_t<K>>& points) = 0;
-	virtual bool FindNearestNeighbor(const point_t<K>& point, size_t& index) = 0;
-	virtual bool FindNearestNeighbors(const point_t<K>& point, float radius, std::vector<size_t>& indices) = 0;
+	virtual bool FindNearestNeighbor(const point_t<K>& point, uint32_t& index) = 0;
+	virtual bool FindNearestNeighbors(const point_t<K>& point, float radius, std::vector<uint32_t>& indices) = 0;
 };

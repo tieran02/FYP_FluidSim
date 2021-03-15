@@ -24,13 +24,13 @@ class SpartialHash : public INearestNeighbor<K>
 	/// Find the Nearest neighbour from the given point (Note: this will only search the bucket that contains the point)
 	/// \param point
 	/// \param index ref that gets assigned the closest index
-	bool FindNearestNeighbor(const point_t<K>& point, size_t & index) override;
+	bool FindNearestNeighbor(const point_t<K>& point, uint32_t& index) override;
 
 	/// Find a list of the nearest neighbours from the given point that fit within the radius
 	/// \param point
 	/// \param radius of the search from point
 	/// \param indices ref that gets assigned the closest indices
-	bool FindNearestNeighbors(const point_t<K>& point, float radius, std::vector<size_t>& indices) override;
+	bool FindNearestNeighbors(const point_t<K>& point, float radius, std::vector<uint32_t>& indices) override;
  private:
 	typedef std::pair<point_t<K>,size_t> pair;
 	const uint32_t m_bucketSize;
@@ -68,7 +68,7 @@ void SpartialHash<K>::Build(const std::vector<point_t<K>>& points)
 }
 
 template<size_t K>
-bool SpartialHash<K>::FindNearestNeighbor(const point_t<K>& point, size_t & index)
+bool SpartialHash<K>::FindNearestNeighbor(const point_t<K>& point, uint32_t& index)
 {
 	//hash point
 	size_t pointHashkey = getHashKey(point);
@@ -103,7 +103,7 @@ bool SpartialHash<K>::FindNearestNeighbor(const point_t<K>& point, size_t & inde
 }
 
 template<size_t K>
-bool SpartialHash<K>::FindNearestNeighbors(const point_t<K>& point, float radius, std::vector<size_t>& indices)
+bool SpartialHash<K>::FindNearestNeighbors(const point_t<K>& point, float radius, std::vector<uint32_t>& indices)
 {
 	float radius2 = radius * radius;
 	auto searchBuckets = getAllBucketPointsWithinRange(point,radius2);

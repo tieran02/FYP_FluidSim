@@ -13,7 +13,7 @@ void OpenCLBruteForceNNTests::BuildTests(const std::vector<glm::vec4>& points)
 	GpuBruteForceNN gpuNN(points, m_context);
 	gpuNN.Build(points);
 
-	std::vector<size_t> indices;
+	std::vector<uint32_t> indices;
 
 	Stopwatch sw;
 	sw.Start();

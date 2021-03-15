@@ -156,12 +156,12 @@ void GpuSpatialHash::Build(const std::vector<point4_t>& points)
 	}
 }
 
-bool GpuSpatialHash::FindNearestNeighbor(const point4_t& point, size_t& index)
+bool GpuSpatialHash::FindNearestNeighbor(const point4_t& point, uint32_t& index)
 {
 	throw std::logic_error{"FindNearestNeighbor not yet implemented."};
 }
 
-bool GpuSpatialHash::FindNearestNeighbors(const point4_t& point, float radius, std::vector<size_t>& indices)
+bool GpuSpatialHash::FindNearestNeighbors(const point4_t& point, float radius, std::vector<uint32_t>& indices)
 {
 	//check if the OpenCL context has the Brute NN search program
 	OpenCLProgram* NNProgram = m_openCLContext.GetProgram("spatialHash");
@@ -235,10 +235,9 @@ bool GpuSpatialHash::KNN(const std::vector<glm::vec4>& points,
 	cl::Kernel* knnKernel = hashProgram->GetKernel("KNN");
 	CORE_ASSERT(knnKernel, "Failed to find OpenCL Kernel ('KNN') for spatialHash (Make sure its compiled)");
 
+	indices.resize(K);
 	try
 	{
-		std::vector<cl_uint> kNeighbours(queryPoints.size() * K);
-
 		cl::Buffer queryPointBuffer(m_openCLContext.Context(),CL_MEM_READ_ONLY, queryPoints.size() * sizeof(cl_float4));
 		m_openCLContext.Queue().enqueueWriteBuffer(queryPointBuffer,CL_TRUE,0,queryPoints.size() * sizeof(cl_float4), queryPoints.data());
 
@@ -273,18 +272,11 @@ bool GpuSpatialHash::KNN(const std::vector<glm::vec4>& points,
 			true,
 			0,
 			queryPoints.size() * K * sizeof(cl_uint),
-			kNeighbours.data(),
+			indices.data(),
 			nullptr,
 			&event);
 		//wait for event to finish
 		event.wait();
-
-		//TODO make neighbours uint32 instead of size_t;
-		for (int i = 0; i < kNeighbours.size(); ++i)
-		{
-			indices[i] = kNeighbours[i];
-		}
-
 	}
 	catch (cl::Error& err)
 	{

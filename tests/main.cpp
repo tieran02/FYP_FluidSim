@@ -64,13 +64,13 @@ void KDTests(uint32_t PointCount)
 	LOG_CORE_INFO("KD-Tree constuction time: {}", constructionTime);
 
 	sw.Start();
-	size_t index = 0;
+	uint32_t index = 0;
 	bool found = tree.FindNearestNeighbor(glm::vec3(20,41,4), index);
 	sw.Stop();
 	LOG_CORE_INFO("KD-Tree find closest index to point time: {}", sw.Time());
 
 	sw.Start();
-	std::vector<size_t> elements;
+	std::vector<uint32_t> elements;
 	elements.reserve(1000);
 	bool foundElements = tree.FindNearestNeighbors(glm::vec3(50,60,60),20*20, elements);
 	sw.Stop();
@@ -78,11 +78,11 @@ void KDTests(uint32_t PointCount)
 
 	sw.Start();
 	//find all neighbours of all elements
-	std::vector<std::vector<size_t>> neighbors(points.size());
+	std::vector<std::vector<uint32_t>> neighbors(points.size());
 	#pragma omp parallel for
 	for (int i = 0; i < points.size(); ++i)
 	{
-		std::vector<size_t> e;
+		std::vector<uint32_t> e;
 		e.reserve(1000);
 		bool foundE = tree.FindNearestNeighbors(points[i],25*25, e);
 		neighbors[i] = e;
@@ -109,25 +109,25 @@ void SpartialHashTests(uint32_t PointCount)
 	LOG_CORE_INFO("Spatial hash constuction time: {}", sw.Time());
 
 	sw.Start();
-	size_t index = 0;
+	uint32_t index = 0;
 	bool found = spartialHash.FindNearestNeighbor(glm::vec3(20,41,4), index);
 	sw.Stop();
 	LOG_CORE_INFO("Spatial hash find closest index to point time: {}", sw.Time());
 
 
 	sw.Start();
-	std::vector<size_t> elements;
+	std::vector<uint32_t> elements;
 	found = spartialHash.FindNearestNeighbors(glm::vec3(0,0,0), 100*100,elements);
 	sw.Stop();
 	LOG_CORE_INFO("Spatial hash find nearest neighbors to point within radius time: {}", sw.Time());
 
 	sw.Start();
 	//find all neighbours of all elements
-	std::vector<std::vector<size_t>> neighbors(points.size());
+	std::vector<std::vector<uint32_t>> neighbors(points.size());
 	#pragma omp parallel for
 	for (int i = 0; i < points.size(); ++i)
 	{
-		std::vector<size_t> e;
+		std::vector<uint32_t> e;
 		bool foundE = spartialHash.FindNearestNeighbors(points[i],100*100, e);
 		neighbors[i] = e;
 	}
@@ -161,13 +161,13 @@ int main()
 	//KD Tree
 	KDTree<3> KDTree;
 	KDTree.Build(points3);
-	std::vector<size_t> indices;
+	std::vector<uint32_t> indices;
 	KDTree.FindNearestNeighbors(glm::vec3(0.0f,0.0f,0.0f),40.0f,indices);
 
 	//Spatial hash
 	SpartialHash<3> spartialHash(points3,50);
 	spartialHash.Build(points3);
-	std::vector<size_t> indices1;
+	std::vector<uint32_t> indices1;
 	spartialHash.FindNearestNeighbors(glm::vec3(0.0f,0.0f,0.0f),40.0f,indices1);
 
 	//OpenCL hash map tests
