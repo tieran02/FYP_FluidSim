@@ -107,3 +107,10 @@ bool GpuBruteForceNN::FindNearestNeighbors(const point4_t& point, float radius, 
 
 	return false;
 }
+
+bool GpuBruteForceNN::FindAllNearestNeighbors(const std::vector<point4_t>& points,
+	float radius,
+	std::vector<std::vector<uint32_t>>& indices)
+{
+	return false;
+}

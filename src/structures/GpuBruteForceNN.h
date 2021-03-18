@@ -18,6 +18,10 @@ class GpuBruteForceNN : public INearestNeighbor<4>
 	bool FindNearestNeighbors(const point4_t& point,
 	                          float radius,
 	                          std::vector<uint32_t>& indices) override;
+
+	bool FindAllNearestNeighbors(const std::vector<point4_t>& points,
+		float radius,
+		std::vector<std::vector<uint32_t>>& indices) override;
  private:
 	OpenCLContext& m_openCLContext;
 	std::unique_ptr<cl::Buffer> m_pointBuffer;

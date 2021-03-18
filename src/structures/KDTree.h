@@ -34,6 +34,9 @@ class KDTree : public INearestNeighbor<K>
 	void Build(const std::vector<point_t<K>>& points) override;
 	bool FindNearestNeighbor(const point_t<K>& point, uint32_t& index) override;
 	bool FindNearestNeighbors(const point_t<K>& point, float radius, std::vector<uint32_t>& indices) override;
+	bool FindAllNearestNeighbors(const std::vector<point_t<K>>& points,
+		float radius,
+		std::vector<std::vector<uint32_t>>& indices) override;
  private:
 	typedef std::pair<point_t<K>,size_t> KDPair;
 	typedef typename std::vector<KDPair>::iterator point_Iterator;
@@ -237,4 +240,12 @@ void KDTree<K>::findNearestNodesWithinRadius(KDNode<K>* branch,
 	if (dx2 <= radius2) {
 		findNearestNodesWithinRadius(other, point, next_lv, nearestNodes, radius2);
 	}
+}
+
+template<size_t K>
+bool KDTree<K>::FindAllNearestNeighbors(const std::vector<point_t<K>>& points,
+	float radius,
+	std::vector<std::vector<uint32_t>>& indices)
+{
+	return false;
 }

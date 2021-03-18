@@ -31,6 +31,10 @@ class SpartialHash : public INearestNeighbor<K>
 	/// \param radius of the search from point
 	/// \param indices ref that gets assigned the closest indices
 	bool FindNearestNeighbors(const point_t<K>& point, float radius, std::vector<uint32_t>& indices) override;
+
+	bool FindAllNearestNeighbors(const std::vector<point_t<K>>& points,
+		float radius,
+		std::vector<std::vector<uint32_t>>& indices) override;
  private:
 	typedef std::pair<point_t<K>,size_t> pair;
 	const uint32_t m_bucketSize;
@@ -187,4 +191,12 @@ std::vector<glm::vec3> SpartialHash<K>::getAllBucketPointsWithinRange(const poin
 	}
 
 	return result;
+}
+
+template<size_t K>
+bool SpartialHash<K>::FindAllNearestNeighbors(const std::vector<point_t<K>>& points,
+	float radius,
+	std::vector<std::vector<uint32_t>>& indices)
+{
+	return false;
 }

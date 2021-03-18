@@ -46,9 +46,9 @@ void OpenCLHashmapTests::NearestNeighborTests(const std::vector<glm::vec4>& poin
 	LOG_CORE_INFO("OpenCLHashmapTests NN for single point: {0}", sw.Time());
 
 	//get all neighbours within range
-	std::vector<uint32_t> allQueryPointNeighbors(points.size() * K);
 	sw.Start();
-	gpuNN.KNN(points,points, aabb,K, 40.0f,allQueryPointNeighbors);
+	std::vector<std::vector<uint32_t>> allQueryPointNeighbors(points.size() * K);
+	gpuNN.FindAllNearestNeighbors(points,40.0f,allQueryPointNeighbors);
 	sw.Stop();
 	LOG_CORE_INFO("OpenCLHashmapTests NN for all points: {0}", sw.Time());
 }

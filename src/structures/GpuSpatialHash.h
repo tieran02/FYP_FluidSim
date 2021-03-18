@@ -33,6 +33,10 @@ class GpuSpatialHash: public INearestNeighbor<4>
 	                          float radius,
 	                          std::vector<uint32_t>& indices) override;
 
+	bool FindAllNearestNeighbors(const std::vector<point4_t>& points,
+		float radius,
+		std::vector<std::vector<uint32_t>>& indices) override;
+
 	bool KNN(const std::vector<point4_t>& points,const std::vector<point4_t>& queryPoints, const AABB& aabb, uint32_t K, float radius, std::vector<uint32_t>& indices);
  private:
 	AABB m_aabb;

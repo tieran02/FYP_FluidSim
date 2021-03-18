@@ -288,3 +288,27 @@ bool GpuSpatialHash::KNN(const std::vector<point4_t>& points,
 	return !indices.empty();
 }
 
+bool GpuSpatialHash::FindAllNearestNeighbors(const std::vector<point4_t>& points,
+	float radius,
+	std::vector<std::vector<uint32_t>>& indices)
+{
+	constexpr int K = 64;
+	indices.resize(points.size());
+	//get all neighbours within range
+	std::vector<uint32_t> allQueryPointNeighbors(points.size() * K);
+	KNN(points,points, m_aabb, K, radius,allQueryPointNeighbors);
+
+	for (int i = 0; i < points.size(); i++)
+	{
+		for (int n = 0; n < K; n++)
+		{
+			if(allQueryPointNeighbors[n + i*K] < std::numeric_limits<cl_uint>::max())
+			{
+				indices[i].push_back(allQueryPointNeighbors[n + i*K]);
+			}
+		}
+	}
+
+	return !indices.empty();
+}
+
