@@ -2,6 +2,7 @@
 #include <util/Log.h>
 #include <util/Util.h>
 #include <numeric>
+#include "opencl/OpenCLContext.h"
 
 constexpr uint32_t MAX_NEIGHBORS = 256;
 
@@ -222,8 +223,8 @@ bool GpuSpatialHash::FindNearestNeighbors(const point4_t& point, float radius, s
 
 	return !indices.empty();
 }
-bool GpuSpatialHash::KNN(const std::vector<glm::vec4>& points,
-	const std::vector<glm::vec4>& queryPoints,
+bool GpuSpatialHash::KNN(const std::vector<point4_t>& points,
+	const std::vector<point4_t>& queryPoints,
 	const AABB& aabb,
 	uint32_t K,
 	float radius,
@@ -235,7 +236,7 @@ bool GpuSpatialHash::KNN(const std::vector<glm::vec4>& points,
 	cl::Kernel* knnKernel = hashProgram->GetKernel("KNN");
 	CORE_ASSERT(knnKernel, "Failed to find OpenCL Kernel ('KNN') for spatialHash (Make sure its compiled)");
 
-	indices.resize(K);
+	indices.resize(queryPoints.size() * K);
 	try
 	{
 		cl::Buffer queryPointBuffer(m_openCLContext.Context(),CL_MEM_READ_ONLY, queryPoints.size() * sizeof(cl_float4));

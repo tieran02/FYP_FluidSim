@@ -3,14 +3,14 @@ project(FYP_FluidSim)
 
 set(CMAKE_CXX_STANDARD 14)
 find_package(OpenCL REQUIRED) #Nvidia only support OpenCL 1.2 via the CUDA SDK
-find_package(OpenMP) #openMD for parallel code
+find_package(OpenMP REQUIRED) #openMD for parallel code
 add_subdirectory(vendor/glad) #include glad
 add_subdirectory(vendor/glfw) #include glfw
 
-file(GLOB_RECURSE  SRC_FILES ${PROJECT_SOURCE_DIR}/src/*)
+file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/*)
 list(REMOVE_ITEM SRC_FILES ${PROJECT_SOURCE_DIR}/src/main.cpp)
 
-file(GLOB_RECURSE  TEST_SRC_FILES ${PROJECT_SOURCE_DIR}/tests/*)
+file(GLOB_RECURSE TEST_SRC_FILES ${PROJECT_SOURCE_DIR}/tests/*)
 
 
 add_executable(FYP_FluidSim ${PROJECT_SOURCE_DIR}/src/main.cpp ${SRC_FILES})

@@ -1,13 +1,14 @@
-#include <util/Log.h>
+#include <random>
+#include <math/AABB.h>
 #include <structures/KDTree.h>
 #include <structures/SpartialHash.h>
-#include "util/Stopwatch.h"
-#include "PlaneTests.h"
-#include "AABBTests.h"
+#include <util/Log.h>
+
+
+
 #include "OpenCLHashmapTests.h"
-#include "OpenCLBruteForceNNTests.h"
 #include "TestData.h"
-#include <random>
+#include "util/Stopwatch.h"
 
 std::vector<glm::vec3> randomPoints(size_t count)
 {

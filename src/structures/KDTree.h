@@ -4,7 +4,7 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
-#include "INearestNeighbor .h"
+#include "INearestNeighbor.h"
 
 #pragma region KDNode
 template<size_t K>

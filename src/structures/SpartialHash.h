@@ -3,7 +3,7 @@
 #include <memory>
 #include <vector>
 #include <unordered_map>
-#include "INearestNeighbor .h"
+#include "INearestNeighbor.h"
 #include "gtx/string_cast.hpp"
 
 #define GLM_ENABLE_EXPERIMENTAL

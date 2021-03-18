@@ -1,8 +1,9 @@
 #pragma once
-
-#include <opencl/OpenCLContext.h>
-#include <math/AABB.h>
+#include <vector>
 #include "glm.hpp"
+#include "opencl/OpenCLContext.h"
+
+struct AABB;
 
 class OpenCLHashmapTests
 {

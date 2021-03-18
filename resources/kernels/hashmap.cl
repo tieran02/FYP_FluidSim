@@ -220,6 +220,7 @@ __kernel void KNN(__global const float4* points,
     int gi = get_global_id(0); //index of workgroup
     int globalOffset = gi * K;
 
+    float radiusPerBucket = length(upperBound - lowerBound) / subdivisions;
     int rangeRadius = 0;
     int t = 0;
     //get number of point in queryPointCell
@@ -227,21 +228,23 @@ __kernel void KNN(__global const float4* points,
     if(!pointInBounds(queryPoint,lowerBound,upperBound))
         return;
 
-    printf("Query Point: %f, %f, %f\n", queryPoint.x,queryPoint.y,queryPoint.z);
-
     float4 queryCellPoint = getCellPoint(queryPoint, lowerBound,upperBound,subdivisions);
     uint queryPointHash = getHash(queryPoint, lowerBound,upperBound,subdivisions);
     
     uint pHist = cellSize[queryPointHash];
     __local uint local_neighbors[MAX_NEIGHBORS];
     __local float local_distances[MAX_NEIGHBORS];
+    uint vistedCellHashes[MAX_NEIGHBORS*2];
+    uint vistedCellCount = 0;
     uint neighborCount = 0;
-
-    printf("visted Cell: %d, %d, %d\n", queryCellPoint.x,queryCellPoint.y,queryCellPoint.z);
 
     while(pHist < K || t <= 2)
     {
         if(rangeRadius >= subdivisions)
+            break;
+
+        //check if the cell distance is too far away from point
+        if((rangeRadius*radiusPerBucket)/2 > radius)
             break;
 
         rangeRadius++;
@@ -253,15 +256,36 @@ __kernel void KNN(__global const float4* points,
                 for(int cellZ = queryCellPoint.z-rangeRadius; cellZ < queryCellPoint.z+rangeRadius; cellZ++)
                 {
 
-                    printf("visted Cell: %d, %d, %d\n", cellX,cellY,cellZ);
                     //check for out of bounds
                     if(cellX < 0 || cellX > subdivisions || cellY < 0 || cellY > subdivisions || cellZ < 0 || cellZ > subdivisions) 
                         continue;
-                    if(abs(cellX) < rangeRadius && abs(cellY) < rangeRadius && abs(cellZ) < rangeRadius)
-                        continue; //ignore inside area as we have already visted before 
+                    
+
+                    // if(abs(cellX) < rangeRadius+1 || abs(cellY) <= rangeRadius+1 || abs(cellZ) <= rangeRadius+1)
+                    //     continue; //ignore inside area as we have already visted before.
 
                     uint cellPointHash = getHashFromCellPoint((float4)(cellX,cellY,cellZ,1.0f), lowerBound,upperBound,subdivisions);
 
+                    //TODO optimise visted cell points, this is not optimal at all as it also has a limit on the number of points visted due to private memory restrictions
+                    bool vistedCell = false;
+                    if(vistedCellCount < MAX_NEIGHBORS*2)
+                    {
+                        for(int vistedIndex = 0; vistedIndex < vistedCellCount; vistedIndex++)
+                        {
+                            if(vistedCellHashes[vistedIndex] == cellPointHash)
+                            {
+                                vistedCell = true;
+                                break;
+                            }
+                        }
+                        if(vistedCell) continue;
+                    }
+                    else{
+                        continue;
+                    }
+
+                    //printf("visted Cell: %d, %d, %d search radius:%d\n", cellX,cellY,cellZ, rangeRadius);
+                    vistedCellHashes[vistedCellCount++] = cellPointHash;
                     uint pointWithinCell = cellSize[cellPointHash];
                     if(pointWithinCell > 0)
                     {

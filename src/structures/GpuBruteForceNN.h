@@ -3,7 +3,7 @@
 #include <common.hpp>
 #include <opencl/OpenCLContext.h>
 #include <memory>
-#include "INearestNeighbor .h"
+#include "INearestNeighbor.h"
 
 class GpuBruteForceNN : public INearestNeighbor<4>
 {

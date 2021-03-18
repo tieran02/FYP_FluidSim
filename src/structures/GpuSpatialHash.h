@@ -1,10 +1,17 @@
 #pragma once
-#include <opencl/OpenCLContext.h>
-#include <vector>
-#include <common.hpp>
+#define __CL_ENABLE_EXCEPTIONS
+#define CL_TARGET_OPENCL_VERSION 300
+#if defined(__APPLE__) || defined(__MACOSX)
+#include <OpenCL/cl.hpp>
+#else
+#include <CL/cl.hpp>
+#endif
+
 #include <memory>
-#include <math/AABB.h>
-#include "INearestNeighbor .h"
+#include "INearestNeighbor.h"
+#include "math/AABB.h"
+
+class OpenCLContext;
 
 struct GpuHashPoint
 {
@@ -26,7 +33,7 @@ class GpuSpatialHash: public INearestNeighbor<4>
 	                          float radius,
 	                          std::vector<uint32_t>& indices) override;
 
-	bool KNN(const std::vector<glm::vec4>& points,const std::vector<glm::vec4>& queryPoints, const AABB& aabb, uint32_t K, float radius, std::vector<uint32_t>& indices);
+	bool KNN(const std::vector<point4_t>& points,const std::vector<point4_t>& queryPoints, const AABB& aabb, uint32_t K, float radius, std::vector<uint32_t>& indices);
  private:
 	AABB m_aabb;
 
