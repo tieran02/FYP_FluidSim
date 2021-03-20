@@ -234,7 +234,7 @@ __kernel void KNN(__global const float4* points,
     uint pHist = cellSize[queryPointHash];
     __local uint local_neighbors[MAX_NEIGHBORS];
     __local float local_distances[MAX_NEIGHBORS];
-    uint vistedCellHashes[MAX_NEIGHBORS*2];
+    __local uint vistedCellHashes[MAX_NEIGHBORS*2];
     uint vistedCellCount = 0;
     uint neighborCount = 0;
 
@@ -244,8 +244,8 @@ __kernel void KNN(__global const float4* points,
             break;
 
         //check if the cell distance is too far away from point
-        if((rangeRadius*radiusPerBucket)/2 > radius)
-            break;
+        // if((rangeRadius*radiusPerBucket)/2 > radius)
+        //     break;
 
         rangeRadius++;
 
@@ -257,7 +257,7 @@ __kernel void KNN(__global const float4* points,
                 {
 
                     //check for out of bounds
-                    if(cellX < 0 || cellX > subdivisions || cellY < 0 || cellY > subdivisions || cellZ < 0 || cellZ > subdivisions) 
+                    if(cellX < 0 || cellX >= subdivisions || cellY < 0 || cellY >= subdivisions || cellZ < 0 || cellZ >= subdivisions) 
                         continue;
                     
 

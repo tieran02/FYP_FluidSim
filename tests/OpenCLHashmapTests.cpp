@@ -3,6 +3,7 @@
 #include "structures/GpuSpatialHash.h"
 #include "util/Log.h"
 #include "util/Stopwatch.h"
+#include "TestData.h"
 
 
 OpenCLHashmapTests::OpenCLHashmapTests()
@@ -31,7 +32,7 @@ void OpenCLHashmapTests::NearestNeighborTests(const std::vector<glm::vec4>& poin
 		glm::vec4(0.0f)
 	};
 
-	constexpr int K = 128;
+	constexpr int K = 16;
 	std::vector<uint32_t> singleQueryPointNeighbors(queryPoints.size() * K);
 	Stopwatch sw;
 	sw.Start();
@@ -50,6 +51,13 @@ void OpenCLHashmapTests::NearestNeighborTests(const std::vector<glm::vec4>& poin
 	std::vector<std::vector<uint32_t>> allQueryPointNeighbors(points.size() * K);
 	gpuNN.FindAllNearestNeighbors(points,40.0f,allQueryPointNeighbors);
 	sw.Stop();
+
+	auto neighborTestData = TestData::NeighborCount256();
+	for (int i = 0; i < allQueryPointNeighbors.size(); ++i)
+	{
+		CORE_ASSERT(allQueryPointNeighbors[i].size() == neighborTestData[i], "OpenCL hashmap FindAllNearestNeighbors returned wrong neighbor count");
+	}
+	
 	LOG_CORE_INFO("OpenCLHashmapTests NN for all points: {0}", sw.Time());
 }
 

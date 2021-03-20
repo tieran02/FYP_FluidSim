@@ -260,7 +260,7 @@ bool GpuSpatialHash::KNN(const std::vector<point4_t>& points,
 		knnKernel->setArg(7, upperBound);
 		knnKernel->setArg(8, m_subdivisions);
 		knnKernel->setArg(9, K); // K
-		knnKernel->setArg(10, radius); // K
+		knnKernel->setArg(10, radius);
 
 		m_openCLContext.Queue().enqueueNDRangeKernel(
 			*knnKernel,
@@ -292,7 +292,7 @@ bool GpuSpatialHash::FindAllNearestNeighbors(const std::vector<point4_t>& points
 	float radius,
 	std::vector<std::vector<uint32_t>>& indices)
 {
-	constexpr int K = 64;
+	constexpr int K = 16;
 	indices.resize(points.size());
 	//get all neighbours within range
 	std::vector<uint32_t> allQueryPointNeighbors(points.size() * K);

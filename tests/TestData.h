@@ -7,4 +7,5 @@ class TestData
  public:
 	static std::vector<glm::vec4> Vec4Points256();
 	static std::vector<glm::vec3> Vec3Points256();
+	static std::vector<uint32_t> NeighborCount256();
 };
