@@ -38,7 +38,7 @@ void SPHSolverCPU::Setup()
 		x+= -BOX_COLLIDER.GetAABB().Max().x + perRow*0.5f;
 		z+= -BOX_COLLIDER.GetAABB().Max().z + perRow*0.5f;
 		y+= BOX_COLLIDER.GetAABB().Min().y + 0.5f;
-		m_particles.Positions[i] = glm::vec3(x, y, z);
+		m_particles.Positions[i].vec = glm::vec3(x, y, z);
 	}
 }
 
@@ -51,7 +51,8 @@ void SPHSolverCPU::Reset()
 void SPHSolverCPU::BeginTimeStep()
 {
 	m_state = ParticleState(m_particles);
-	m_tree.Build(m_particles.Positions);
+
+	m_tree.Build(reinterpret_cast<std::vector<glm::vec4>&>(m_particles.Positions));
 	//LOG_CORE_INFO(glm::to_string(m_state.Positions[0]));
 
 	computeNeighborList();
@@ -65,7 +66,7 @@ void SPHSolverCPU::ApplyForces()
 	{
 		#pragma omp for
 		for (int i = 0; i < m_particles.Size(); ++i)
-			m_particles.Forces[i] = GRAVITY;
+			m_particles.Forces[i].vec = GRAVITY;
 	}
 
 	viscosityForces();
@@ -80,12 +81,12 @@ void SPHSolverCPU::Integrate()
 		for (int i = 0; i < PARTICLE_COUNT; i++)
 		{
 			//integrate velocity
-			glm::vec3& newVelocity = m_state.Velocities[i];
-			newVelocity = m_particles.Velocities[i] + TIMESTEP * m_particles.Forces[i];
+			glm::vec3& newVelocity = m_state.Velocities[i].vec;
+			newVelocity = m_particles.Velocities[i].vec + TIMESTEP * m_particles.Forces[i].vec;
 
 			//integrate position
-			glm::vec3& newPosition = m_state.Positions[i];
-			newPosition = m_particles.Positions[i] + TIMESTEP * newVelocity;
+			glm::vec3& newPosition = m_state.Positions[i].vec;
+			newPosition = m_particles.Positions[i].vec + TIMESTEP * newVelocity;
 		}
 	}
 }
@@ -116,7 +117,7 @@ void SPHSolverCPU::computeNeighborList()
 	{
 		std::vector<uint32_t> e;
 		e.reserve(1000);
-		bool foundE = m_tree.FindNearestNeighbors(m_particles.Positions[i], KERNEL_RADIUS, e);
+		bool foundE = m_tree.FindNearestNeighbors(m_particles.Positions[i].vec4, KERNEL_RADIUS, e);
 		m_neighborList[i] = e;
 	}
 }
@@ -144,7 +145,7 @@ float SPHSolverCPU::sumOfKernelNearby(size_t pointIndex) const
 		if(neighbor == pointIndex)
 			continue;
 
-		float dist = glm::distance(m_particles.Positions[pointIndex], m_particles.Positions[neighbor]); //TODO distance2
+		float dist = glm::distance(m_particles.Positions[pointIndex].vec, m_particles.Positions[neighbor].vec); //TODO distance2
 		float weight = kernal.Value(dist);
 		sum += weight;
 	}
@@ -175,7 +176,7 @@ void SPHSolverCPU::pressureForces()
 	accumlatePressureForces(x,d,p,f);
 }
 
-void SPHSolverCPU::accumlatePressureForces(const std::vector<glm::vec3>& positions,const std::vector<float>& densities, std::vector<float>& pressures, const std::vector<glm::vec3>& forces)
+void SPHSolverCPU::accumlatePressureForces(const std::vector<ParticlePoint>& positions,const std::vector<float>& densities, std::vector<float>& pressures, const std::vector<ParticlePoint>& forces)
 {
 	const float massSquared = m_mass * m_mass;
 	SpikedKernel kernal = SpikedKernel(KERNEL_RADIUS);
@@ -189,15 +190,15 @@ void SPHSolverCPU::accumlatePressureForces(const std::vector<glm::vec3>& positio
 			if(neighbor == i)
 				continue;
 
-			float dist = glm::distance(m_particles.Positions[i], m_particles.Positions[neighbor]); //TODO distance2
+			float dist = glm::distance(m_particles.Positions[i].vec, m_particles.Positions[neighbor].vec); //TODO distance2
 			if(dist > 0.0f)
 			{
-				glm::vec3 direction = (m_particles.Positions[neighbor] - m_particles.Positions[i]) / dist;
+				glm::vec3 direction = (m_particles.Positions[neighbor].vec - m_particles.Positions[i].vec) / dist;
 				glm::vec3 force = massSquared
 					* (m_particles.Pressures[i] / (m_particles.Densities[i] * m_particles.Densities[i])
 						+ m_particles.Pressures[neighbor] / (m_particles.Densities[neighbor] * m_particles.Densities[neighbor]))
 					* kernal.Gradiant(dist, direction);
-				m_particles.Forces[i] -= force;
+				m_particles.Forces[i].vec -= force;
 			}
 		}
 	}
@@ -238,32 +239,32 @@ void SPHSolverCPU::viscosityForces()
 			if(neighbor == i)
 				continue;
 
-			float dist = glm::distance(m_particles.Positions[i], m_particles.Positions[neighbor]); //TODO distance2
+			float dist = glm::distance(m_particles.Positions[i].vec, m_particles.Positions[neighbor].vec); //TODO distance2
 
-			f[i] += m_viscosityCoefficient * massSquared
-				* (v[neighbor] - v[i]) / d[neighbor]
+			f[i].vec += m_viscosityCoefficient * massSquared
+				* (v[neighbor].vec - v[i].vec) / d[neighbor]
 				* kernal.SecondDerivative(dist);
 		}
 	}
 }
 
 
-void SPHSolverCPU::resolveCollisions(std::vector<glm::vec3>& positions, std::vector<glm::vec3>& velocities)
+void SPHSolverCPU::resolveCollisions(std::vector<ParticlePoint>& positions, std::vector<ParticlePoint>& velocities)
 {
 	#pragma omp parallel
 	{
 	#pragma omp for
 		for (int i = 0; i < PARTICLE_COUNT; i++)
 		{
-			glm::vec3& pos = positions[i];
-			glm::vec3& vel = velocities[i];;
+			glm::vec3& pos = positions[i].vec;
+			glm::vec3& vel = velocities[i].vec;
 
-			resolveCollision(m_particles.Positions[i],pos,vel);
+			resolveCollision(m_particles.Positions[i].vec,pos,vel);
 		}
 	}
 }
 
-void SPHSolverCPU::resolveCollision(const glm::vec3 startPos, glm::vec3& pos, glm::vec3& vel)
+void SPHSolverCPU::resolveCollision(const glm::vec3& startPos, glm::vec3& pos, glm::vec3& vel)
 {
 	constexpr float RestitutionCoefficient = 0.2f;
 	constexpr float frictionCoeffient = 0.1f;
@@ -332,15 +333,15 @@ void SPHSolverCPU::fakeViscosity()
 
 		for(const auto& neighbor : m_neighborList[i])
 		{
-			float distance = glm::distance(x[i], x[neighbor]);
+			float distance = glm::distance(x[i].vec, x[neighbor].vec);
 			float wj = m_mass / d[neighbor] * kernel.Value(distance);
 			weightSum += wj;
-			smoothedVelocity += wj * v[neighbor];
+			smoothedVelocity += wj * v[neighbor].vec;
 		}
 
 		float wi = m_mass / d[i];
 		weightSum += wi;
-		smoothedVelocity += wi * v[i];
+		smoothedVelocity += wi * v[i].vec;
 
 		if (weightSum > 0.0)
 		{
@@ -355,7 +356,7 @@ void SPHSolverCPU::fakeViscosity()
 	#pragma omp parallel for
 	for (int i = 0; i < m_particles.Size(); ++i)
 	{
-		v[1] = lerp(v[i],smoothedVelocities[i], factor);
+		v[1].vec = lerp(v[i].vec,smoothedVelocities[i], factor);
 	}
 }
 

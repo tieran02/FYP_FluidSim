@@ -8,7 +8,7 @@ void ParticleSet::Integrate(ParticleState& state)
 
 void ParticleSet::Reset()
 {
-	std::fill(Positions.begin(), Positions.end(), glm::vec3(0,0,0));
-	std::fill(Velocities.begin(), Velocities.end(), glm::vec3(0, 0, 0));
-	std::fill(Forces.begin(), Forces.end(), glm::vec3(0, 0, 0));
+	std::fill(Positions.begin(), Positions.end(), ParticlePoint());
+	std::fill(Velocities.begin(), Velocities.end(), ParticlePoint());
+	std::fill(Forces.begin(), Forces.end(), ParticlePoint());
 }

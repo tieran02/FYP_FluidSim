@@ -14,9 +14,9 @@ class PCISPHSolverCPU : public SPHSolverCPU
 	uint32_t m_maxItterations{5};
 	float deltaDensitity;
 
-	std::vector<glm::vec3> m_tempPositions;
-	std::vector<glm::vec3> m_tempVelocities;
-	std::vector<glm::vec3> m_pressureForces;
+	std::vector<ParticlePoint> m_tempPositions;
+	std::vector<ParticlePoint> m_tempVelocities;
+	std::vector<ParticlePoint> m_pressureForces;
 	std::vector<float> m_densitiyErrors;
 
 	float computeDeltaPressure();

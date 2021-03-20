@@ -4,7 +4,7 @@ layout (location = 1) in vec3 aNorm;
 layout (location = 2) in vec2 aTex;
 
 struct Position {
-    float x, y, z;
+    float x, y, z, w;
 };
 
 layout(std430, binding = 0) buffer ParticleData

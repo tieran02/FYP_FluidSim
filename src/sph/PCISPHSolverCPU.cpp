@@ -33,7 +33,7 @@ void PCISPHSolverCPU::pressureForces()
 	for (int i = 0; i < m_particles.Size(); ++i) //Maybe we could just do a mem copy?
 	{
 		p[i] = 0.0f;
-		m_pressureForces[i] = glm::vec3(0.0f);
+		m_pressureForces[i].vec = glm::vec3(0.0f);
 		m_densitiyErrors[i] = 0.0f;
 		ds[i] = d[i];
 	}
@@ -47,16 +47,16 @@ void PCISPHSolverCPU::pressureForces()
 		#pragma omp parallel for
 		for (int i = 0; i < m_particles.Size(); ++i) //Maybe we could just do a mem copy?
 		{
-			m_tempVelocities[i]
-				= v[i]
+			m_tempVelocities[i].vec
+				= v[i].vec
 				+ TIMESTEP / m_mass
-				* (f[i] + m_pressureForces[i]);
+				* (f[i].vec + m_pressureForces[i].vec);
 
-			auto newPos = x[i] + TIMESTEP * m_tempVelocities[i];
+			auto newPos = x[i].vec + TIMESTEP * m_tempVelocities[i].vec;
 
 			//resolveCollision(m_tempPositions[i],newPos,m_tempVelocities[i]);
 
-			m_tempPositions[i] = newPos;
+			m_tempPositions[i].vec = newPos;
 		}
 
 		//resolve collisions
@@ -70,7 +70,7 @@ void PCISPHSolverCPU::pressureForces()
 
 			for(const auto& neighbor : m_neighborList[i])
 			{
-				float dist = glm::distance(m_tempPositions[neighbor], m_tempPositions[i]);
+				float dist = glm::distance(m_tempPositions[neighbor].vec, m_tempPositions[i].vec);
 				weightSum += kernel.Value(dist);
 			}
 			weightSum += kernel.Value(0.0f);
@@ -91,7 +91,7 @@ void PCISPHSolverCPU::pressureForces()
 		}
 
 		//pressure gradiant force
-		std::fill(m_pressureForces.begin(), m_pressureForces.end(), glm::vec3(0.0f));
+		std::fill(m_pressureForces.begin(), m_pressureForces.end(), ParticlePoint());
 		SPHSolverCPU::accumlatePressureForces(x,ds,p,m_pressureForces);
 
 		//max densitiy error
@@ -117,7 +117,7 @@ void PCISPHSolverCPU::pressureForces()
 	#pragma omp parallel for
 	for (int i = 0; i < m_particles.Size(); ++i)
 	{
-		f[i] += m_pressureForces[i];
+		f[i].vec += m_pressureForces[i].vec;
 	}
 
 }

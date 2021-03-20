@@ -4,13 +4,24 @@
 
 class ParticleState;
 
+
+//Pos, Vel and Forces need to be a vec4 due to OpenCL float3 being 16 bytes
+union ParticlePoint
+{
+	ParticlePoint() : vec4(glm::vec4(0.0f)) {}
+
+	float data[4];
+	glm::vec3 vec;
+	glm::vec4 vec4;
+};
+
 struct ParticleSet
 {
 	ParticleSet(size_t particleCount)
 	{
-		Positions = std::vector<glm::vec3>(particleCount);
-		Velocities = std::vector<glm::vec3>(particleCount);
-		Forces = std::vector<glm::vec3>(particleCount);
+		Positions = std::vector<ParticlePoint>(particleCount);
+		Velocities = std::vector<ParticlePoint>(particleCount);
+		Forces = std::vector<ParticlePoint>(particleCount);
 		Densities = std::vector<float>(particleCount);
 		Pressures = std::vector<float>(particleCount);
 	}
@@ -18,9 +29,9 @@ struct ParticleSet
 	void Integrate(ParticleState& state);
 	void Reset();
 
-	std::vector<glm::vec3> Positions;
-	std::vector<glm::vec3> Velocities;
-	std::vector<glm::vec3> Forces;
+	std::vector<ParticlePoint> Positions;
+	std::vector<ParticlePoint> Velocities;
+	std::vector<ParticlePoint> Forces;
 	std::vector<float> Densities;
 	std::vector<float> Pressures;
 
@@ -37,7 +48,7 @@ struct ParticleState
 		Velocities = set.Velocities;
 	}
 
-	std::vector<glm::vec3> Positions;
-	std::vector<glm::vec3> Velocities;
+	std::vector<ParticlePoint> Positions;
+	std::vector<ParticlePoint> Velocities;
 };
 
