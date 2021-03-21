@@ -16,7 +16,13 @@ public:
 	GPU_PCISPHSolver(float timeStep, size_t particleCount, const BoxCollider& boxCollider, OpenCLContext& context);
 protected:
 	void BeginTimeStep() override;
-private:
+	void ApplyForces() override;
+	void Integrate() override;
+	void ResolveCollisions() override;
+	void EndTimeStep() override;
+
+	void computeNeighborList() override;
+ private:
 	void createBuffers();
 	
 	OpenCLContext& m_context;
@@ -25,4 +31,14 @@ private:
 	cl::Buffer m_forcesBuffer;
 	cl::Buffer m_densitiyBuffer;
 	cl::Buffer m_pressureBuffer;
+
+	//state buffers
+	cl::Buffer m_statePositionBuffer;
+	cl::Buffer m_stateVelocityBuffer;
+
+	cl::Buffer m_neighborBuffer;
+	std::vector<uint32_t> hostNeighbors;
+
+	//TEMP copy of position data for NN search
+	std::vector<ParticlePoint> m_particlePoints;
 };

@@ -1,5 +1,6 @@
 #include "Vertex.h"
 #include "glad/gl.h"
+#include <utility>
 
 void Vertex::EnableAttributes(int& attributeCount)
 {

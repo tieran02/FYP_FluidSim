@@ -17,16 +17,18 @@ class SPHSolverCPU : public Solver
 	void Reset() override;
 	const ParticleSet& Particles() const;
  protected:
-	void BeginTimeStep() override;
-	void ApplyForces() override;
-	void Integrate() override;
-	void ResolveCollisions() override;
-	void EndTimeStep() override;
+	virtual void BeginTimeStep() override;
+	virtual void ApplyForces() override;
+	virtual void Integrate() override;
+	virtual void ResolveCollisions() override;
+	virtual void EndTimeStep() override;
 	
 	virtual void pressureForces();
 	void accumlatePressureForces(const std::vector<ParticlePoint>& positions,const std::vector<float>& densities, std::vector<float>& pressures, const std::vector<ParticlePoint>& forces);
 	void resolveCollisions(std::vector<ParticlePoint>& positions,std::vector<ParticlePoint>& velocities);
 	void resolveCollision(const glm::vec3& startPos, glm::vec3& pos, glm::vec3& vel);
+	virtual void computeNeighborList();
+
 
 	const BoxCollider BOX_COLLIDER;
 	const size_t PARTICLE_COUNT;
@@ -38,10 +40,8 @@ class SPHSolverCPU : public Solver
 	float m_targetDensitiy{ 200.0f};
 	float m_viscosityCoefficient = 0.0074f;
 	float m_negativePressureScale = 0.0f;
+	KDTree<4> m_tree{ };
  private:
-
-
-	void computeNeighborList();
 	float sumOfKernelNearby(size_t pointIndex) const;
 	void computeDensities();
 	float computePressure(float density, float targetDensity, float eosScale, float eosExponent, float negativePressureScale) const;
@@ -53,5 +53,4 @@ class SPHSolverCPU : public Solver
 	const glm::vec3 GRAVITY{0.0f,-9.81f,0.0f};
 	const float PSEUDO_VISCOSITY_COEFFICIENT = 1.0f;
 	const float SPEED_OF_SOUND{ 500.0f};
-	KDTree<4> m_tree{ };
 };

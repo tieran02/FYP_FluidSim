@@ -1,5 +1,6 @@
 #include <math/SpikedKernel.h>
 #include "PCISPHSolverCPU.h"
+#include <utility>
 
 PCISPHSolverCPU::PCISPHSolverCPU(float timeStep, size_t particleCount, const BoxCollider& boxCollider) : SPHSolverCPU(
 	timeStep,
@@ -98,7 +99,7 @@ void PCISPHSolverCPU::pressureForces()
 		maxDensityError = 0.0f;
 		for (int j = 0; j < PARTICLE_COUNT; ++j)
 		{
-			maxDensityError = std::max(maxDensityError, fabs(m_densitiyErrors[i]));
+			maxDensityError = std::max(maxDensityError, fabsf(m_densitiyErrors[i]));
 		}
 
 		densityErrorRatio = maxDensityError / m_targetDensitiy;

@@ -3,7 +3,20 @@ project(FYP_FluidSim)
 
 set(CMAKE_CXX_STANDARD 14)
 find_package(OpenCL REQUIRED) #Nvidia only support OpenCL 1.2 via the CUDA SDK
-find_package(OpenMP REQUIRED) #openMD for parallel code
+message(STATUS "Checking OpenMP")
+find_package(OpenMP)
+IF(OPENMP_FOUND)
+    message("Found OpenMP! ^_^")
+    # add flags for OpenMP
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${OpenMP_SHARED_LINKER_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+ELSE()
+    message("Missed OpenMP! x_x")
+ENDIF()
+
+
 add_subdirectory(vendor/glad) #include glad
 add_subdirectory(vendor/glfw) #include glfw
 
