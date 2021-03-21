@@ -17,6 +17,12 @@ class SPHSolverCPU : public Solver
 	void Reset() override;
 	const ParticleSet& Particles() const;
  protected:
+	void BeginTimeStep() override;
+	void ApplyForces() override;
+	void Integrate() override;
+	void ResolveCollisions() override;
+	void EndTimeStep() override;
+	
 	virtual void pressureForces();
 	void accumlatePressureForces(const std::vector<ParticlePoint>& positions,const std::vector<float>& densities, std::vector<float>& pressures, const std::vector<ParticlePoint>& forces);
 	void resolveCollisions(std::vector<ParticlePoint>& positions,std::vector<ParticlePoint>& velocities);
@@ -33,11 +39,7 @@ class SPHSolverCPU : public Solver
 	float m_viscosityCoefficient = 0.0074f;
 	float m_negativePressureScale = 0.0f;
  private:
-	void BeginTimeStep() override;
-	void ApplyForces() override;
-	void Integrate() override;
-	void ResolveCollisions() override;
-	void EndTimeStep() override;
+
 
 	void computeNeighborList();
 	float sumOfKernelNearby(size_t pointIndex) const;

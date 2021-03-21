@@ -6,6 +6,7 @@
 #include <math/BoxCollider.h>
 #include "opencl/OpenCLContext.h"
 #include "opencl/OpenCLProgram.h"
+#include "sph/GPU_PCISPHSolver.h"
 
 class Simulation
 {
@@ -19,7 +20,6 @@ class Simulation
  private:
 	Renderer& m_renderer;
 	OpenCLContext m_openCLContext;
-	OpenCLProgram m_helloWorldKernel{"resources/kernels/helloWorld.cl", m_openCLContext};
 
 	bool m_isPaused;
 
@@ -33,7 +33,7 @@ class Simulation
 
 	const size_t SPHERE_COUNT{20000};
 	//SPHSolverCPU m_solver{ 1.0/150.0, SPHERE_COUNT,boxCollider};
-	PCISPHSolverCPU m_solver{ 1.0/60.0, SPHERE_COUNT,boxCollider};
+	GPU_PCISPHSolver m_solver{ 1.0/60.0, SPHERE_COUNT,boxCollider, m_openCLContext};
 	Buffer particleBuffer{BufferType::STORAGE_BUFFER};
 
 	void createRenderResources();
