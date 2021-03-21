@@ -1,4 +1,4 @@
-#include "GPU_PCISPHSolver.h"
+#include "PCISPHSolverGPU.h"
 
 #include "util/Log.h"
 #include "util/Util.h"
@@ -6,51 +6,47 @@
 //Due to memory restriction on the GPU need to limit the number of max neighbours for a given point known as K
 constexpr size_t K = 256;
 
-GPU_PCISPHSolver::GPU_PCISPHSolver(float timeStep, size_t particleCount, const BoxCollider& boxCollider, OpenCLContext& context) :
+PCISPHSolverGPU::PCISPHSolverGPU(float timeStep, size_t particleCount, const BoxCollider& boxCollider, OpenCLContext& context) :
 	PCISPHSolverCPU(timeStep,particleCount,boxCollider), 
 	m_context(context),
 	m_particlePoints(particleCount)
 {
+	compileKernels();
 	createBuffers();
 }
 
-void GPU_PCISPHSolver::BeginTimeStep()
+void PCISPHSolverGPU::BeginTimeStep()
 {
 	//copy over positions into state
 	m_context.Queue().enqueueCopyBuffer(m_positiionBuffer,m_statePositionBuffer,0,0,sizeof(ParticlePoint) * m_particles.Size());
 	m_context.Queue().enqueueCopyBuffer(m_velocityBuffer,m_stateVelocityBuffer,0,0,sizeof(ParticlePoint) * m_particles.Size());
 
-//	m_state = ParticleState(m_particles);
-//
-//	m_tree.Build(reinterpret_cast<std::vector<glm::vec4>&>(m_particles.Positions));
-//	//LOG_CORE_INFO(glm::to_string(m_state.Positions[0]));
-//
 	computeNeighborList();
-//
-//	computeDensities();
+
+    computeDensities();
 }
 
-void GPU_PCISPHSolver::ApplyForces()
+void PCISPHSolverGPU::ApplyForces()
 {
 
 }
 
-void GPU_PCISPHSolver::Integrate()
+void PCISPHSolverGPU::Integrate()
 {
 
 }
 
-void GPU_PCISPHSolver::ResolveCollisions()
+void PCISPHSolverGPU::ResolveCollisions()
 {
 
 }
 
-void GPU_PCISPHSolver::EndTimeStep()
+void PCISPHSolverGPU::EndTimeStep()
 {
 
 }
 
-void GPU_PCISPHSolver::createBuffers()
+void PCISPHSolverGPU::createBuffers()
 {
 	try
 	{
@@ -79,6 +75,9 @@ void GPU_PCISPHSolver::createBuffers()
 		//Neighbor Buffer
 		m_neighborBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(uint32_t) * m_particles.Size() * K);
 		hostNeighbors = std::vector<uint32_t>(m_particles.Size() * K, std::numeric_limits<uint32_t>::max());
+
+		//sum of kernel buffer
+		m_kernelSumBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(cl_float) * m_particles.Size());
 	}
 	catch (cl::Error& err)
 	{
@@ -87,7 +86,14 @@ void GPU_PCISPHSolver::createBuffers()
 	}
 }
 
-void GPU_PCISPHSolver::computeNeighborList()
+void PCISPHSolverGPU::compileKernels() const
+{
+	m_context.AddProgram("sph", "resources/kernels/sph.cl");
+	m_context.GetProgram("sph")->AddKernel("SumOfKernel");
+	m_context.GetProgram("sph")->AddKernel("ComputeDensitites");
+}
+
+void PCISPHSolverGPU::computeNeighborList()
 {
 	//TODO compute KNN on GPU
 	m_context.Queue().enqueueReadBuffer(m_positiionBuffer,CL_TRUE,0,sizeof(ParticlePoint) * m_particles.Size(), m_particlePoints.data());
@@ -111,6 +117,42 @@ void GPU_PCISPHSolver::computeNeighborList()
 	try
 	{
 		m_context.Queue().enqueueWriteBuffer(m_neighborBuffer, CL_TRUE, 0, sizeof(uint32_t) * m_particles.Size() * K, hostNeighbors.data());
+	}
+	catch (cl::Error& err)
+	{
+		LOG_CORE_ERROR("OpenCL Error: {0}, {1}", err.what(), Util::GetCLErrorString(err.err()));
+		throw;
+	}
+}
+
+void PCISPHSolverGPU::computeDensities()
+{
+	//check if the OpenCL context has the Brute NN search program
+	OpenCLProgram* program = m_context.GetProgram("sph");
+	CORE_ASSERT(program, "Failed to find OpenCLProgram for sph (Make sure its compiled)");
+	cl::Kernel* kernelSumKernel = program->GetKernel("SumOfKernel");
+	CORE_ASSERT(kernelSumKernel, "Failed to find OpenCL Kernel ('SumOfKernel') for sph (Make sure its compiled)");
+	cl::Kernel* densityKernel = program->GetKernel("ComputeDensitites");
+	CORE_ASSERT(densityKernel, "Failed to find OpenCL Kernel ('ComputeDensitites') for sph (Make sure its compiled)");
+
+	try
+	{
+		kernelSumKernel->setArg(0, m_positiionBuffer);
+		kernelSumKernel->setArg(1, m_neighborBuffer);
+		kernelSumKernel->setArg(2, m_kernelSumBuffer);
+
+		//reset kernel sums
+		m_context.Queue().enqueueNDRangeKernel(*kernelSumKernel,
+			0,
+			cl::NDRange(m_particles.Size()),
+			cl::NDRange(1));
+
+		densityKernel->setArg(0, m_kernelSumBuffer);
+		densityKernel->setArg(1, m_densitiyBuffer);
+		m_context.Queue().enqueueNDRangeKernel(*densityKernel,
+			0,
+			cl::NDRange(m_particles.Size()),
+			cl::NDRange(1));
 	}
 	catch (cl::Error& err)
 	{

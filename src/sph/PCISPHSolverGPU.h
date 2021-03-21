@@ -10,10 +10,10 @@
 #include "PCISPHSolverCPU.h"
 #include "opencl/OpenCLContext.h"
 
-class GPU_PCISPHSolver : public PCISPHSolverCPU
+class PCISPHSolverGPU : public PCISPHSolverCPU
 {
 public:
-	GPU_PCISPHSolver(float timeStep, size_t particleCount, const BoxCollider& boxCollider, OpenCLContext& context);
+	PCISPHSolverGPU(float timeStep, size_t particleCount, const BoxCollider& boxCollider, OpenCLContext& context);
 protected:
 	void BeginTimeStep() override;
 	void ApplyForces() override;
@@ -22,8 +22,10 @@ protected:
 	void EndTimeStep() override;
 
 	void computeNeighborList() override;
+	void computeDensities() override;
  private:
 	void createBuffers();
+	void compileKernels() const;
 	
 	OpenCLContext& m_context;
 	cl::Buffer m_positiionBuffer;
@@ -38,6 +40,8 @@ protected:
 
 	cl::Buffer m_neighborBuffer;
 	std::vector<uint32_t> hostNeighbors;
+
+	cl::Buffer m_kernelSumBuffer;
 
 	//TEMP copy of position data for NN search
 	std::vector<ParticlePoint> m_particlePoints;

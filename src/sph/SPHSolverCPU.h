@@ -17,12 +17,13 @@ class SPHSolverCPU : public Solver
 	void Reset() override;
 	const ParticleSet& Particles() const;
  protected:
-	virtual void BeginTimeStep() override;
-	virtual void ApplyForces() override;
-	virtual void Integrate() override;
-	virtual void ResolveCollisions() override;
-	virtual void EndTimeStep() override;
-	
+	void BeginTimeStep() override;
+	void ApplyForces() override;
+	void Integrate() override;
+	void ResolveCollisions() override;
+	void EndTimeStep() override;
+
+	virtual void computeDensities();
 	virtual void pressureForces();
 	void accumlatePressureForces(const std::vector<ParticlePoint>& positions,const std::vector<float>& densities, std::vector<float>& pressures, const std::vector<ParticlePoint>& forces);
 	void resolveCollisions(std::vector<ParticlePoint>& positions,std::vector<ParticlePoint>& velocities);
@@ -43,7 +44,6 @@ class SPHSolverCPU : public Solver
 	KDTree<4> m_tree{ };
  private:
 	float sumOfKernelNearby(size_t pointIndex) const;
-	void computeDensities();
 	float computePressure(float density, float targetDensity, float eosScale, float eosExponent, float negativePressureScale) const;
 	void viscosityForces();
 

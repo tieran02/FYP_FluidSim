@@ -6,7 +6,7 @@
 #include <math/BoxCollider.h>
 #include "opencl/OpenCLContext.h"
 #include "opencl/OpenCLProgram.h"
-#include "sph/GPU_PCISPHSolver.h"
+#include "sph/PCISPHSolverGPU.h"
 
 class Simulation
 {
@@ -33,7 +33,7 @@ class Simulation
 
 	const size_t SPHERE_COUNT{20480};
 	//SPHSolverCPU m_solver{ 1.0/150.0, SPHERE_COUNT,boxCollider};
-	GPU_PCISPHSolver m_solver{ 1.0/60.0, SPHERE_COUNT,boxCollider, m_openCLContext};
+	PCISPHSolverGPU m_solver{ 1.0/60.0, SPHERE_COUNT,boxCollider, m_openCLContext};
 	Buffer particleBuffer{BufferType::STORAGE_BUFFER};
 
 	void createRenderResources();
