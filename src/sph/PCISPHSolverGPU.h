@@ -43,6 +43,10 @@ protected:
 
 	cl::Buffer m_kernelSumBuffer;
 
+	//PCI SPH buffers
+	cl::Buffer m_densityErrorBuffer;
+	cl::Buffer m_estimateDensityBuffer;
+
 	//TEMP copy of position data for NN search
 	std::vector<ParticlePoint> m_particlePoints;
 };
