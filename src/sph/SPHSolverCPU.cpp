@@ -159,7 +159,7 @@ void SPHSolverCPU::pressureForces()
 	const auto& x = m_particles.Positions;
 	const auto& d = m_particles.Densities;
 	auto& p = m_particles.Pressures;
-	const auto& f = m_particles.Forces;
+	auto& f = m_particles.Forces;
 
 	float targetDensity = m_targetDensitiy;
 	float eosScale = targetDensity * (SPEED_OF_SOUND * SPEED_OF_SOUND);
@@ -176,29 +176,29 @@ void SPHSolverCPU::pressureForces()
 	accumlatePressureForces(x,d,p,f);
 }
 
-void SPHSolverCPU::accumlatePressureForces(const std::vector<ParticlePoint>& positions,const std::vector<float>& densities, std::vector<float>& pressures, const std::vector<ParticlePoint>& forces)
+void SPHSolverCPU::accumlatePressureForces(const std::vector<ParticlePoint>& positions,const std::vector<float>& densities, std::vector<float>& pressures, std::vector<ParticlePoint>& forces)
 {
 	const float massSquared = m_mass * m_mass;
 	SpikedKernel kernal = SpikedKernel(KERNEL_RADIUS);
 
 	//now accumlate pressure
 	#pragma omp parallel for
-	for (int i = 0; i < m_particles.Pressures.size(); ++i)
+	for (int i = 0; i < pressures.size(); ++i)
 	{
 		for(const auto& neighbor : m_neighborList[i])
 		{
 			if(neighbor == i)
 				continue;
 
-			float dist = glm::distance(m_particles.Positions[i].vec, m_particles.Positions[neighbor].vec); //TODO distance2
+			float dist = glm::distance(positions[i].vec, positions[neighbor].vec); //TODO distance2
 			if(dist > 0.0f)
 			{
-				glm::vec3 direction = (m_particles.Positions[neighbor].vec - m_particles.Positions[i].vec) / dist;
+				glm::vec3 direction = (positions[neighbor].vec - positions[i].vec) / dist;
 				glm::vec3 force = massSquared
-					* (m_particles.Pressures[i] / (m_particles.Densities[i] * m_particles.Densities[i])
-						+ m_particles.Pressures[neighbor] / (m_particles.Densities[neighbor] * m_particles.Densities[neighbor]))
+					* (pressures[i] / (densities[i] * densities[i])
+						+ pressures[neighbor] / (densities[neighbor] * densities[neighbor]))
 					* kernal.Gradiant(dist, direction);
-				m_particles.Forces[i].vec -= force;
+				forces[i].vec -= force;
 			}
 		}
 	}

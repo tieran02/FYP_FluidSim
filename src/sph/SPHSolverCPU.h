@@ -25,7 +25,7 @@ class SPHSolverCPU : public Solver
 
 	virtual void computeDensities();
 	virtual void pressureForces();
-	void accumlatePressureForces(const std::vector<ParticlePoint>& positions,const std::vector<float>& densities, std::vector<float>& pressures, const std::vector<ParticlePoint>& forces);
+	void accumlatePressureForces(const std::vector<ParticlePoint>& positions,const std::vector<float>& densities, std::vector<float>& pressures, std::vector<ParticlePoint>& forces);
 	void resolveCollisions(std::vector<ParticlePoint>& positions,std::vector<ParticlePoint>& velocities);
 	void resolveCollision(const glm::vec3& startPos, glm::vec3& pos, glm::vec3& vel);
 	virtual void computeNeighborList();
