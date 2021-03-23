@@ -15,17 +15,24 @@ PCISPHSolverGPU::PCISPHSolverGPU(float timeStep, size_t particleCount, const Box
 	createBuffers();
 }
 
+void PCISPHSolverGPU::Setup()
+{
+	SPHSolverCPU::Setup();
+	createBuffers();
+}
+
 void PCISPHSolverGPU::BeginTimeStep()
 {
 	//copy over positions into state
-	m_context.Queue().enqueueCopyBuffer(m_positiionBuffer,m_statePositionBuffer,0,0,sizeof(ParticlePoint) * m_particles.Size());
-	m_context.Queue().enqueueCopyBuffer(m_velocityBuffer,m_stateVelocityBuffer,0,0,sizeof(ParticlePoint) * m_particles.Size());
+	m_context.Queue().enqueueCopyBuffer(m_positiionBuffer.value(),m_statePositionBuffer.value(),0,0,sizeof(ParticlePoint) * m_particles.Size());
+	m_context.Queue().enqueueCopyBuffer(m_velocityBuffer.value(),m_stateVelocityBuffer.value(),0,0,sizeof(ParticlePoint) * m_particles.Size());
 
 	computeNeighborList();
 
     computeDensities();
 }
 
+bool argsSet = false;
 void PCISPHSolverGPU::ApplyForces()
 {
 	//check if the OpenCL context has the Brute NN search program
@@ -35,40 +42,60 @@ void PCISPHSolverGPU::ApplyForces()
 	CORE_ASSERT(nonPressureForcesKernel, "Failed to find OpenCL Kernel ('ApplyNonPressureForces') for sph (Make sure its compiled)");
 	cl::Kernel* pressureForcesKernel = program->GetKernel("ApplyPressureForces");
 	CORE_ASSERT(pressureForcesKernel, "Failed to find OpenCL Kernel ('ApplyPressureForces') for sph (Make sure its compiled)");
+	cl::Kernel* accumulateForcesKernel = program->GetKernel("AccumlateForces");
+	CORE_ASSERT(accumulateForcesKernel, "Failed to find OpenCL Kernel ('AccumlateForces') for sph (Make sure its compiled)");
 
 	try
 	{
-		nonPressureForcesKernel->setArg(0, m_neighborBuffer);
-		nonPressureForcesKernel->setArg(1, m_positiionBuffer);
-		nonPressureForcesKernel->setArg(2, m_velocityBuffer);
-		nonPressureForcesKernel->setArg(3, m_densitiyBuffer);
-		nonPressureForcesKernel->setArg(4, m_forcesBuffer);
+		if (!argsSet) {
+			nonPressureForcesKernel->setArg(0, m_neighborBuffer.value());
+			nonPressureForcesKernel->setArg(1, m_positiionBuffer.value());
+			nonPressureForcesKernel->setArg(2, m_velocityBuffer.value());
+			nonPressureForcesKernel->setArg(3, m_densitiyBuffer.value());
+			nonPressureForcesKernel->setArg(4, m_forcesBuffer.value());
 
+			pressureForcesKernel->setArg(0, m_neighborBuffer.value());
+			pressureForcesKernel->setArg(1, m_positiionBuffer.value());
+			pressureForcesKernel->setArg(2, m_velocityBuffer.value());
+			pressureForcesKernel->setArg(3, m_densitiyBuffer.value());
+			pressureForcesKernel->setArg(4, m_forcesBuffer.value());
+			pressureForcesKernel->setArg(5, m_pressureBuffer.value());
+			pressureForcesKernel->setArg(6, m_densityErrorBuffer.value());
+			pressureForcesKernel->setArg(7, m_estimateDensityBuffer.value());
+			pressureForcesKernel->setArg(8, m_pressureForcesBuffer.value());
+			pressureForcesKernel->setArg(9, m_targetDensitiy);
+			pressureForcesKernel->setArg(10, deltaDensitity);
+			pressureForcesKernel->setArg(11, m_negativePressureScale);
+
+			accumulateForcesKernel->setArg(0, m_pressureForcesBuffer.value());
+			accumulateForcesKernel->setArg(1, m_forcesBuffer.value());
+
+			argsSet = true;
+		}
+		
 		//reset kernel sums
 		m_context.Queue().enqueueNDRangeKernel(*nonPressureForcesKernel,
 			0,
 			cl::NDRange(m_particles.Size()),
-			cl::NDRange(1));
+			cl::NDRange(256));
 
-		pressureForcesKernel->setArg(0, m_neighborBuffer);
-		pressureForcesKernel->setArg(1, m_positiionBuffer);
-		pressureForcesKernel->setArg(2, m_velocityBuffer);
-		pressureForcesKernel->setArg(3, m_densitiyBuffer);
-		pressureForcesKernel->setArg(4, m_forcesBuffer);
-		pressureForcesKernel->setArg(5, m_pressureBuffer);
-		pressureForcesKernel->setArg(6, m_densityErrorBuffer);
-		pressureForcesKernel->setArg(7, m_estimateDensityBuffer);
 
-		m_context.Queue().enqueueFillBuffer(m_densityErrorBuffer, 0.0f, 0, sizeof(cl_float) * m_particles.Size());
-		
-		for (size_t i = 0; i < m_maxItterations; i++)
-		{
-			m_context.Queue().enqueueNDRangeKernel(*pressureForcesKernel,
-				0,
-				cl::NDRange(m_particles.Size()),
-				cl::NDRange(1));
-		}
+		m_context.Queue().enqueueFillBuffer(m_densityErrorBuffer.value(), 0.0f, 0, sizeof(cl_float) * m_particles.Size());
+		m_context.Queue().enqueueCopyBuffer(m_pressureBuffer.value(), m_estimateDensityBuffer.value(), 0, 0, sizeof(cl_float) * m_particles.Size());
+		m_context.Queue().enqueueFillBuffer(m_pressureForcesBuffer.value(), ParticlePoint(), 0, sizeof(ParticlePoint) * m_particles.Size());
 
+		//for (size_t i = 0; i < 5; i++)
+		//{
+		//	m_context.Queue().enqueueNDRangeKernel(*pressureForcesKernel,
+		//		0,
+		//		cl::NDRange(m_particles.Size()),
+		//		cl::NDRange(256));
+		//}
+
+		//m_context.Queue().enqueueNDRangeKernel(*accumulateForcesKernel,
+		//	0,
+		//	cl::NDRange(m_particles.Size()),
+		//	cl::NDRange(1));
 	}
 	catch (cl::Error& err)
 	{
@@ -79,7 +106,26 @@ void PCISPHSolverGPU::ApplyForces()
 
 void PCISPHSolverGPU::Integrate()
 {
+	//check if the OpenCL context has the Brute NN search program
+	OpenCLProgram* program = m_context.GetProgram("sph");
+	CORE_ASSERT(program, "Failed to find OpenCLProgram for sph (Make sure its compiled)");
+	cl::Kernel* integrateKernel = program->GetKernel("integrate");
+	CORE_ASSERT(integrateKernel, "Failed to find OpenCL Kernel ('integrate') for sph (Make sure its compiled)");
 
+	integrateKernel->setArg(0, m_forcesBuffer.value());
+	integrateKernel->setArg(1, m_positiionBuffer.value());
+	integrateKernel->setArg(2, m_velocityBuffer.value());
+	
+	try
+	{
+		m_context.Queue().enqueueNDRangeKernel(*integrateKernel, 0, cl::NDRange(m_particles.Size()), cl::NDRange(64));
+		m_context.Queue().enqueueReadBuffer(m_positiionBuffer.value(), CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), m_particles.Positions.data());
+	}
+	catch (cl::Error& err)
+	{
+		LOG_CORE_ERROR("OpenCL Error: {0}, {1}", err.what(), Util::GetCLErrorString(err.err()));
+		throw;
+	}
 }
 
 void PCISPHSolverGPU::ResolveCollisions()
@@ -96,38 +142,51 @@ void PCISPHSolverGPU::createBuffers()
 {
 	try
 	{
-		m_positiionBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(ParticlePoint) * m_particles.Size());
-		m_context.Queue().enqueueWriteBuffer(m_positiionBuffer,CL_TRUE,0,sizeof(ParticlePoint) * m_particles.Size(), m_particles.Positions.data());
+		if(!m_positiionBuffer.has_value())
+			m_positiionBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(ParticlePoint) * m_particles.Size());
+		m_context.Queue().enqueueWriteBuffer(m_positiionBuffer.value(),CL_TRUE,0,sizeof(ParticlePoint) * m_particles.Size(), m_particles.Positions.data());
 
-		m_velocityBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(ParticlePoint) * m_particles.Size());
-		m_context.Queue().enqueueWriteBuffer(m_velocityBuffer,CL_TRUE,0,sizeof(ParticlePoint) * m_particles.Size(), m_particles.Velocities.data());
+		if (!m_velocityBuffer.has_value())
+			m_velocityBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(ParticlePoint) * m_particles.Size());
+		m_context.Queue().enqueueWriteBuffer(m_velocityBuffer.value(),CL_TRUE,0,sizeof(ParticlePoint) * m_particles.Size(), m_particles.Velocities.data());
 
-		m_forcesBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(ParticlePoint) * m_particles.Size());
-		m_context.Queue().enqueueWriteBuffer(m_forcesBuffer,CL_TRUE,0,sizeof(ParticlePoint) * m_particles.Size(), m_particles.Forces.data());
+		if (!m_forcesBuffer.has_value())
+			m_forcesBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(ParticlePoint) * m_particles.Size());
+		m_context.Queue().enqueueWriteBuffer(m_forcesBuffer.value(),CL_TRUE,0,sizeof(ParticlePoint) * m_particles.Size(), m_particles.Forces.data());
 
-		m_densitiyBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(cl_float) * m_particles.Size());
-		m_context.Queue().enqueueWriteBuffer(m_densitiyBuffer,CL_TRUE,0,sizeof(cl_float) * m_particles.Size(), m_particles.Densities.data());
+		if (!m_densitiyBuffer.has_value())
+			m_densitiyBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(cl_float) * m_particles.Size());
+		m_context.Queue().enqueueWriteBuffer(m_densitiyBuffer.value(),CL_TRUE,0,sizeof(cl_float) * m_particles.Size(), m_particles.Densities.data());
 
-		m_pressureBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(cl_float) * m_particles.Size());
-		m_context.Queue().enqueueWriteBuffer(m_pressureBuffer,CL_TRUE,0,sizeof(cl_float) * m_particles.Size(), m_particles.Pressures.data());
+		if (!m_pressureBuffer.has_value())
+			m_pressureBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(cl_float) * m_particles.Size());
+		m_context.Queue().enqueueWriteBuffer(m_pressureBuffer.value(),CL_TRUE,0,sizeof(cl_float) * m_particles.Size(), m_particles.Pressures.data());
 
 		//state buffers
-		m_statePositionBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(ParticlePoint) * m_particles.Size());
-		m_context.Queue().enqueueWriteBuffer(m_statePositionBuffer,CL_TRUE,0,sizeof(ParticlePoint) * m_particles.Size(), m_particles.Positions.data());
+		if (!m_statePositionBuffer.has_value())
+			m_statePositionBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(ParticlePoint) * m_particles.Size());
+		m_context.Queue().enqueueWriteBuffer(m_statePositionBuffer.value(),CL_TRUE,0,sizeof(ParticlePoint) * m_particles.Size(), m_particles.Positions.data());
 
-		m_stateVelocityBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(ParticlePoint) * m_particles.Size());
-		m_context.Queue().enqueueWriteBuffer(m_stateVelocityBuffer,CL_TRUE,0,sizeof(ParticlePoint) * m_particles.Size(), m_particles.Velocities.data());
+		if (!m_stateVelocityBuffer.has_value())
+			m_stateVelocityBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(ParticlePoint) * m_particles.Size());
+		m_context.Queue().enqueueWriteBuffer(m_stateVelocityBuffer.value(),CL_TRUE,0,sizeof(ParticlePoint) * m_particles.Size(), m_particles.Velocities.data());
 
 		//Neighbor Buffer
-		m_neighborBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(uint32_t) * m_particles.Size() * K);
+		if (!m_neighborBuffer.has_value())
+			m_neighborBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(uint32_t) * m_particles.Size() * K);
 		hostNeighbors = std::vector<uint32_t>(m_particles.Size() * K, std::numeric_limits<uint32_t>::max());
 
 		//sum of kernel buffer
-		m_kernelSumBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(cl_float) * m_particles.Size());
+		if (!m_kernelSumBuffer.has_value())
+			m_kernelSumBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(cl_float) * m_particles.Size());
 
 		//density error buffer for PCI SPH
-		m_densityErrorBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(cl_float) * m_particles.Size());
-		m_estimateDensityBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(cl_float) * m_particles.Size());
+		if (!m_densityErrorBuffer.has_value())
+			m_densityErrorBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(cl_float) * m_particles.Size());
+		if (!m_estimateDensityBuffer.has_value())
+			m_estimateDensityBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(cl_float) * m_particles.Size());
+		if (!m_pressureForcesBuffer.has_value())
+			m_pressureForcesBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(ParticlePoint) * m_particles.Size());
 	}
 	catch (cl::Error& err)
 	{
@@ -143,12 +202,14 @@ void PCISPHSolverGPU::compileKernels() const
 	m_context.GetProgram("sph")->AddKernel("ComputeDensitites");
 	m_context.GetProgram("sph")->AddKernel("ApplyNonPressureForces");
 	m_context.GetProgram("sph")->AddKernel("ApplyPressureForces");
+	m_context.GetProgram("sph")->AddKernel("AccumlateForces");
+	m_context.GetProgram("sph")->AddKernel("integrate");
 }
 
 void PCISPHSolverGPU::computeNeighborList()
 {
 	//TODO compute KNN on GPU
-	m_context.Queue().enqueueReadBuffer(m_positiionBuffer,CL_TRUE,0,sizeof(ParticlePoint) * m_particles.Size(), m_particlePoints.data());
+	m_context.Queue().enqueueReadBuffer(m_positiionBuffer.value(),CL_TRUE,0,sizeof(ParticlePoint) * m_particles.Size(), m_particlePoints.data());
 	m_tree.Build(reinterpret_cast<std::vector<glm::vec4>&>(m_particles.Positions));
 
 	//Set all neighbors to the max value
@@ -168,7 +229,7 @@ void PCISPHSolverGPU::computeNeighborList()
 
 	try
 	{
-		m_context.Queue().enqueueWriteBuffer(m_neighborBuffer, CL_TRUE, 0, sizeof(uint32_t) * m_particles.Size() * K, hostNeighbors.data());
+		m_context.Queue().enqueueWriteBuffer(m_neighborBuffer.value(), CL_TRUE, 0, sizeof(uint32_t) * m_particles.Size() * K, hostNeighbors.data());
 	}
 	catch (cl::Error& err)
 	{
@@ -189,9 +250,9 @@ void PCISPHSolverGPU::computeDensities()
 
 	try
 	{
-		kernelSumKernel->setArg(0, m_positiionBuffer);
-		kernelSumKernel->setArg(1, m_neighborBuffer);
-		kernelSumKernel->setArg(2, m_kernelSumBuffer);
+		kernelSumKernel->setArg(0, m_positiionBuffer.value());
+		kernelSumKernel->setArg(1, m_neighborBuffer.value());
+		kernelSumKernel->setArg(2, m_kernelSumBuffer.value());
 
 		//reset kernel sums
 		m_context.Queue().enqueueNDRangeKernel(*kernelSumKernel,
@@ -199,8 +260,8 @@ void PCISPHSolverGPU::computeDensities()
 			cl::NDRange(m_particles.Size()),
 			cl::NDRange(1));
 
-		densityKernel->setArg(0, m_kernelSumBuffer);
-		densityKernel->setArg(1, m_densitiyBuffer);
+		densityKernel->setArg(0, m_kernelSumBuffer.value());
+		densityKernel->setArg(1, m_densitiyBuffer.value());
 		m_context.Queue().enqueueNDRangeKernel(*densityKernel,
 			0,
 			cl::NDRange(m_particles.Size()),

@@ -17,7 +17,7 @@ SPHSolverCPU::SPHSolverCPU(float timeStep, size_t particleCount, const BoxCollid
 	KERNEL_RADIUS(PARTICLE_RADIUS*4),
 	BOX_COLLIDER(boxCollider)
 {
-
+	Setup();
 }
 
 void SPHSolverCPU::Setup()

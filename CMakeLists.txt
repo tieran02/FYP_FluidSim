@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.17)
 project(FYP_FluidSim)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 find_package(OpenCL REQUIRED) #Nvidia only support OpenCL 1.2 via the CUDA SDK
 message(STATUS "Checking OpenMP")
 find_package(OpenMP)

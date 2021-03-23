@@ -9,6 +9,8 @@ __constant float KERNEL_RADIUS5 = 0.4f * 0.4f * 0.4f * 0.4f * 0.4f;
 __constant float MASS = 1.0f;
 __constant float MASS2 = 1.0f * 1.0f;
 __constant float VISCOSITY_COEFFICIENT = 0.0074f;
+__constant float TIME_STEP = 1.0f/60.0f; //TODO pass this through
+__constant float TARGET_DENSITY = 200.0f; //TODO pass this through
 
 float SmoothedKernelValue(float distance)
 {
@@ -53,6 +55,11 @@ float SpikedKernelSecondDerivative(float distance)
 	
 	float x = 1.0f - distance / KERNEL_RADIUS;
 	return 90.0f / (M_PI * KERNEL_RADIUS5) * x;
+}
+
+float3 SpikedKernelGradiant(float distance, float3 direction)
+{
+	return -SpikedKernelFirstDerivative(distance) * direction;
 }
 
 __kernel void SumOfKernel(__global const float3* positions, __global const uint* neighbors, __global float* kernelSum)
@@ -146,16 +153,23 @@ __kernel void ApplyNonPressureForces(__global const uint* neighbors, __global co
 
 	copy_events[0] = async_work_group_copy(forces+offset,local_force,wg,0);
     wait_group_events(1,copy_events);
+
+	//printf("point =%f,%f,%f\n", local_force[i].x,local_force[i].y,local_force[i].z);
+
 }
 
 __kernel void ApplyPressureForces(__global const uint* neighbors,
 									__global const float3* positions,
 									__global const float3* velocities,  
 									__global const float* densities, 
-									__global float3* forces, 
-									__global float* pressure,
+									__global const float3* forces, 
+									__global float* pressures,
 									__global float* densityErrors,
-									__global float* estimateDensity)
+									__global float* estimateDensity,
+									__global float3* pressureForces,
+									float targetDensity,
+									float deltaDensitity,
+									float negativePressureScale)
 {
 	int i = get_local_id(0); //index of workgroup
     int wg = get_local_size(0); //get workgroup size
@@ -165,25 +179,153 @@ __kernel void ApplyPressureForces(__global const uint* neighbors,
 	__local float3 local_force[MAX_LOCAL_SIZE];
 	__local float3 local_positions[MAX_LOCAL_SIZE];
 	__local float3 local_velocities[MAX_LOCAL_SIZE];
+	__local float3 local_tempVelocities[MAX_LOCAL_SIZE];
+	__local float3 local_tempPositions[MAX_LOCAL_SIZE];
 	__local float local_pressure[MAX_LOCAL_SIZE];
 	__local float local_densityErrors[MAX_LOCAL_SIZE];
 	__local float local_estimateDensity[MAX_LOCAL_SIZE];
+	__local float3 local_pressureForces[MAX_LOCAL_SIZE];
 
 	//copy data from global to local
-	event_t copy_events[6];
+	event_t copy_events[7];
 	copy_events[0] = async_work_group_copy(local_force,forces+offset,wg,0);
 	copy_events[1] = async_work_group_copy(local_positions,positions+offset,wg,0);
 	copy_events[2] = async_work_group_copy(local_velocities,velocities+offset,wg,0);
-	copy_events[3] = async_work_group_copy(local_pressure,pressure+offset,wg,0);
+	copy_events[3] = async_work_group_copy(local_pressure,pressures+offset,wg,0);
 	copy_events[4] = async_work_group_copy(local_densityErrors,densityErrors+offset,wg,0);
 	copy_events[5] = async_work_group_copy(local_estimateDensity,estimateDensity+offset,wg,0);
-    wait_group_events(6,copy_events);
+	copy_events[6] = async_work_group_copy(local_pressureForces,pressureForces+offset,wg,0);
+    wait_group_events(7,copy_events);
 
-	
+	//predict velocity and pos
+	local_tempVelocities[i] = local_velocities[i] 
+								+ TIME_STEP / MASS
+								* (local_force[i] + local_pressureForces[i]);
+	local_tempPositions[i] = local_positions[i] + TIME_STEP * local_tempVelocities[i];
+	barrier(CLK_LOCAL_MEM_FENCE);
 
-	copy_events[0] = async_work_group_copy(forces+offset,local_force,wg,0);
-	copy_events[1] = async_work_group_copy(pressure+offset,local_pressure,wg,0);
-	copy_events[2] = async_work_group_copy(densityErrors+offset,local_densityErrors,wg,0);
-	copy_events[3] = async_work_group_copy(estimateDensity+offset,local_estimateDensity,wg,0);
+	//TODO resolve collisions	
+
+	//calculate pressure from densitiy error	
+	float weightSum = 0.0f;		
+	for(int n = 0; n < K; n++)
+	{
+		uint neighborIndex = neighbors[n+neighbourOffset];
+
+		if(i+offset == neighborIndex || neighborIndex == UINT_MAX)
+			continue;
+
+		float dist = fast_distance(local_positions[i],positions[neighborIndex]);
+		weightSum += SpikedKernelValue(dist);
+	}	
+	weightSum += SpikedKernelValue(0.0f);
+	barrier(CLK_LOCAL_MEM_FENCE);		
+
+	float density = MASS * weightSum;
+	float densityError = (density - targetDensity);
+	float pressure = deltaDensitity * densityError;
+
+	if(pressure < 0.0f)
+	{
+		pressure *= negativePressureScale;
+		densityError *= negativePressureScale;
+	}
+
+	local_pressure[i] += pressure;
+	local_estimateDensity[i] = density;
+	local_densityErrors[i] = densityError;
+	barrier(CLK_LOCAL_MEM_FENCE);		
+
+	//accumlate pressure forces
+	for(int n = 0; n < K; n++)
+	{
+		uint neighborIndex = neighbors[n+neighbourOffset];
+
+		if(i+offset == neighborIndex || neighborIndex == UINT_MAX)
+			continue;
+
+		float dist = fast_distance(local_positions[i],positions[neighborIndex]);
+		if(dist >= 0.0f)
+		{
+			float3 direction = (positions[neighborIndex] - local_positions[i]) / dist;
+			local_pressureForces[i] = MASS2
+				* (local_pressure[i] / (local_estimateDensity[i] * local_estimateDensity[i])
+				+ pressures[neighborIndex] / (estimateDensity[neighborIndex] * estimateDensity[neighborIndex]))
+				* SpikedKernelGradiant(dist, direction);
+		}
+	}	
+
+	copy_events[0] = async_work_group_copy(pressures+offset,local_pressure,wg,0);
+	copy_events[1] = async_work_group_copy(densityErrors+offset,local_densityErrors,wg,0);
+	copy_events[2] = async_work_group_copy(estimateDensity+offset,local_estimateDensity,wg,0);
+	copy_events[3] = async_work_group_copy(pressureForces+offset,local_pressureForces,wg,0);
     wait_group_events(4,copy_events);
+}
+
+__kernel void AccumlateForces(__global const float3* additionalForces, __global float3* forces)
+{
+	int i = get_local_id(0); //index of workgroup
+    int wg = get_local_size(0); //get workgroup size
+    int offset = get_group_id(0) * wg; //offset from global points memory
+
+	forces[i+offset] = additionalForces[i+offset];
+}
+
+// bool IsSphereInsideeAABB(float3 pos, float radius, float3 lowerBound, float3 upperBound)
+// {
+// 	//is point outside
+// 	if(	!(point.x >= m_min.x && point.x <= m_max.x) && 
+// 		!(point.y >= m_min.y && point.y <= m_max.y) && 
+// 		!(point.z >= m_min.z && point.z <= m_max.z))
+// 	{
+// 		return false;
+// 	}
+// }
+
+__kernel void resolveCollisions(__global float3* positions, __global float3* velocities, float3 lowerBound, float3 upperBound)
+{
+	int i = get_local_id(0); //index of workgroup
+    int wg = get_local_size(0); //get workgroup size
+    int offset = get_group_id(0) * wg; //offset from global points memory
+
+	__local float3 local_startPositions[MAX_LOCAL_SIZE];
+	__local float3 local_positions[MAX_LOCAL_SIZE];
+	__local float3 local_velocities[MAX_LOCAL_SIZE];
+
+	event_t copy_events[3];
+	copy_events[0] = async_work_group_copy(local_startPositions,positions+offset,wg,0);
+	copy_events[1] = async_work_group_copy(local_positions,positions+offset,wg,0);
+	copy_events[2] = async_work_group_copy(local_velocities,velocities+offset,wg,0);
+    wait_group_events(3,copy_events);
+
+	const float RestitutionCoefficient = 0.2f;
+	const float frictionCoeffient = 0.1f;
+	const float radius = 0.1f;
+}
+
+__kernel void integrate(__global const float3* forces, __global float3* positions, __global float3* velocities)
+{
+	int i = get_local_id(0); //index of workgroup
+    int wg = get_local_size(0); //get workgroup size
+    int offset = get_group_id(0) * wg; //offset from global points memory
+
+	__local float3 local_forces[MAX_LOCAL_SIZE];
+	__local float3 local_positions[MAX_LOCAL_SIZE];
+	__local float3 local_velocities[MAX_LOCAL_SIZE];
+
+	event_t copy_events[3];
+	copy_events[0] = async_work_group_copy(local_forces,forces+offset,wg,0);
+	copy_events[1] = async_work_group_copy(local_positions,positions+offset,wg,0);
+	copy_events[2] = async_work_group_copy(local_velocities,velocities+offset,wg,0);
+    wait_group_events(3,copy_events);
+
+	local_velocities[i] +=  TIME_STEP * local_forces[i];
+	local_positions[i] += TIME_STEP * local_velocities[i];
+	barrier(CLK_LOCAL_MEM_FENCE);
+
+	copy_events[0] = async_work_group_copy(positions+offset,local_positions,wg,0);
+	copy_events[1] = async_work_group_copy(velocities+offset,local_velocities,wg,0);
+    wait_group_events(2,copy_events);
+    barrier(CLK_GLOBAL_MEM_FENCE);
+
 }
