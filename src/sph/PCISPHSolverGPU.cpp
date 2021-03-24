@@ -130,7 +130,32 @@ void PCISPHSolverGPU::Integrate()
 
 void PCISPHSolverGPU::ResolveCollisions()
 {
+	//check if the OpenCL context has the Brute NN search program
+	OpenCLProgram* program = m_context.GetProgram("collisions");
+	CORE_ASSERT(program, "Failed to find OpenCLProgram for collisions (Make sure its compiled)");
+	cl::Kernel* collisionKernel = program->GetKernel("SphereAABBCollisions");
+	CORE_ASSERT(collisionKernel, "Failed to find OpenCL Kernel ('SphereAABBCollisions') for collisions (Make sure its compiled)");
 
+	glm::vec4 lower{ BOX_COLLIDER.GetAABB().Min(), 0.0f };
+	glm::vec4 upper{ BOX_COLLIDER.GetAABB().Max(), 0.0f };
+	
+	try
+	{
+		collisionKernel->setArg(0, m_positiionBuffer.value());
+		collisionKernel->setArg(1, lower);
+		collisionKernel->setArg(2, upper);
+		collisionKernel->setArg(3, PARTICLE_RADIUS);
+
+		m_context.Queue().enqueueNDRangeKernel(*collisionKernel,
+			0,
+			cl::NDRange(m_particles.Size()),
+			cl::NDRange(64));
+	}
+	catch (cl::Error& err)
+	{
+		LOG_CORE_ERROR("OpenCL Error: {0}, {1}", err.what(), Util::GetCLErrorString(err.err()));
+		throw;
+	}
 }
 
 void PCISPHSolverGPU::EndTimeStep()
@@ -204,6 +229,9 @@ void PCISPHSolverGPU::compileKernels() const
 	m_context.GetProgram("sph")->AddKernel("ApplyPressureForces");
 	m_context.GetProgram("sph")->AddKernel("AccumlateForces");
 	m_context.GetProgram("sph")->AddKernel("integrate");
+
+	m_context.AddProgram("collisions", "resources/kernels/collisions.cl");
+	m_context.GetProgram("collisions")->AddKernel("SphereAABBCollisions");
 }
 
 void PCISPHSolverGPU::computeNeighborList()

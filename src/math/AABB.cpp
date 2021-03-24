@@ -73,7 +73,7 @@ std::vector<std::pair<glm::vec3, glm::vec3>> AABB::Intersection(const glm::vec3&
 	glm::vec3 boxSize = (m_max - m_min) * 0.5f;
 
 	glm::vec3 boxWorldTransform = glm::vec3(0.0f);
-	glm::vec3 sphereWorldTransform = point;
+	glm::vec3 sphereWorldTransform = point + vel;
 
 	glm::vec3 delta = sphereWorldTransform - boxWorldTransform;
 	glm::vec3 closestPointOnBox = glm::clamp(delta, -boxSize+radius, boxSize-radius);
@@ -84,7 +84,7 @@ std::vector<std::pair<glm::vec3, glm::vec3>> AABB::Intersection(const glm::vec3&
 	if(distance > std::numeric_limits<float>::epsilon()) // colliding
 	{
 		glm::vec3 intersectionNormal = -glm::normalize(localPoint);
-		glm::vec3 intersectionPoint = glm::clamp(point + (-intersectionNormal * radius),m_min+radius,m_max-radius);
+		glm::vec3 intersectionPoint = closestPointOnBox;
 		
 		intersections.emplace_back(intersectionPoint, intersectionNormal);
 	}

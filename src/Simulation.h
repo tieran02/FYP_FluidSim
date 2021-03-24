@@ -31,7 +31,7 @@ class Simulation
 	SpherePrimitive sphere{0.1f,24,16};
 	Shader shader, m_instancedShader;
 
-	const size_t SPHERE_COUNT{20480};
+	const size_t SPHERE_COUNT{10240};
 	//SPHSolverCPU m_solver{ 1.0/150.0, SPHERE_COUNT,boxCollider};
 	PCISPHSolverCPU m_solver{ 1.0/60.0, SPHERE_COUNT,boxCollider};
 	//PCISPHSolverGPU m_solver{ 1.0/60.0, SPHERE_COUNT,boxCollider, m_openCLContext};
