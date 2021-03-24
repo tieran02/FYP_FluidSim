@@ -84,18 +84,18 @@ void PCISPHSolverGPU::ApplyForces()
 		m_context.Queue().enqueueCopyBuffer(m_pressureBuffer.value(), m_estimateDensityBuffer.value(), 0, 0, sizeof(cl_float) * m_particles.Size());
 		m_context.Queue().enqueueFillBuffer(m_pressureForcesBuffer.value(), ParticlePoint(), 0, sizeof(ParticlePoint) * m_particles.Size());
 
-		//for (size_t i = 0; i < 5; i++)
-		//{
-		//	m_context.Queue().enqueueNDRangeKernel(*pressureForcesKernel,
-		//		0,
-		//		cl::NDRange(m_particles.Size()),
-		//		cl::NDRange(256));
-		//}
+		for (size_t i = 0; i < 5; i++)
+		{
+			m_context.Queue().enqueueNDRangeKernel(*pressureForcesKernel,
+				0,
+				cl::NDRange(m_particles.Size()),
+				cl::NDRange(256));
+		}
 
-		//m_context.Queue().enqueueNDRangeKernel(*accumulateForcesKernel,
-		//	0,
-		//	cl::NDRange(m_particles.Size()),
-		//	cl::NDRange(1));
+		m_context.Queue().enqueueNDRangeKernel(*accumulateForcesKernel,
+			0,
+			cl::NDRange(m_particles.Size()),
+			cl::NDRange(1));
 	}
 	catch (cl::Error& err)
 	{

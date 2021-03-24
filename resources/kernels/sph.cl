@@ -268,39 +268,7 @@ __kernel void AccumlateForces(__global const float3* additionalForces, __global 
     int wg = get_local_size(0); //get workgroup size
     int offset = get_group_id(0) * wg; //offset from global points memory
 
-	forces[i+offset] = additionalForces[i+offset];
-}
-
-// bool IsSphereInsideeAABB(float3 pos, float radius, float3 lowerBound, float3 upperBound)
-// {
-// 	//is point outside
-// 	if(	!(point.x >= m_min.x && point.x <= m_max.x) && 
-// 		!(point.y >= m_min.y && point.y <= m_max.y) && 
-// 		!(point.z >= m_min.z && point.z <= m_max.z))
-// 	{
-// 		return false;
-// 	}
-// }
-
-__kernel void resolveCollisions(__global float3* positions, __global float3* velocities, float3 lowerBound, float3 upperBound)
-{
-	int i = get_local_id(0); //index of workgroup
-    int wg = get_local_size(0); //get workgroup size
-    int offset = get_group_id(0) * wg; //offset from global points memory
-
-	__local float3 local_startPositions[MAX_LOCAL_SIZE];
-	__local float3 local_positions[MAX_LOCAL_SIZE];
-	__local float3 local_velocities[MAX_LOCAL_SIZE];
-
-	event_t copy_events[3];
-	copy_events[0] = async_work_group_copy(local_startPositions,positions+offset,wg,0);
-	copy_events[1] = async_work_group_copy(local_positions,positions+offset,wg,0);
-	copy_events[2] = async_work_group_copy(local_velocities,velocities+offset,wg,0);
-    wait_group_events(3,copy_events);
-
-	const float RestitutionCoefficient = 0.2f;
-	const float frictionCoeffient = 0.1f;
-	const float radius = 0.1f;
+	forces[i+offset] += additionalForces[i+offset];
 }
 
 __kernel void integrate(__global const float3* forces, __global float3* positions, __global float3* velocities)
