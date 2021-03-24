@@ -142,9 +142,11 @@ void PCISPHSolverGPU::ResolveCollisions()
 	try
 	{
 		collisionKernel->setArg(0, m_positiionBuffer.value());
-		collisionKernel->setArg(1, lower);
-		collisionKernel->setArg(2, upper);
-		collisionKernel->setArg(3, PARTICLE_RADIUS);
+		collisionKernel->setArg(1, m_velocityBuffer.value());
+		collisionKernel->setArg(2, lower);
+		collisionKernel->setArg(3, upper);
+		collisionKernel->setArg(4, PARTICLE_RADIUS);
+		collisionKernel->setArg(5, TIMESTEP);
 
 		m_context.Queue().enqueueNDRangeKernel(*collisionKernel,
 			0,
