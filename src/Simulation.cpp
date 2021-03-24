@@ -23,6 +23,8 @@ Simulation::Simulation(Renderer& renderer) : m_renderer(renderer), m_isPaused(fa
 
 	m_planeTransforms[5].SetRotation(glm::vec3(0,1,0),glm::radians(-90.0f)); //right
 	m_planeTransforms[5].SetPosition(glm::vec3(-2.5f,0,0));
+
+	m_camera.LootAt(glm::vec3(0.0f));
 }
 
 void Simulation::Update()

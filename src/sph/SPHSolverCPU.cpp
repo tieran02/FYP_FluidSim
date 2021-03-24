@@ -272,15 +272,16 @@ void SPHSolverCPU::resolveCollision(const glm::vec3& startPos, glm::vec3& pos, g
 
 	CollisionData collisionData{};
 
-	if(BOX_COLLIDER.GetAABB().IsSphereOutside(pos, radius))
+	//if(BOX_COLLIDER.GetAABB().IsSphereOutside(pos, radius))
 	{
-		auto clostestPoint = BOX_COLLIDER.GetAABB().GetClosestPoint(pos,true);
+		//auto clostestPoint = BOX_COLLIDER.GetAABB().GetClosestPoint(pos,true);
 		//add radius to velocity
-		auto velocityRadius = (vel * TIMESTEP) + clostestPoint.second * radius;
-		if (BOX_COLLIDER.CollisionOccured(startPos, velocityRadius, collisionData))
+		//auto velocityRadius = (vel * TIMESTEP) + clostestPoint.second * radius;
+		//auto velocityRadius = ((vel - radius) * TIMESTEP);
+		if (BOX_COLLIDER.CollisionOccured(startPos, vel, collisionData))
 		{
 			glm::vec3 targetNormal = collisionData.CollisionNormal;
-			auto targetPoint = collisionData.ContactPoint + radius * targetNormal;
+			auto targetPoint = collisionData.ContactPoint;
 
 			float normalDotRelativeVelocity = glm::dot(targetNormal, vel);
 			glm::vec3 relativeVelocityNormal = normalDotRelativeVelocity * targetNormal;

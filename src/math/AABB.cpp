@@ -64,6 +64,34 @@ std::vector<std::pair<glm::vec3,glm::vec3>> AABB::Intersection(const glm::vec3& 
 	return intersections;
 }
 
+std::vector<std::pair<glm::vec3, glm::vec3>> AABB::Intersection(const glm::vec3& point, const glm::vec3& vel,
+	float radius) const
+{
+	std::vector<std::pair<glm::vec3, glm::vec3>> intersections;
+	
+	//Get aabb half size
+	glm::vec3 boxSize = (m_max - m_min) * 0.5f;
+
+	glm::vec3 boxWorldTransform = glm::vec3(0.0f);
+	glm::vec3 sphereWorldTransform = point;
+
+	glm::vec3 delta = sphereWorldTransform - boxWorldTransform;
+	glm::vec3 closestPointOnBox = glm::clamp(delta, -boxSize+radius, boxSize-radius);
+
+	glm::vec3 localPoint = delta - closestPointOnBox;
+	float distance = glm::length(localPoint);
+
+	if(distance > std::numeric_limits<float>::epsilon()) // colliding
+	{
+		glm::vec3 intersectionNormal = -glm::normalize(localPoint);
+		glm::vec3 intersectionPoint = glm::clamp(point + (-intersectionNormal * radius),m_min+radius,m_max-radius);
+		
+		intersections.emplace_back(intersectionPoint, intersectionNormal);
+	}
+
+	return intersections;
+}
+
 std::pair<glm::vec3, glm::vec3> AABB::GetClosestPoint(const glm::vec3& point, bool flipNormal) const
 {
 	//TODO closest point should use euclidean distance instead of a Manhattan approach with clamping on the axis

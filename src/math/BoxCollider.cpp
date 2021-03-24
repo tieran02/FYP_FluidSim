@@ -17,7 +17,7 @@ bool BoxCollider::CollisionOccured(const glm::vec3& point,
 	const glm::vec3& velocity,
 	CollisionData& collisionData) const
 {
-	auto intersections = m_aabb.Intersection(point,velocity);
+	auto intersections = m_aabb.Intersection(point,velocity,0.1f);
 	if(!intersections.empty())
 	{
 		// TODO: collisionData.CollisionNormal
