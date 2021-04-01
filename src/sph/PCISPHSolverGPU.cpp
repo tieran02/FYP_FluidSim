@@ -43,8 +43,8 @@ void PCISPHSolverGPU::ApplyForces()
 	//check if the OpenCL context has the Brute NN search program
 	OpenCLProgram* program = m_context.GetProgram("sph");
 	CORE_ASSERT(program, "Failed to find OpenCLProgram for sph (Make sure its compiled)");
-	cl::Kernel* nonPressureForcesKernel = program->GetKernel("ApplyNonPressureForces");
-	CORE_ASSERT(nonPressureForcesKernel, "Failed to find OpenCL Kernel ('ApplyNonPressureForces') for sph (Make sure its compiled)");
+	cl::Kernel* viscosityForcesKernel = program->GetKernel("ApplyViscosityForces");
+	CORE_ASSERT(viscosityForcesKernel, "Failed to find OpenCL Kernel ('ApplyViscosityForces') for sph (Make sure its compiled)");
 	cl::Kernel* calculatePressureKernel = program->GetKernel("CalculatePressure");
 	CORE_ASSERT(calculatePressureKernel, "Failed to find OpenCL Kernel ('CalculatePressure') for sph (Make sure its compiled)");
 	cl::Kernel* accumulateForcesKernel = program->GetKernel("AccumlateForces");
@@ -57,11 +57,11 @@ void PCISPHSolverGPU::ApplyForces()
 	try
 	{
 		if (!argsSet) {
-			nonPressureForcesKernel->setArg(0, m_neighborBuffer.value());
-			nonPressureForcesKernel->setArg(1, m_positiionBuffer.value());
-			nonPressureForcesKernel->setArg(2, m_velocityBuffer.value());
-			nonPressureForcesKernel->setArg(3, m_densitiyBuffer.value());
-			nonPressureForcesKernel->setArg(4, m_forcesBuffer.value());
+			viscosityForcesKernel->setArg(0, m_neighborBuffer.value());
+			viscosityForcesKernel->setArg(1, m_positiionBuffer.value());
+			viscosityForcesKernel->setArg(2, m_velocityBuffer.value());
+			viscosityForcesKernel->setArg(3, m_densitiyBuffer.value());
+			viscosityForcesKernel->setArg(4, m_forcesBuffer.value());
 
 			calculatePressureKernel->setArg(0, m_neighborBuffer.value());
 			calculatePressureKernel->setArg(1, m_statePositionBuffer.value());
@@ -96,14 +96,18 @@ void PCISPHSolverGPU::ApplyForces()
 		}
 
 		std::array<cl::Event, 10> events;
-		//reset kernel sums
-		m_context.Queue().enqueueNDRangeKernel(*nonPressureForcesKernel,
-			0,
-			cl::NDRange(m_particles.Size()),
-			cl::NDRange(m_localWorkGroupSize),
-			nullptr,
-			&events[0]);
-		events[0].wait();
+		
+		//Apply gravity
+		m_context.Queue().enqueueFillBuffer(m_forcesBuffer.value(), ParticlePoint(glm::vec3(0.0f,-9.81f,0.0f)), 0, sizeof(ParticlePoint) * m_particles.Size());
+		
+		////apply viscosity forces
+		//m_context.Queue().enqueueNDRangeKernel(*viscosityForcesKernel,
+		//	0,
+		//	cl::NDRange(m_particles.Size()),
+		//	cl::NDRange(m_localWorkGroupSize),
+		//	nullptr,
+		//	&events[0]);
+		//events[0].wait();
 
 
 		m_context.Queue().enqueueFillBuffer(m_pressureBuffer.value(), 0.0f, 0, sizeof(cl_float) * m_particles.Size(),nullptr, &events[1]);
@@ -115,7 +119,7 @@ void PCISPHSolverGPU::ApplyForces()
 		events[3].wait();
 		events[4].wait();
 		
-		for (size_t i = 0; i < 1; i++)
+		for (size_t i = 0; i < 5; i++)
 		{
 			m_context.Queue().enqueueNDRangeKernel(*predictKernel,
 				0,
@@ -327,7 +331,7 @@ void PCISPHSolverGPU::compileKernels() const
 	m_context.AddProgram("sph", "resources/kernels/sph.cl");
 	m_context.GetProgram("sph")->AddKernel("SumOfKernel");
 	m_context.GetProgram("sph")->AddKernel("ComputeDensitites");
-	m_context.GetProgram("sph")->AddKernel("ApplyNonPressureForces");
+	m_context.GetProgram("sph")->AddKernel("ApplyViscosityForces");
 	m_context.GetProgram("sph")->AddKernel("CalculatePressure");
 	m_context.GetProgram("sph")->AddKernel("AccumlateForces");
 	m_context.GetProgram("sph")->AddKernel("integrate");

@@ -9,6 +9,7 @@ class ParticleState;
 union ParticlePoint
 {
 	ParticlePoint() : vec4(glm::vec4(0.0f)) {}
+	ParticlePoint(const glm::vec3& vec3) : vec(vec3) {}
 
 	float data[4];
 	glm::vec3 vec;
