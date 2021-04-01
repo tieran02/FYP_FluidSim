@@ -3,8 +3,10 @@
 #include <NonMovable.h>
 #include <NonCopyable.h>
 #include <memory>
-#include <spdlog/logger.h>
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/fmt/ostr.h"
+#include "spdlog/sinks/basic_file_sink.h"
 
 class Log : NonCopyable, NonMovable
 {
@@ -13,7 +15,7 @@ class Log : NonCopyable, NonMovable
 	static void Clean();
 	static std::shared_ptr<spdlog::logger> GetCoreLogger();
  private:
-	static std::shared_ptr<spdlog::logger> s_CoreLogger;
+	static std::shared_ptr<spdlog::logger> s_CombinedLogger;
 };
 
 #define LOG_CORE_TRACE(...) ::Log::GetCoreLogger()->trace(__VA_ARGS__)

@@ -105,10 +105,7 @@ void PCISPHSolverCPU::pressureForces()
 		densityErrorRatio = maxDensityError / m_targetDensitiy;
 		maxNumIter = i + 1;
 
-		//float maxDensityError =
-		float densitiyErrorRatio = m_maxErrorRatio / m_targetDensitiy;
-
-		if(fabs(densitiyErrorRatio) < m_maxErrorRatio)
+		if(fabs(densityErrorRatio) < m_maxErrorRatio)
 		{
 			break;
 		}

@@ -23,7 +23,7 @@ __kernel void SphereAABBCollisions(__global float3* positions, __global float3* 
     float3 closestPointOnBox = clamp(sphereWorldTransform, -boxSize+radius, boxSize-radius);
     float3 localPoint = sphereWorldTransform - closestPointOnBox;
 
-    float dist = fast_length(localPoint);
+    float dist = length(localPoint);
 
     if(dist > 0.0f)
     {
@@ -39,10 +39,10 @@ __kernel void SphereAABBCollisions(__global float3* positions, __global float3* 
             relativeVelocityNormal *= -RestitutionCoefficient;
 
             // Apply friction to the tangential component of the velocity
-            if (fast_length(relativeVelocityT) > 0.0f)
+            if (length(relativeVelocityT) > 0.0f)
             {
                 float frictionScale = max(1.0f - frictionCoeffient *
-                    fast_length(deltaRelativeVelocityNormal) / fast_length(relativeVelocityT), 0.0f);
+                    length(deltaRelativeVelocityNormal) / length(relativeVelocityT), 0.0f);
                 relativeVelocityT *= frictionScale;
             }
 
@@ -50,6 +50,7 @@ __kernel void SphereAABBCollisions(__global float3* positions, __global float3* 
         }
         local_positions[i] = closestPointOnBox;
     }
+    barrier(CLK_LOCAL_MEM_FENCE);
 
     copy_events[0] = async_work_group_copy(positions+offset,local_positions,wg,0);
     copy_events[1] = async_work_group_copy(velocities+offset,local_velocities,wg,0);

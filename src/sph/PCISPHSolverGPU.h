@@ -28,9 +28,12 @@ protected:
  private:
 	void createBuffers();
 	void compileKernels() const;
-	bool validBuffers() const;
+
+	void resolveCollisions(cl::Buffer& positions, cl::Buffer& velocities);
 	
 	OpenCLContext& m_context;
+	int m_localWorkGroupSize;
+
 	std::optional<cl::Buffer> m_positiionBuffer;
 	std::optional<cl::Buffer> m_velocityBuffer;
 	std::optional<cl::Buffer> m_forcesBuffer;
@@ -50,6 +53,8 @@ protected:
 	std::optional<cl::Buffer> m_densityErrorBuffer;
 	std::optional<cl::Buffer> m_estimateDensityBuffer;
 	std::optional<cl::Buffer> m_pressureForcesBuffer;
+	std::optional<cl::Buffer> m_tempPositionBuffer;
+	std::optional<cl::Buffer> m_tempVelocityBuffer;
 
 	//TEMP copy of position data for NN search
 	std::vector<ParticlePoint> m_particlePoints;

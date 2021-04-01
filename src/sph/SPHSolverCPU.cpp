@@ -37,7 +37,7 @@ void SPHSolverCPU::Setup()
 
 		x+= -BOX_COLLIDER.GetAABB().Max().x + perRow*0.5f;
 		z+= -BOX_COLLIDER.GetAABB().Max().z + perRow*0.5f;
-		y+= BOX_COLLIDER.GetAABB().Min().y + 0.5f;
+		y+= BOX_COLLIDER.GetAABB().Min().y + 2.0f;
 		m_particles.Positions[i].vec = glm::vec3(x, y, z);
 	}
 }
