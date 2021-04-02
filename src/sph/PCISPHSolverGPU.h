@@ -53,6 +53,7 @@ protected:
 	std::optional<cl::Buffer> m_densityErrorBuffer;
 	std::optional<cl::Buffer> m_estimateDensityBuffer;
 	std::optional<cl::Buffer> m_pressureForcesBuffer;
+	std::optional<cl::Buffer> m_viscosityForcesBuffer;
 	std::optional<cl::Buffer> m_tempPositionBuffer;
 	std::optional<cl::Buffer> m_tempVelocityBuffer;
 

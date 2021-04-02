@@ -12,7 +12,7 @@ PCISPHSolverGPU::PCISPHSolverGPU(float timeStep, size_t particleCount, const Box
 	m_particlePoints(particleCount),
 	m_localWorkGroupSize(std::min(64,static_cast<int>(particleCount)))
 {
-	m_negativePressureScale = 0.01f;
+	//m_negativePressureScale = 0.01f;
 	compileKernels();
 	createBuffers();
 }
@@ -27,10 +27,10 @@ void PCISPHSolverGPU::BeginTimeStep()
 {
 	//copy over positions into state
 	std::array<cl::Event, 2> events;
-	m_context.Queue().enqueueCopyBuffer(m_positiionBuffer.value(),m_statePositionBuffer.value(),0,0,sizeof(ParticlePoint) * m_particles.Size(),nullptr,&events[0]);
-	m_context.Queue().enqueueCopyBuffer(m_velocityBuffer.value(),m_stateVelocityBuffer.value(),0,0,sizeof(ParticlePoint) * m_particles.Size(),nullptr, &events[1]);
-	events[0].wait();
-	events[1].wait();
+	//m_context.Queue().enqueueCopyBuffer(m_positiionBuffer.value(),m_statePositionBuffer.value(),0,0,sizeof(ParticlePoint) * m_particles.Size(),nullptr,&events[0]);
+	//m_context.Queue().enqueueCopyBuffer(m_velocityBuffer.value(),m_stateVelocityBuffer.value(),0,0,sizeof(ParticlePoint) * m_particles.Size(),nullptr, &events[1]);
+	//events[0].wait();
+	//events[1].wait();
 
 	computeNeighborList();
 
@@ -58,14 +58,15 @@ void PCISPHSolverGPU::ApplyForces()
 	{
 		if (!argsSet) {
 			viscosityForcesKernel->setArg(0, m_neighborBuffer.value());
-			viscosityForcesKernel->setArg(1, m_positiionBuffer.value());
-			viscosityForcesKernel->setArg(2, m_velocityBuffer.value());
+			viscosityForcesKernel->setArg(1, m_statePositionBuffer.value());
+			viscosityForcesKernel->setArg(2, m_stateVelocityBuffer.value());
 			viscosityForcesKernel->setArg(3, m_densitiyBuffer.value());
-			viscosityForcesKernel->setArg(4, m_forcesBuffer.value());
+			viscosityForcesKernel->setArg(4, m_viscosityForcesBuffer.value());
+			viscosityForcesKernel->setArg(5, m_viscosityCoefficient);
 
 			calculatePressureKernel->setArg(0, m_neighborBuffer.value());
-			calculatePressureKernel->setArg(1, m_statePositionBuffer.value());
-			calculatePressureKernel->setArg(2, m_stateVelocityBuffer.value());
+			calculatePressureKernel->setArg(1, m_tempPositionBuffer.value());
+			calculatePressureKernel->setArg(2, m_tempVelocityBuffer.value());
 			calculatePressureKernel->setArg(3, m_pressureBuffer.value());
 			calculatePressureKernel->setArg(4, m_densityErrorBuffer.value());
 			calculatePressureKernel->setArg(5, m_estimateDensityBuffer.value());
@@ -74,20 +75,21 @@ void PCISPHSolverGPU::ApplyForces()
 			calculatePressureKernel->setArg(8, deltaDensitity);
 			calculatePressureKernel->setArg(9, m_negativePressureScale);
 
-			accumulateForcesKernel->setArg(0, m_pressureForcesBuffer.value());
-			accumulateForcesKernel->setArg(1, m_forcesBuffer.value());
+			accumulateForcesKernel->setArg(0, m_viscosityForcesBuffer.value());
+			accumulateForcesKernel->setArg(1, m_pressureForcesBuffer.value());
+			accumulateForcesKernel->setArg(2, m_forcesBuffer.value());
 
-			predictKernel->setArg(0, m_positiionBuffer.value());
-			predictKernel->setArg(1, m_velocityBuffer.value());
+			predictKernel->setArg(0, m_statePositionBuffer.value());
+			predictKernel->setArg(1, m_stateVelocityBuffer.value());
 			predictKernel->setArg(2, m_forcesBuffer.value());
 			predictKernel->setArg(3, m_pressureForcesBuffer.value());
-			predictKernel->setArg(4, m_statePositionBuffer.value());
-			predictKernel->setArg(5, m_stateVelocityBuffer.value());
+			predictKernel->setArg(4, m_tempPositionBuffer.value());
+			predictKernel->setArg(5, m_tempVelocityBuffer.value());
 			predictKernel->setArg(6, TIMESTEP);
 
 			accumalatePressureForcesKernel->setArg(0, m_neighborBuffer.value());
-			accumalatePressureForcesKernel->setArg(1, m_statePositionBuffer.value());
-			accumalatePressureForcesKernel->setArg(2, m_stateVelocityBuffer.value());
+			accumalatePressureForcesKernel->setArg(1, m_tempPositionBuffer.value());
+			accumalatePressureForcesKernel->setArg(2, m_tempVelocityBuffer.value());
 			accumalatePressureForcesKernel->setArg(3, m_estimateDensityBuffer.value());
 			accumalatePressureForcesKernel->setArg(4, m_pressureBuffer.value());
 			accumalatePressureForcesKernel->setArg(5, m_pressureForcesBuffer.value());
@@ -98,16 +100,16 @@ void PCISPHSolverGPU::ApplyForces()
 		std::array<cl::Event, 10> events;
 		
 		//Apply gravity
-		m_context.Queue().enqueueFillBuffer(m_forcesBuffer.value(), ParticlePoint(glm::vec3(0.0f,-9.81f,0.0f)), 0, sizeof(ParticlePoint) * m_particles.Size());
+		//m_context.Queue().enqueueFillBuffer(m_forcesBuffer.value(), ParticlePoint(glm::vec3(0.0f,-9.81f,0.0f)), 0, sizeof(ParticlePoint) * m_particles.Size());
 		
-		////apply viscosity forces
-		//m_context.Queue().enqueueNDRangeKernel(*viscosityForcesKernel,
-		//	0,
-		//	cl::NDRange(m_particles.Size()),
-		//	cl::NDRange(m_localWorkGroupSize),
-		//	nullptr,
-		//	&events[0]);
-		//events[0].wait();
+		//apply viscosity forces
+		m_context.Queue().enqueueNDRangeKernel(*viscosityForcesKernel,
+			0,
+			cl::NDRange(m_particles.Size()),
+			cl::NDRange(m_localWorkGroupSize),
+			nullptr,
+			&events[0]);
+		events[0].wait();
 
 
 		m_context.Queue().enqueueFillBuffer(m_pressureBuffer.value(), 0.0f, 0, sizeof(cl_float) * m_particles.Size(),nullptr, &events[1]);
@@ -129,7 +131,7 @@ void PCISPHSolverGPU::ApplyForces()
 				&events[5]);
 			events[5].wait();
 
-			resolveCollisions(m_statePositionBuffer.value(),m_stateVelocityBuffer.value());
+			resolveCollisions(m_tempPositionBuffer.value(), m_tempVelocityBuffer.value());
 
 			m_context.Queue().enqueueNDRangeKernel(*calculatePressureKernel,
 				0,
@@ -139,7 +141,7 @@ void PCISPHSolverGPU::ApplyForces()
 				&events[6]);
 			events[6].wait();
 
-			m_context.Queue().enqueueFillBuffer(m_pressureForcesBuffer.value(), ParticlePoint(), 0, sizeof(ParticlePoint) * m_particles.Size());
+			//m_context.Queue().enqueueFillBuffer(m_pressureForcesBuffer.value(), ParticlePoint(), 0, sizeof(ParticlePoint) * m_particles.Size());
 			m_context.Queue().enqueueNDRangeKernel(*accumalatePressureForcesKernel,
 				0,
 				cl::NDRange(m_particles.Size()),
@@ -194,8 +196,8 @@ void PCISPHSolverGPU::Integrate()
 	CORE_ASSERT(integrateKernel, "Failed to find OpenCL Kernel ('integrate') for sph (Make sure its compiled)");
 
 	integrateKernel->setArg(0, m_forcesBuffer.value());
-	integrateKernel->setArg(1, m_positiionBuffer.value());
-	integrateKernel->setArg(2, m_velocityBuffer.value());
+	integrateKernel->setArg(1, m_statePositionBuffer.value());
+	integrateKernel->setArg(2, m_stateVelocityBuffer.value());
 	integrateKernel->setArg(3, TIMESTEP);
 	
 	try
@@ -213,7 +215,7 @@ void PCISPHSolverGPU::Integrate()
 
 void PCISPHSolverGPU::ResolveCollisions()
 {
-	resolveCollisions(m_positiionBuffer.value(),m_velocityBuffer.value());
+	resolveCollisions(m_statePositionBuffer.value(), m_stateVelocityBuffer.value());
 }
 
 void PCISPHSolverGPU::resolveCollisions(cl::Buffer& positions, cl::Buffer& velocities)
@@ -259,8 +261,10 @@ void PCISPHSolverGPU::EndTimeStep()
 	try
 	{
 		std::array<cl::Event, 1> events;
-		m_context.Queue().enqueueReadBuffer(m_positiionBuffer.value(), CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), m_particles.Positions.data(),nullptr,&events[0]);
+		m_context.Queue().enqueueReadBuffer(m_statePositionBuffer.value(), CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), m_particles.Positions.data(),nullptr,&events[0]);
 		events[0].wait();
+
+		m_context.Queue().flush();
 	}
 	catch (cl::Error& err)
 	{
@@ -318,6 +322,12 @@ void PCISPHSolverGPU::createBuffers()
 			m_estimateDensityBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(cl_float) * m_particles.Size());
 		if (!m_pressureForcesBuffer.has_value())
 			m_pressureForcesBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(ParticlePoint) * m_particles.Size());
+		if (!m_viscosityForcesBuffer.has_value())
+			m_viscosityForcesBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(ParticlePoint) * m_particles.Size());
+		if (!m_tempPositionBuffer.has_value())
+			m_tempPositionBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(ParticlePoint) * m_particles.Size());
+		if (!m_tempVelocityBuffer.has_value())
+			m_tempVelocityBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(ParticlePoint) * m_particles.Size());
 	}
 	catch (cl::Error& err)
 	{
@@ -388,23 +398,24 @@ void PCISPHSolverGPU::computeDensities()
 
 	try
 	{
-		kernelSumKernel->setArg(0, m_positiionBuffer.value());
-		kernelSumKernel->setArg(1, m_neighborBuffer.value());
-		kernelSumKernel->setArg(2, m_kernelSumBuffer.value());
+		//kernelSumKernel->setArg(0, m_positiionBuffer.value());
+		//kernelSumKernel->setArg(1, m_neighborBuffer.value());
+		//kernelSumKernel->setArg(2, m_kernelSumBuffer.value());
 
 		std::array<cl::Event, 2> events;
-		
-		//reset kernel sums
-		m_context.Queue().enqueueNDRangeKernel(*kernelSumKernel,
-			0,
-			cl::NDRange(m_particles.Size()),
-			cl::NDRange(m_localWorkGroupSize),
-			nullptr,
-			&events[0]);
-		events[0].wait();
+		//
+		////reset kernel sums
+		//m_context.Queue().enqueueNDRangeKernel(*kernelSumKernel,
+		//	0,
+		//	cl::NDRange(m_particles.Size()),
+		//	cl::NDRange(m_localWorkGroupSize),
+		//	nullptr,
+		//	&events[0]);
+		//events[0].wait();
 
-		densityKernel->setArg(0, m_kernelSumBuffer.value());
-		densityKernel->setArg(1, m_densitiyBuffer.value());
+		densityKernel->setArg(0, m_positiionBuffer.value());
+		densityKernel->setArg(1, m_neighborBuffer.value());
+		densityKernel->setArg(2, m_densitiyBuffer.value());
 		m_context.Queue().enqueueNDRangeKernel(*densityKernel,
 			0,
 			cl::NDRange(m_particles.Size()),

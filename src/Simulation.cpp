@@ -30,7 +30,7 @@ Simulation::Simulation(Renderer& renderer) : m_renderer(renderer), m_isPaused(fa
 void Simulation::Update()
 {
 	//run simulation
-	if(!m_isPaused)
+	if(!m_isPaused) 
 		m_solver.Update();
 
 	//Render
