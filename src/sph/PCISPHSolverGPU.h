@@ -30,6 +30,8 @@ protected:
 	void compileKernels() const;
 
 	void resolveCollisions(cl::Buffer& positions, cl::Buffer& velocities);
+	void copyIntoState();
+	void copyToHost();
 	
 	OpenCLContext& m_context;
 	int m_localWorkGroupSize;

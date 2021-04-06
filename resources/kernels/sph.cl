@@ -195,24 +195,28 @@ int i = get_local_id(0); //index of workgroup
 
 		float dist = distance(local_positions[i],positions[neighborIndex]);
 
-		viscosityForce += viscosityCoefficient * MASS2
+		float3 force = viscosityCoefficient * MASS2
 			* (velocities[neighborIndex] - local_velocities[i]) / densities[neighborIndex]
 			* SpikedKernelSecondDerivative(dist);
 
-		// if(isnan(densities[neighborIndex]) || isnan(local_velocities[i].x) || isnan(velocities[neighborIndex].x) || isnan(dist) || isnan(viscosityForce.x))
-		// 	printf("%d, %d, %d, %d, %f:%f:%f, %f:%f:%f, %f:%f:%f, %f:%f:%f, %f, %f, %f:%f:%f, %f:%f:%f\n",
-		// 		gid,
-		// 		i,
-		// 		i+offset,
-		// 		neighborIndex,
-		// 		local_positions[i].x, local_positions[i].y, local_positions[i].z,
-		// 		positions[neighborIndex].x, positions[neighborIndex].y, positions[neighborIndex].z,
-		// 		local_velocities[i].x, local_velocities[i].y, local_velocities[i].z,
-		// 		velocities[neighborIndex].x, velocities[neighborIndex].y, velocities[neighborIndex].z,
-		// 		densities[neighborIndex],
-		// 		dist,
-		// 		viscosityForce.x, viscosityForce.y, viscosityForce.z,
-		// 		local_force[i].x, local_force[i].y, local_force[i].z);
+		viscosityForce += force;
+
+		// if(isnan(viscosityForce.x) || isnan(viscosityForce.y) || isnan(viscosityForce.z) || isinf(viscosityForce.x) || isinf(viscosityForce.y) || isinf(viscosityForce.z) || 
+		// isnan(force.x) || isnan(force.y) || isnan(force.z) || isinf(force.x) || isinf(force.y) || isinf(force.z))
+			// printf("%d, %d, %d, %d, %1.17e:%1.17e:%1.17e, %1.17e:%1.17e:%1.17e, %1.17e:%1.17e:%1.17e, %1.17e:%1.17e:%1.17e, %1.17e,%1.17e, %1.17e:%1.17e:%1.17e, %1.17e:%1.17e:%1.17e\n",
+			// 	gid,
+			// 	i,
+			// 	i+offset,
+			// 	neighborIndex,
+			// 	local_positions[i].x, local_positions[i].y, local_positions[i].z,
+			// 	positions[neighborIndex].x, positions[neighborIndex].y, positions[neighborIndex].z,
+			// 	local_velocities[i].x, local_velocities[i].y, local_velocities[i].z,
+			// 	velocities[neighborIndex].x, velocities[neighborIndex].y, velocities[neighborIndex].z,
+			// 	densities[neighborIndex],
+			// 	dist,
+			// 	force.x, force.y, force.z,
+			// 	viscosityForce.x, viscosityForce.y, viscosityForce.z,
+			// 	local_force[i].x, local_force[i].y, local_force[i].z);
 	}
 
 	local_force[i] = viscosityForce;
@@ -467,9 +471,9 @@ __kernel void AccumlateForces(__global const float3* viscosityForces, __global c
 	local_forces[i] = (float3)(0.0f,-9.81f,0.0f);
 	barrier(CLK_LOCAL_MEM_FENCE);
 
-	// if(!isnan(local_viscosityForces[i].x))
-	// local_forces[i] += local_viscosityForces[i];
-	// barrier(CLK_LOCAL_MEM_FENCE);
+	if(!isnan(local_viscosityForces[i].x))
+		local_forces[i] += local_viscosityForces[i];
+	barrier(CLK_LOCAL_MEM_FENCE);
 
 	local_forces[i] += local_pressureForces[i];
 	barrier(CLK_LOCAL_MEM_FENCE);
@@ -487,7 +491,7 @@ __kernel void AccumlateForces(__global const float3* viscosityForces, __global c
 	barrier(CLK_GLOBAL_MEM_FENCE);
 }
 
-__kernel void integrate(__global const float3* forces, __global float3* positions, __global float3* velocities, float timeStep)
+__kernel void integrate(__global const float3* forces, __global  float3* positions, __global float3* velocities, __global float3* state_positions, __global float3* state_velocities, float timeStep)
 {
 	int i = get_local_id(0); //index of workgroup
     int wg = get_local_size(0); //get workgroup size
@@ -496,19 +500,23 @@ __kernel void integrate(__global const float3* forces, __global float3* position
 	__local float3 local_forces[MAX_LOCAL_SIZE];
 	__local float3 local_positions[MAX_LOCAL_SIZE];
 	__local float3 local_velocities[MAX_LOCAL_SIZE];
+	__local float3 local_state_positions[MAX_LOCAL_SIZE];
+	__local float3 local_state_velocities[MAX_LOCAL_SIZE];
 
-	event_t copy_events[3];
+	event_t copy_events[5];
 	copy_events[0] = async_work_group_copy(local_forces,forces+offset,wg,0);
 	copy_events[1] = async_work_group_copy(local_positions,positions+offset,wg,0);
 	copy_events[2] = async_work_group_copy(local_velocities,velocities+offset,wg,0);
-    wait_group_events(3,copy_events);
+	copy_events[3] = async_work_group_copy(local_state_positions,state_positions+offset,wg,0);
+	copy_events[4] = async_work_group_copy(local_state_velocities,state_velocities+offset,wg,0);
+    wait_group_events(5,copy_events);
 
-	local_velocities[i] +=  timeStep * local_forces[i];
-	local_positions[i] += timeStep * local_velocities[i];
+	local_state_velocities[i] = local_velocities[i] + timeStep * local_forces[i];
+	local_state_positions[i] = local_positions[i] + timeStep * local_state_velocities[i];
 	barrier(CLK_LOCAL_MEM_FENCE);
 
-	copy_events[0] = async_work_group_copy(positions+offset,local_positions,wg,0);
-	copy_events[1] = async_work_group_copy(velocities+offset,local_velocities,wg,0);
+	copy_events[0] = async_work_group_copy(state_positions+offset,local_state_positions,wg,0);
+	copy_events[1] = async_work_group_copy(state_velocities+offset,local_state_velocities,wg,0);
     wait_group_events(2,copy_events);
 	barrier(CLK_GLOBAL_MEM_FENCE);
 }

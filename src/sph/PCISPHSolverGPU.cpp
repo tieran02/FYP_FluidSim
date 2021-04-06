@@ -26,11 +26,7 @@ void PCISPHSolverGPU::Setup()
 void PCISPHSolverGPU::BeginTimeStep()
 {
 	//copy over positions into state
-	std::array<cl::Event, 2> events;
-	//m_context.Queue().enqueueCopyBuffer(m_positiionBuffer.value(),m_statePositionBuffer.value(),0,0,sizeof(ParticlePoint) * m_particles.Size(),nullptr,&events[0]);
-	//m_context.Queue().enqueueCopyBuffer(m_velocityBuffer.value(),m_stateVelocityBuffer.value(),0,0,sizeof(ParticlePoint) * m_particles.Size(),nullptr, &events[1]);
-	//events[0].wait();
-	//events[1].wait();
+	copyIntoState();
 
 	computeNeighborList();
 
@@ -196,9 +192,11 @@ void PCISPHSolverGPU::Integrate()
 	CORE_ASSERT(integrateKernel, "Failed to find OpenCL Kernel ('integrate') for sph (Make sure its compiled)");
 
 	integrateKernel->setArg(0, m_forcesBuffer.value());
-	integrateKernel->setArg(1, m_statePositionBuffer.value());
-	integrateKernel->setArg(2, m_stateVelocityBuffer.value());
-	integrateKernel->setArg(3, TIMESTEP);
+	integrateKernel->setArg(1, m_positiionBuffer.value());
+	integrateKernel->setArg(2, m_velocityBuffer.value());
+	integrateKernel->setArg(3, m_statePositionBuffer.value());
+	integrateKernel->setArg(4, m_stateVelocityBuffer.value());
+	integrateKernel->setArg(5, TIMESTEP);
 	
 	try
 	{
@@ -255,16 +253,64 @@ void PCISPHSolverGPU::resolveCollisions(cl::Buffer& positions, cl::Buffer& veloc
 	}
 }
 
+void PCISPHSolverGPU::copyIntoState()
+{
+	try
+	{
+		std::array<cl::Event, 2> events;
+		m_context.Queue().enqueueCopyBuffer(m_positiionBuffer.value(), m_statePositionBuffer.value(), 0, 0, sizeof(ParticlePoint) * m_particles.Size(), nullptr, &events[0]);
+		m_context.Queue().enqueueCopyBuffer(m_velocityBuffer.value(), m_stateVelocityBuffer.value(), 0, 0, sizeof(ParticlePoint) * m_particles.Size(), nullptr, &events[1]);
+		events[0].wait();
+		events[1].wait();
+
+		m_context.Queue().finish();
+	}
+	catch (cl::Error& err)
+	{
+		LOG_CORE_ERROR("OpenCL Error: {0}, {1}", err.what(), Util::GetCLErrorString(err.err()));
+		throw;
+	}
+}
+
+void PCISPHSolverGPU::copyToHost()
+{
+	try
+	{
+		std::array<cl::Event, 2> events;
+		m_context.Queue().enqueueReadBuffer(m_positiionBuffer.value(), CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), m_particles.Positions.data(), nullptr, &events[0]);
+		m_context.Queue().enqueueReadBuffer(m_velocityBuffer.value(), CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), m_particles.Positions.data(), nullptr, &events[0]);
+		m_context.Queue().enqueueReadBuffer(m_positiionBuffer.value(), CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), m_particles.Positions.data(), nullptr, &events[0]);
+		m_context.Queue().enqueueReadBuffer(m_positiionBuffer.value(), CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), m_particles.Positions.data(), nullptr, &events[0]);
+		m_context.Queue().enqueueReadBuffer(m_positiionBuffer.value(), CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), m_particles.Positions.data(), nullptr, &events[0]);
+		events[0].wait();
+		events[1].wait();
+
+		m_context.Queue().finish();
+	}
+	catch (cl::Error& err)
+	{
+		LOG_CORE_ERROR("OpenCL Error: {0}, {1}", err.what(), Util::GetCLErrorString(err.err()));
+		throw;
+	}
+}
+
 
 void PCISPHSolverGPU::EndTimeStep()
 {
 	try
 	{
-		std::array<cl::Event, 1> events;
-		m_context.Queue().enqueueReadBuffer(m_statePositionBuffer.value(), CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), m_particles.Positions.data(),nullptr,&events[0]);
-		events[0].wait();
+		//copy state pos and vel into final pos and velocity
+		std::vector<cl::Event> events(5);
+		m_context.Queue().enqueueCopyBuffer(m_statePositionBuffer.value(), m_positiionBuffer.value(), 0, 0, sizeof(ParticlePoint) * m_particles.Size(), 0, &events[0]);
+		m_context.Queue().enqueueCopyBuffer(m_stateVelocityBuffer.value(), m_velocityBuffer.value(), 0, 0, sizeof(ParticlePoint) * m_particles.Size(), 0, &events[1]);
+		m_context.Queue().enqueueReadBuffer(m_forcesBuffer.value(), CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), m_particles.Forces.data(), nullptr, &events[2]);
+		m_context.Queue().enqueueReadBuffer(m_densitiyBuffer.value(), CL_TRUE, 0, sizeof(cl_filter_mode) * m_particles.Size(), m_particles.Densities.data(), nullptr, &events[3]);
+		m_context.Queue().enqueueReadBuffer(m_pressureBuffer.value(), CL_TRUE, 0, sizeof(cl_filter_mode) * m_particles.Size(), m_particles.Pressures.data(), nullptr, &events[4]);
+		cl::WaitForEvents(events);
 
-		m_context.Queue().flush();
+		copyToHost();
+
+		m_context.Queue().finish();
 	}
 	catch (cl::Error& err)
 	{
@@ -371,6 +417,7 @@ void PCISPHSolverGPU::computeNeighborList()
 
 		size_t gid = i * K;
 		memcpy(&hostNeighbors[gid],e.data(), sizeof(uint32_t) * std::min(e.size(),K));
+		m_neighborList[i] = e;
 	}
 
 	try
@@ -388,6 +435,18 @@ void PCISPHSolverGPU::computeNeighborList()
 
 void PCISPHSolverGPU::computeDensities()
 {
+	//try
+	//{
+	//	m_context.Queue().enqueueReadBuffer(m_positiionBuffer.value(), CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), m_particles.Positions.data());
+	//	SPHSolverCPU::computeDensities();
+	//	m_context.Queue().enqueueWriteBuffer(m_densitiyBuffer.value(), CL_TRUE, 0, sizeof(CL_FLOAT) * m_particles.Size(), m_particles.Densities.data());
+	//}
+	//catch (cl::Error& err)
+	//{
+	//	LOG_CORE_ERROR("OpenCL Error: {0}, {1}", err.what(), Util::GetCLErrorString(err.err()));
+	//	throw;
+	//}
+	
 	//check if the OpenCL context has the Brute NN search program
 	OpenCLProgram* program = m_context.GetProgram("sph");
 	CORE_ASSERT(program, "Failed to find OpenCLProgram for sph (Make sure its compiled)");
