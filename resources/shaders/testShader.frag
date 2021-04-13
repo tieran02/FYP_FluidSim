@@ -4,6 +4,7 @@ out vec4 FragColor;
 uniform vec4 ourColor;
 
 in vec3 Normal;
+in vec3 Color;
 
 void main()
 {
@@ -13,5 +14,5 @@ void main()
     float diff = max(dot(Normal, LightDirection), 0.0);
     float lightIntensity = 1.0;
 
-    FragColor = ourColor * diff * lightIntensity;
+    FragColor = (ourColor + vec4(Color,1.0f)) * diff * lightIntensity;
 }

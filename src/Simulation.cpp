@@ -54,8 +54,13 @@ void Simulation::Update()
 	m_renderer.Draw(plane.GetMesh(),shader,m_planeTransforms[4]);
 	m_renderer.Draw(plane.GetMesh(),shader,m_planeTransforms[5]);
 
-	//update pos
-	particleBuffer.Upload((void*)m_solver.Particles().Positions.data(),sizeof(ParticlePoint) * SPHERE_COUNT);
+	std::vector<ParticlePoint> points = m_solver.Particles().Positions;
+	for (size_t i = 0; i < points.size(); i++)
+	{
+		points[i].vec4.w = m_solver.Particles().Densities[i];
+	}
+	//upload pos
+	particleBuffer.Upload((void*)points.data(),sizeof(ParticlePoint) * SPHERE_COUNT);
 
 	m_renderer.DrawInstanced(sphere.GetMesh(),m_instancedShader,particleBuffer ,SPHERE_COUNT);
 

@@ -16,10 +16,14 @@ uniform mat4 view;
 uniform mat4 perspective;
 
 out vec3 Normal;
+out vec3 Color;
 
 void main()
 {
     vec3 instancePos = vec3(positions[gl_InstanceID].x,positions[gl_InstanceID].y,positions[gl_InstanceID].z);
     gl_Position = perspective * view * vec4(instancePos + aPos, 1.0);
     Normal = aNorm;
+
+    float maxDensity = 600.0;
+    Color = vec3(positions[gl_InstanceID].w / maxDensity,0.0,0.0);
 }

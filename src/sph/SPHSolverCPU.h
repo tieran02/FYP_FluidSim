@@ -16,6 +16,7 @@ class SPHSolverCPU : public Solver
 	void Setup() override;
 	void Reset() override;
 	const ParticleSet& Particles() const;
+	ParticleSet& Particles();
  protected:
 	void BeginTimeStep() override;
 	void ApplyForces() override;
