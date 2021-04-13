@@ -7,6 +7,7 @@ typedef struct _collisionPoint
 {
 	float3 Point;
     float3 Normal;
+    float Distance
 } CollisionPoint;
 
 bool GetIntersection(float3 point, float3 velocity, float3 lowerBound, float3 upperBound, float radius, CollisionPoint* collisionPoint)
@@ -25,6 +26,7 @@ bool GetIntersection(float3 point, float3 velocity, float3 lowerBound, float3 up
 	{
 		collisionPoint->Normal = -normalize(localPoint);
 		collisionPoint->Point = closestPointOnBox;
+        collisionPoint->Distance = distance;
         return true;
 	}
 

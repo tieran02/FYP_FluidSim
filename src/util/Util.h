@@ -9,3 +9,8 @@ class Util
 
 	static  const char* GetCLErrorString(cl_int error);
 };
+
+template <typename T>
+inline T absmax(T x, T y) {
+	return (x * x > y * y) ? x : y;
+}
