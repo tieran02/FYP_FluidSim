@@ -11,7 +11,7 @@ class PCISPHSolverCPU : public SPHSolverCPU
 	void pressureForces() override;
 	uint32_t m_maxItterations{ 5 };
 	float deltaDensitity;
-	float m_maxErrorRatio{ 0.1f };
+	float m_maxErrorRatio{ 0.01f };
  private:
 	std::vector<ParticlePoint> m_tempPositions;
 	std::vector<ParticlePoint> m_tempVelocities;

@@ -12,7 +12,8 @@ PCISPHSolverGPU::PCISPHSolverGPU(float timeStep, size_t particleCount, const Box
 	m_particlePoints(particleCount),
 	m_localWorkGroupSize(std::min(64,static_cast<int>(particleCount)))
 {
-	//m_negativePressureScale = 0.01f;
+	m_negativePressureScale = 0.4f;
+	//m_viscosityCoefficient = 0.1f;
 	compileKernels();
 	createBuffers();
 }
@@ -107,7 +108,6 @@ void PCISPHSolverGPU::ApplyForces()
 			&events[0]);
 		events[0].wait();
 
-
 		m_context.Queue().enqueueFillBuffer(m_pressureBuffer.value(), 0.0f, 0, sizeof(cl_float) * m_particles.Size(),nullptr, &events[1]);
 		m_context.Queue().enqueueFillBuffer(m_pressureForcesBuffer.value(), ParticlePoint(), 0, sizeof(ParticlePoint) * m_particles.Size(), nullptr, &events[2]);
 		m_context.Queue().enqueueFillBuffer(m_densityErrorBuffer.value(), 0.0f, 0, sizeof(cl_float) * m_particles.Size(), nullptr, &events[3]);
@@ -117,7 +117,7 @@ void PCISPHSolverGPU::ApplyForces()
 		events[3].wait();
 		events[4].wait();
 		
-		for (size_t i = 0; i < 5; i++)
+		for (size_t i = 0; i < 1; i++)
 		{
 			m_context.Queue().enqueueNDRangeKernel(*predictKernel,
 				0,
@@ -127,7 +127,8 @@ void PCISPHSolverGPU::ApplyForces()
 				&events[5]);
 			events[5].wait();
 
-			resolveCollisions(m_tempPositionBuffer.value(), m_tempVelocityBuffer.value());
+			//TODO fix PCISPH collider
+			//resolveCollisions(m_tempPositionBuffer.value(), m_tempVelocityBuffer.value());
 
 			m_context.Queue().enqueueNDRangeKernel(*calculatePressureKernel,
 				0,
@@ -216,16 +217,27 @@ void PCISPHSolverGPU::ResolveCollisions()
 	resolveCollisions(m_statePositionBuffer.value(), m_stateVelocityBuffer.value());
 }
 
+std::vector<ParticlePoint> pos;
+std::vector<ParticlePoint> vel;
 void PCISPHSolverGPU::resolveCollisions(cl::Buffer& positions, cl::Buffer& velocities)
 {
+	//pos.resize(m_particles.Size());
+	//vel.resize(m_particles.Size());
+	//m_context.Queue().enqueueReadBuffer(positions, CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), pos.data());
+	//m_context.Queue().enqueueReadBuffer(velocities, CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), vel.data());
+	//
+	//SPHSolverCPU::resolveCollisions(pos, vel);
+	//m_context.Queue().enqueueWriteBuffer(positions, CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), pos.data());
+	//m_context.Queue().enqueueWriteBuffer(velocities, CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), vel.data());
+	
 	//check if the OpenCL context has the Brute NN search program
 	OpenCLProgram* program = m_context.GetProgram("collisions");
 	CORE_ASSERT(program, "Failed to find OpenCLProgram for collisions (Make sure its compiled)");
 	cl::Kernel* collisionKernel = program->GetKernel("SphereAABBCollisions");
 	CORE_ASSERT(collisionKernel, "Failed to find OpenCL Kernel ('SphereAABBCollisions') for collisions (Make sure its compiled)");
 
-	glm::vec4 lower{ BOX_COLLIDER.GetAABB().Min(), 0.0f };
-	glm::vec4 upper{ BOX_COLLIDER.GetAABB().Max(), 0.0f };
+	ParticlePoint lower{ BOX_COLLIDER.GetAABB().Min() };
+	ParticlePoint upper{ BOX_COLLIDER.GetAABB().Max() };
 
 	try
 	{
@@ -245,6 +257,7 @@ void PCISPHSolverGPU::resolveCollisions(cl::Buffer& positions, cl::Buffer& veloc
 			&events[0]);
 
 		events[0].wait();
+		m_context.Queue().finish();
 	}
 	catch (cl::Error& err)
 	{
@@ -276,16 +289,34 @@ void PCISPHSolverGPU::copyToHost()
 {
 	try
 	{
-		std::array<cl::Event, 2> events;
+		std::vector<cl::Event> events(5);
 		m_context.Queue().enqueueReadBuffer(m_positiionBuffer.value(), CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), m_particles.Positions.data(), nullptr, &events[0]);
-		m_context.Queue().enqueueReadBuffer(m_velocityBuffer.value(), CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), m_particles.Positions.data(), nullptr, &events[0]);
-		m_context.Queue().enqueueReadBuffer(m_positiionBuffer.value(), CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), m_particles.Positions.data(), nullptr, &events[0]);
-		m_context.Queue().enqueueReadBuffer(m_positiionBuffer.value(), CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), m_particles.Positions.data(), nullptr, &events[0]);
-		m_context.Queue().enqueueReadBuffer(m_positiionBuffer.value(), CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), m_particles.Positions.data(), nullptr, &events[0]);
-		events[0].wait();
-		events[1].wait();
+		m_context.Queue().enqueueReadBuffer(m_velocityBuffer.value(), CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), m_particles.Velocities.data(), nullptr, &events[1]);
+		m_context.Queue().enqueueReadBuffer(m_forcesBuffer.value(), CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), m_particles.Forces.data(), nullptr, &events[2]);
+		m_context.Queue().enqueueReadBuffer(m_densitiyBuffer.value(), CL_TRUE, 0, sizeof(CL_FLOAT) * m_particles.Size(), m_particles.Densities.data(), nullptr, &events[3]);
+		m_context.Queue().enqueueReadBuffer(m_pressureBuffer.value(), CL_TRUE, 0, sizeof(CL_FLOAT) * m_particles.Size(), m_particles.Pressures.data(), nullptr, &events[4]);
+	
+		cl::WaitForEvents(events);
+	}
+	catch (cl::Error& err)
+	{
+		LOG_CORE_ERROR("OpenCL Error: {0}, {1}", err.what(), Util::GetCLErrorString(err.err()));
+		throw;
+	}
+}
 
-		m_context.Queue().finish();
+void PCISPHSolverGPU::copyToGPU()
+{
+	try
+	{
+		std::vector<cl::Event> events(5);
+		m_context.Queue().enqueueWriteBuffer(m_positiionBuffer.value(), CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), m_particles.Positions.data(), nullptr, &events[0]);
+		m_context.Queue().enqueueWriteBuffer(m_velocityBuffer.value(), CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), m_particles.Velocities.data(), nullptr, &events[1]);
+		m_context.Queue().enqueueWriteBuffer(m_forcesBuffer.value(), CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), m_particles.Forces.data(), nullptr, &events[2]);
+		m_context.Queue().enqueueWriteBuffer(m_densitiyBuffer.value(), CL_TRUE, 0, sizeof(CL_FLOAT) * m_particles.Size(), m_particles.Densities.data(), nullptr, &events[3]);
+		m_context.Queue().enqueueWriteBuffer(m_pressureBuffer.value(), CL_TRUE, 0, sizeof(CL_FLOAT) * m_particles.Size(), m_particles.Pressures.data(), nullptr, &events[4]);
+
+		cl::WaitForEvents(events);
 	}
 	catch (cl::Error& err)
 	{
@@ -300,13 +331,9 @@ void PCISPHSolverGPU::EndTimeStep()
 	try
 	{
 		//copy state pos and vel into final pos and velocity
-		std::vector<cl::Event> events(5);
-		m_context.Queue().enqueueCopyBuffer(m_statePositionBuffer.value(), m_positiionBuffer.value(), 0, 0, sizeof(ParticlePoint) * m_particles.Size(), 0, &events[0]);
-		m_context.Queue().enqueueCopyBuffer(m_stateVelocityBuffer.value(), m_velocityBuffer.value(), 0, 0, sizeof(ParticlePoint) * m_particles.Size(), 0, &events[1]);
-		m_context.Queue().enqueueReadBuffer(m_forcesBuffer.value(), CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), m_particles.Forces.data(), nullptr, &events[2]);
-		m_context.Queue().enqueueReadBuffer(m_densitiyBuffer.value(), CL_TRUE, 0, sizeof(cl_filter_mode) * m_particles.Size(), m_particles.Densities.data(), nullptr, &events[3]);
-		m_context.Queue().enqueueReadBuffer(m_pressureBuffer.value(), CL_TRUE, 0, sizeof(cl_filter_mode) * m_particles.Size(), m_particles.Pressures.data(), nullptr, &events[4]);
-		cl::WaitForEvents(events);
+		std::vector<cl::Event> events(2);
+		m_context.Queue().enqueueCopyBuffer(m_statePositionBuffer.value(), m_positiionBuffer.value(), 0, 0, sizeof(ParticlePoint) * m_particles.Size(), nullptr, &events[0]);
+		m_context.Queue().enqueueCopyBuffer(m_stateVelocityBuffer.value(), m_velocityBuffer.value(), 0, 0, sizeof(ParticlePoint) * m_particles.Size(), nullptr, &events[1]);
 
 		copyToHost();
 

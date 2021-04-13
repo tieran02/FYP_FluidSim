@@ -203,20 +203,20 @@ int i = get_local_id(0); //index of workgroup
 
 		// if(isnan(viscosityForce.x) || isnan(viscosityForce.y) || isnan(viscosityForce.z) || isinf(viscosityForce.x) || isinf(viscosityForce.y) || isinf(viscosityForce.z) || 
 		// isnan(force.x) || isnan(force.y) || isnan(force.z) || isinf(force.x) || isinf(force.y) || isinf(force.z))
-			// printf("%d, %d, %d, %d, %1.17e:%1.17e:%1.17e, %1.17e:%1.17e:%1.17e, %1.17e:%1.17e:%1.17e, %1.17e:%1.17e:%1.17e, %1.17e,%1.17e, %1.17e:%1.17e:%1.17e, %1.17e:%1.17e:%1.17e\n",
-			// 	gid,
-			// 	i,
-			// 	i+offset,
-			// 	neighborIndex,
-			// 	local_positions[i].x, local_positions[i].y, local_positions[i].z,
-			// 	positions[neighborIndex].x, positions[neighborIndex].y, positions[neighborIndex].z,
-			// 	local_velocities[i].x, local_velocities[i].y, local_velocities[i].z,
-			// 	velocities[neighborIndex].x, velocities[neighborIndex].y, velocities[neighborIndex].z,
-			// 	densities[neighborIndex],
-			// 	dist,
-			// 	force.x, force.y, force.z,
-			// 	viscosityForce.x, viscosityForce.y, viscosityForce.z,
-			// 	local_force[i].x, local_force[i].y, local_force[i].z);
+		// 	printf("%d, %d, %d, %d, %1.17e:%1.17e:%1.17e, %1.17e:%1.17e:%1.17e, %1.17e:%1.17e:%1.17e, %1.17e:%1.17e:%1.17e, %1.17e,%1.17e, %1.17e:%1.17e:%1.17e, %1.17e:%1.17e:%1.17e\n",
+		// 		gid,
+		// 		i,
+		// 		i+offset,
+		// 		neighborIndex,
+		// 		local_positions[i].x, local_positions[i].y, local_positions[i].z,
+		// 		positions[neighborIndex].x, positions[neighborIndex].y, positions[neighborIndex].z,
+		// 		local_velocities[i].x, local_velocities[i].y, local_velocities[i].z,
+		// 		velocities[neighborIndex].x, velocities[neighborIndex].y, velocities[neighborIndex].z,
+		// 		densities[neighborIndex],
+		// 		dist,
+		// 		force.x, force.y, force.z,
+		// 		viscosityForce.x, viscosityForce.y, viscosityForce.z,
+		// 		local_force[i].x, local_force[i].y, local_force[i].z);
 	}
 
 	local_force[i] = viscosityForce;

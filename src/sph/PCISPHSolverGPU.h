@@ -32,6 +32,7 @@ protected:
 	void resolveCollisions(cl::Buffer& positions, cl::Buffer& velocities);
 	void copyIntoState();
 	void copyToHost();
+	void copyToGPU();
 	
 	OpenCLContext& m_context;
 	int m_localWorkGroupSize;

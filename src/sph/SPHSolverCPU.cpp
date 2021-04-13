@@ -278,7 +278,7 @@ void SPHSolverCPU::resolveCollision(const glm::vec3& startPos, glm::vec3& pos, g
 		//add radius to velocity
 		//auto velocityRadius = (vel * TIMESTEP) + clostestPoint.second * radius;
 		//auto velocityRadius = ((vel - radius) * TIMESTEP);
-		if (BOX_COLLIDER.CollisionOccured(startPos, vel * TIMESTEP, collisionData))
+		if (BOX_COLLIDER.CollisionOccured(pos, vel * TIMESTEP, collisionData))
 		{
 			glm::vec3 targetNormal = collisionData.CollisionNormal;
 			auto targetPoint = collisionData.ContactPoint;
