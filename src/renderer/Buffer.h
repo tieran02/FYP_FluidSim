@@ -11,11 +11,12 @@ enum class BufferType
 	STORAGE_BUFFER
 };
 
-class Buffer : NonCopyable, NonMovable
+class Buffer : NonCopyable
 {
  public:
 	Buffer(BufferType bufferType);
 	~Buffer();
+	Buffer(Buffer&& other) noexcept;
 
 	void Build(void* data, size_t size, GLuint bindPoint = 0);
 	void Bind(GLuint bindPoint = 0) const;

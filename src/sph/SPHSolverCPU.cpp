@@ -109,11 +109,6 @@ const ParticleSet& SPHSolverCPU::Particles() const
 	return m_particles;
 }
 
-ParticleSet& SPHSolverCPU::Particles()
-{
-	return m_particles;
-}
-
 void SPHSolverCPU::computeNeighborList()
 {
 	//find all neighbours of all elements

@@ -13,6 +13,16 @@ Buffer::~Buffer()
 	glDeleteBuffers(1, &m_id);
 }
 
+Buffer::Buffer(Buffer&& other) noexcept
+{
+	m_id = other.m_id;
+	m_size = other.m_size;
+	m_type = other.m_type;
+
+	other.m_id = 0;
+	other.m_size = 0;
+}
+
 void Buffer::Build(void* data, size_t size, GLuint bindPoint)
 {
 	CORE_ASSERT(!m_id, "BufferID already set");

@@ -12,6 +12,12 @@ layout(std430, binding = 0) buffer ParticleData
     Position positions[];
 };
 
+layout(std430, binding = 1) buffer ParticlePressures
+{
+    float pressures[];
+};
+
+
 uniform mat4 view;
 uniform mat4 perspective;
 
@@ -24,6 +30,7 @@ void main()
     gl_Position = perspective * view * vec4(instancePos + aPos, 1.0);
     Normal = aNorm;
 
-    float maxDensity = 600.0;
-    Color = vec3(positions[gl_InstanceID].w / maxDensity,0.0,0.0);
+    float maxDensity = 2000.0;
+    //float maxDensity = 600.0;
+    Color = vec3(pressures[gl_InstanceID] / maxDensity,0.0,0.0);
 }

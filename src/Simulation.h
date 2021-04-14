@@ -35,7 +35,8 @@ class Simulation
 	//SPHSolverCPU m_solver{ 1.0/150.0, SPHERE_COUNT,boxCollider};
 	//PCISPHSolverCPU m_solver{ 1.0/60.0, SPHERE_COUNT,boxCollider};
 	PCISPHSolverGPU m_solver{ 1.0f/60.0f, SPHERE_COUNT,boxCollider, m_openCLContext};
-	Buffer particleBuffer{BufferType::STORAGE_BUFFER};
+
+	std::vector<Buffer> m_storageBuffers;
 
 	void createRenderResources();
 	void restart();

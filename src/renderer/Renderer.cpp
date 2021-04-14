@@ -95,3 +95,19 @@ void Renderer::DrawInstanced(const Mesh& mesh, const Shader& shader, const Buffe
 
 	shader.Unbind();
 }
+
+void Renderer::DrawInstanced(const Mesh& mesh, const Shader& shader, const std::vector<Buffer>& instanceBuffers,
+	size_t instanceCount) const
+{
+	shader.Bind();
+
+	mesh.VBO().Bind(0);
+	for (int i = 0, bindPoint = 1; i < instanceBuffers.size(); ++i, ++bindPoint)
+	{
+		instanceBuffers[i].Bind(1);
+	}
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.EBO().ID());
+	glDrawElementsInstanced(GL_TRIANGLES, mesh.Indices().size(), GL_UNSIGNED_INT, nullptr, instanceCount);
+
+	shader.Unbind();
+}

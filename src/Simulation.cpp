@@ -54,15 +54,11 @@ void Simulation::Update()
 	m_renderer.Draw(plane.GetMesh(),shader,m_planeTransforms[4]);
 	m_renderer.Draw(plane.GetMesh(),shader,m_planeTransforms[5]);
 
-	std::vector<ParticlePoint> points = m_solver.Particles().Positions;
-	for (size_t i = 0; i < points.size(); i++)
-	{
-		points[i].vec4.w = m_solver.Particles().Densities[i];
-	}
-	//upload pos
-	particleBuffer.Upload((void*)points.data(),sizeof(ParticlePoint) * SPHERE_COUNT);
+	//upload pos and pressure
+	m_storageBuffers[0].Upload((void*)m_solver.Particles().Positions.data(),sizeof(ParticlePoint) * SPHERE_COUNT);
+	m_storageBuffers[1].Upload((void*)m_solver.Particles().Pressures.data(), sizeof(float) * SPHERE_COUNT);
 
-	m_renderer.DrawInstanced(sphere.GetMesh(),m_instancedShader,particleBuffer ,SPHERE_COUNT);
+	m_renderer.DrawInstanced(sphere.GetMesh(),m_instancedShader, m_storageBuffers,SPHERE_COUNT);
 
 	m_renderer.EndFrame();
 }
@@ -76,8 +72,13 @@ void Simulation::createRenderResources()
 	plane.Build();
 	sphere.Build();
 
+	//	Buffer particleBuffer{BufferType::STORAGE_BUFFER};
+	//   Buffer pressureBuffer{ BufferType::STORAGE_BUFFER };
 	//build instanced buffer
-	particleBuffer.Build((void*)m_solver.Particles().Positions.data(),sizeof(ParticlePoint) * SPHERE_COUNT);
+	m_storageBuffers.emplace_back(Buffer{ BufferType::STORAGE_BUFFER });
+	m_storageBuffers.emplace_back(Buffer{ BufferType::STORAGE_BUFFER });
+	m_storageBuffers[0].Build((void*)m_solver.Particles().Positions.data(),sizeof(ParticlePoint) * SPHERE_COUNT, 0);
+	m_storageBuffers[1].Build((void*)m_solver.Particles().Pressures.data(), sizeof(float) * SPHERE_COUNT, 1);
 
 	//set shader uniforms
 	shader.Bind();
