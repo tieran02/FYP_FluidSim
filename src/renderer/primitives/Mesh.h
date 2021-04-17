@@ -15,6 +15,7 @@ class Mesh : NonCopyable, NonMovable
 	Mesh(std::vector<Vertex>&& vertices, std::vector<uint32_t>&& indices);
 	void Build(std::vector<Vertex>&& vertices, std::vector<uint32_t>&& indices);
 	void Draw(const Transform& transform, const Shader& shader) const;
+	void Draw() const;
 
 	const Buffer& VBO() const;
 	const Buffer& EBO() const;

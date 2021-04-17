@@ -84,6 +84,13 @@ void Renderer::Draw(const Mesh& mesh, const Shader& shader, const Transform& tra
 	shader.Unbind();
 }
 
+void Renderer::Draw(const Mesh& mesh, const Shader& shader) const
+{
+	shader.Bind();
+	mesh.Draw();
+	shader.Unbind();
+}
+
 void Renderer::DrawInstanced(const Mesh& mesh, const Shader& shader, const Buffer& instanceBuffer, size_t instanceCount) const
 {
 	shader.Bind();

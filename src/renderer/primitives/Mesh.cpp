@@ -34,6 +34,18 @@ void Mesh::Draw(const Transform& transform, const Shader& shader) const
 	m_EBO.Unbind();
 
 }
+
+void Mesh::Draw() const
+{
+	m_VBO.Bind();
+	m_EBO.Bind();
+	
+	glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
+	
+	m_VBO.Unbind();
+	m_EBO.Unbind();
+}
+
 const Buffer& Mesh::VBO() const
 {
 	return m_VBO;

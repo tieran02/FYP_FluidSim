@@ -6,6 +6,7 @@
 #include <math/BoxCollider.h>
 #include "opencl/OpenCLContext.h"
 #include "opencl/OpenCLProgram.h"
+#include "renderer/Framebuffer.h"
 #include "sph/PCISPHSolverGPU.h"
 
 class Simulation
@@ -29,7 +30,7 @@ class Simulation
 	std::array<Transform,6> m_planeTransforms;
 
 	SpherePrimitive sphere{0.1f,24,16};
-	Shader shader, m_instancedShader;
+	Shader shader, m_instancedShader, m_composeShader;
 
 	const size_t SPHERE_COUNT{10240};
 	//SPHSolverCPU m_solver{ 1.0/150.0, SPHERE_COUNT,boxCollider};
@@ -37,7 +38,10 @@ class Simulation
 	PCISPHSolverGPU m_solver{ 1.0f/60.0f, SPHERE_COUNT,boxCollider, m_openCLContext};
 
 	std::vector<Buffer> m_storageBuffers;
+	Mesh m_fullscreenQuadMesh;
+	FrameBuffer m_depthFrameBuffer;
 
 	void createRenderResources();
 	void restart();
+	void drawFrame();
 };

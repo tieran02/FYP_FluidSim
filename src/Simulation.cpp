@@ -33,32 +33,15 @@ void Simulation::Update()
 	if(!m_isPaused) 
 		m_solver.Update();
 
-	//Render
-	m_renderer.BeginFrame();
-
-	//update Camera views
-	shader.Bind();
-	shader.SetMat4("view", m_camera.ViewMatrix(), false);
-	shader.Unbind();
-
-	//set shader uniforms
-	m_instancedShader.Bind();
-	m_instancedShader.SetMat4("view", m_camera.ViewMatrix(), false);
-	m_instancedShader.Unbind();
+	m_depthFrameBuffer.Bind();
+	drawFrame();
+	m_depthFrameBuffer.Unbind();
 
 
-	m_renderer.Draw(plane.GetMesh(),shader,m_planeTransforms[0]);
-	m_renderer.Draw(plane.GetMesh(),shader,m_planeTransforms[1]);
-	m_renderer.Draw(plane.GetMesh(),shader,m_planeTransforms[2]);
-	m_renderer.Draw(plane.GetMesh(),shader,m_planeTransforms[3]);
-	m_renderer.Draw(plane.GetMesh(),shader,m_planeTransforms[4]);
-	m_renderer.Draw(plane.GetMesh(),shader,m_planeTransforms[5]);
-
-	//upload pos and pressure
-	m_storageBuffers[0].Upload((void*)m_solver.Particles().Positions.data(),sizeof(ParticlePoint) * SPHERE_COUNT);
-	m_storageBuffers[1].Upload((void*)m_solver.Particles().Pressures.data(), sizeof(float) * SPHERE_COUNT);
-
-	m_renderer.DrawInstanced(sphere.GetMesh(),m_instancedShader, m_storageBuffers,SPHERE_COUNT);
+	glDisable(GL_DEPTH_TEST);
+	glBindTexture(GL_TEXTURE_2D, m_depthFrameBuffer.TextureID());
+	m_renderer.Draw(m_fullscreenQuadMesh, m_composeShader);
+	glEnable(GL_DEPTH_TEST);
 
 	m_renderer.EndFrame();
 }
@@ -68,7 +51,8 @@ void Simulation::createRenderResources()
 	//build shader
 	shader.Build("resources/shaders/testShader.vert","resources/shaders/testShader.frag");
 	m_instancedShader.Build("resources/shaders/teshShaderInstanced.vert","resources/shaders/testShader.frag");
-
+	m_composeShader.Build("resources/shaders/compose.vert", "resources/shaders/compose.frag");
+	
 	plane.Build();
 	sphere.Build();
 
@@ -93,11 +77,60 @@ void Simulation::createRenderResources()
 	m_instancedShader.SetMat4("perspective", m_camera.PerspectiveMatrix(), false);
 	m_instancedShader.SetVec4("ourColor", glm::vec4(0.0f,0.0f,1.0f,1.0f));
 	m_instancedShader.Unbind();
+
+	//Framebuffers
+	m_depthFrameBuffer.Create(Window::Width(), Window::Height(), GL_RGB, GL_RGB32F);
+
+	std::vector<Vertex> quadVerts =
+	{
+		Vertex(glm::vec3(-1.0f,1.0f,0.0f), glm::vec3(0.0f,0.0f,-1.0f), glm::vec2(0.0,1.0f)),
+		Vertex(glm::vec3(-1.0f,-1.0f,0.0f), glm::vec3(0.0f,0.0f,-1.0f), glm::vec2(0.0,0.0f)),
+		Vertex(glm::vec3(1.0f,-1.0f,0.0f), glm::vec3(0.0f,0.0f,-1.0f), glm::vec2(1.0,0.0f)),
+		Vertex(glm::vec3(1.0f,1.0f,0.0f), glm::vec3(0.0f,0.0f,-1.0f), glm::vec2(1.0,1.0f))
+	};
+
+	std::vector<uint32_t> quadIndices =
+	{
+		0,1,2,
+		0,2,3
+	};
+
+	m_fullscreenQuadMesh.Build(std::move(quadVerts), std::move(quadIndices));
 }
 
 void Simulation::restart()
 {
 	m_solver.Reset();
+}
+
+void Simulation::drawFrame()
+{
+	//Render
+	m_renderer.BeginFrame();
+
+	//update Camera views
+	shader.Bind();
+	shader.SetMat4("view", m_camera.ViewMatrix(), false);
+	shader.Unbind();
+
+	//set shader uniforms
+	m_instancedShader.Bind();
+	m_instancedShader.SetMat4("view", m_camera.ViewMatrix(), false);
+	m_instancedShader.Unbind();
+
+
+	m_renderer.Draw(plane.GetMesh(), shader, m_planeTransforms[0]);
+	m_renderer.Draw(plane.GetMesh(), shader, m_planeTransforms[1]);
+	m_renderer.Draw(plane.GetMesh(), shader, m_planeTransforms[2]);
+	m_renderer.Draw(plane.GetMesh(), shader, m_planeTransforms[3]);
+	m_renderer.Draw(plane.GetMesh(), shader, m_planeTransforms[4]);
+	m_renderer.Draw(plane.GetMesh(), shader, m_planeTransforms[5]);
+
+	//upload pos and pressure
+	m_storageBuffers[0].Upload((void*)m_solver.Particles().Positions.data(), sizeof(ParticlePoint) * SPHERE_COUNT);
+	m_storageBuffers[1].Upload((void*)m_solver.Particles().Pressures.data(), sizeof(float) * SPHERE_COUNT);
+
+	m_renderer.DrawInstanced(sphere.GetMesh(), m_instancedShader, m_storageBuffers, SPHERE_COUNT);
 }
 
 void Simulation::KeyCallback(int key, int action, int mode)
