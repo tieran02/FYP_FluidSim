@@ -5,6 +5,7 @@ in vec2 TexCoords;
 in vec4 ModelPos;
 
 uniform vec2 screenSize;
+uniform float ProjectFov = 65.0;
 uniform mat4 projection;
 uniform mat4 view;
 uniform vec4 ourColor;
@@ -12,46 +13,111 @@ uniform vec4 ourColor;
 layout(binding = 0) uniform sampler2D particleTexture;
 layout(binding = 1) uniform sampler2D backgroundTexture;
 
-vec3 eyespacePos(vec2 pos) {
-	float depth = texture(particleTexture, pos).x;
-	pos = (pos - vec2(0.5f)) * 2.0f;
-	return(depth * vec3(-pos.x * projection[0][0], -pos.y / projection[1][1], 1.0f));
+float dz2x(float x, float y)
+{
+	if(x<=0 || y<=0 || x>=1 || y>=1)
+	{
+		return 0;
+	}
+
+	float v0 = textureOffset(particleTexture, vec2(x, y), ivec2(-1, 0)).x;
+	float v1 = texture(particleTexture, vec2(x, y) ).x;
+	float v2 = textureOffset(particleTexture, vec2(x, y), ivec2(1, 0)).x;
+
+	float ret = 0;
+
+	if( (v0 == 0) && (v2 != 0))
+	{
+		ret = (v2 - v1);
+	}
+	else if((v2 ==0) && (v0 != 0))
+	{
+		ret = (v1 - v0);
+	}
+	else 
+	{
+		ret = (v2 - v0) / 2.0f;
+	}
+
+	return ret;
 }
 
-// Compute eye-space normal. Adapted from PySPH.
-vec3 eyespaceNormal(vec2 pos) {
-	// Width of one pixel
-	vec2 dx = vec2(1.0f / screenSize.x, 0.0f);
-	vec2 dy = vec2(0.0f, 1.0f / screenSize.y);
+float dz2y(float x, float y)
+{
+	if( x<=0 || y<=0 || x>=1 || y>=1)
+	{
+		return 0;
+	}
 
-	// Central z
-	float zc =  texture(particleTexture, pos).x;
+	float v0 = textureOffset(particleTexture, vec2(x, y), ivec2(0, -1)).x;
+	float v1 = texture(particleTexture, vec2(x, y)).x;
+	float v2 = textureOffset(particleTexture, vec2(x, y), ivec2(0, 1)).x;
 
-	// Derivatives of z
-	// For shading, one-sided only-the-one-that-works version
-	float zdxp = texture(particleTexture, pos + dx).x;
-	float zdxn = texture(particleTexture, pos - dx).x;
-	float zdx = (zdxp == 0.0f) ? (zdxn == 0.0f ? 0.0f : (zc - zdxn)) : (zdxp - zc);
+	float ret = 0;
 
-	float zdyp = texture(particleTexture, pos + dy).x;
-	float zdyn = texture(particleTexture, pos - dy).x;
-	float zdy = (zdyp == 0.0f) ? (zdyn == 0.0f ? 0.0f : (zc - zdyn)) : (zdyp - zc);
+	if( (v0 == 0 && v2 != 0) )
+	{
+		ret = (v2 - v1);
+	}
+	else if( (v2 == 0 && v0 != 0) )
+	{
+		ret = (v1 - v0);
+	}
+	else
+	{
+		ret = ( v2 - v0) / 2.f;
+	}
 
-	// Projection inversion
-	float cx = 2.0f / (screenSize.x * -projection[0][0]);
-	float cy = 2.0f / (screenSize.y * -projection[1][1]);
+	return ret;
+}
 
-	// Screenspace coordinates
-	float sx = floor(pos.x * (screenSize.x - 1.0f));
-	float sy = floor(pos.y * (screenSize.y - 1.0f));
-	float wx = (screenSize.x - 2.0f * sx) / (screenSize.x * projection[0][0]);
-	float wy = (screenSize.y - 2.0f * sy) / (screenSize.y * projection[1][1]);
+vec4 GetNormal()
+{
+	float Depth = texture(particleTexture, TexCoords).x;
+	vec3 Normal = vec3(0.0, 0.0, 0.0);
 
-	// Eyespace position derivatives
-	vec3 pdx = normalize(vec3(cx * zc + wx * zdx, wy * zdx, zdx));
-	vec3 pdy = normalize(vec3(wx * zdy, cy * zc + wy * zdy, zdy));
+	float OffsetX = 1 / screenSize.x;
+	float OffsetY = 1 / screenSize.y;
 
-	return normalize(cross(pdx, pdy));
+	int SampleOffset = 3;
+	int Counter = 0;
+
+	if (Depth > 0)
+	{
+		for (int i=-SampleOffset; i<=SampleOffset; i++)
+			for (int k=-SampleOffset; k<=SampleOffset; k++)
+			{
+				float fd = textureOffset(particleTexture, TexCoords, ivec2(i, k)).x;
+				float fx = gl_FragCoord.x + i;
+				float fy = gl_FragCoord.y + k;
+				if ((fx>=0) && (fx<=screenSize.x) && (fy>=0) && (fy<=screenSize.y) && (fd>0))
+				{
+					float dz_x = dz2x(TexCoords.x+i*OffsetX, TexCoords.y+k*OffsetY);
+					float dz_y = dz2y(TexCoords.x+i*OffsetX, TexCoords.y+k*OffsetY);
+
+//					float Cx = fx==0 ? 0 : 2 / (fx * screenSize.x);
+//					float Cy = fy==0 ? 0 : 2 / (fy * screenSize.y);
+
+					float Cx = fx==0 ? 0 : 2 / (fx * tan(ProjectFov /2));
+					float Cy = fy==0 ? 0 : 2 / (fy * tan(ProjectFov /2));
+//					float Cy = fy==0 ? 0 : 2 / (fy * ( 1 / tan(ProjectFov / 2 ))); 
+
+					float D = Cy * Cy * dz_x * dz_x + Cx * Cx * dz_y * dz_y + Cx * Cx * Cy * Cy * fd * fd;
+					if (D == 0) continue;
+
+					float inv_sqrtD = 1 / sqrt(D);
+
+					Normal.x += Cy * dz_x * inv_sqrtD;
+					Normal.y += Cx * dz_y * inv_sqrtD;
+					Normal.z += Cx * Cy * fd * inv_sqrtD;
+					Counter++;
+				}
+			}
+		Normal = Normal / float(Counter);
+		Normal = normalize(Normal);
+		Normal = Normal*0.5 + vec3(0.5);
+	}
+	return vec4(Normal, 1.0);
 }
 
 void main()
@@ -59,44 +125,24 @@ void main()
 	vec4 backgroundColor = texture(backgroundTexture, TexCoords);
 	float particleDepth = texture(particleTexture, TexCoords).x;
 
-	//FragColor = vec4(vec3(particleDepth.r),1.0);
-
+	//FragColor = vec4(vec3(particleDepth),1.0f);
 	if(particleDepth == 0.0f) 
 	{
 		FragColor = vec4(0.0f);
 	}
 	else
 	{
-		vec3 normal = eyespaceNormal(TexCoords);
+		vec3 normal = vec3(GetNormal());
 		//normal = normal * mat3(inverse(view));
 		//normal.xz = -normal.xz;
 
-		 //single hardcoded directional light for testing
+		//single hardcoded directional light for testing
 		vec3 LightDirection = normalize(vec3( 0.2f, 1.0f, 0.3f));
 		// diffuse shading
 		float diff = max(dot(normal, LightDirection), 0.0);
 		float lightIntensity = 1.0;
 
-		FragColor = vec4(normal, 1.0f);
-		//FragColor = ourColor * diff * lightIntensity;
-
-		/*vec3 lightDir = vec3(1.0f, 1.0f, -1.0f);
-
-		vec3 pos = eyespacePos(TexCoords);
-		pos = (vec4(pos, 1.0f) * inverse(view)).xyz;
-
-		float lambert = max(0.0f, dot(normalize(lightDir), normal));
-		vec3 fromEye = normalize(pos);
-		fromEye.xz = -fromEye.xz;
-		vec3 reflectedEye = normalize(reflect(fromEye, normal));
-
-		vec4 particleColor = exp(-vec4(0.6f, 0.2f, 0.05f, 3.0f));
-		particleColor.w = clamp(1.0f - particleColor.w, 0.0f, 1.0f);
-		particleColor.rgb = (lambert + 0.2f) * particleColor.rgb;
-		particleColor.w = 1.0f;
-		particleColor.rgb = vec3(lambert + 0.2f);*/
-
-
-		//FragColor = particleColor;
+		//FragColor = vec4(normal, 1.0f);
+		FragColor = ourColor * diff * lightIntensity;
 	}
 }

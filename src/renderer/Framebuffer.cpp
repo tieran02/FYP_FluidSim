@@ -11,8 +11,10 @@ FrameBuffer::~FrameBuffer()
 {
 	if (m_textureID == 0)
 		return;
-	
+
+	glDeleteRenderbuffers(1, &m_renderBufferObject);
 	glDeleteTextures(1, &m_textureID);
+	glDeleteFramebuffers(1, &m_frameBufferID);
 }
 
 FrameBuffer::FrameBuffer(FrameBuffer&& other) noexcept
@@ -30,7 +32,7 @@ FrameBuffer::FrameBuffer(FrameBuffer&& other) noexcept
 	other.m_height = 0;
 }
 
-void FrameBuffer::Create(uint32_t width, uint32_t height, GLenum format, GLenum componentFormat)
+void FrameBuffer::Create(uint32_t width, uint32_t height, GLenum format, GLenum internalFormat)
 {
 	if (m_textureID != 0)
 		return;
@@ -41,7 +43,7 @@ void FrameBuffer::Create(uint32_t width, uint32_t height, GLenum format, GLenum 
 	glGenFramebuffers(1, &m_frameBufferID);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_frameBufferID);
 
-	createTextureBuffer(width, height, format, componentFormat);
+	createTextureBuffer(width, height, format, internalFormat);
 
 	// attach texture to currently bound framebuffer object
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_textureID, 0);
@@ -70,7 +72,7 @@ void FrameBuffer::Unbind() const
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void FrameBuffer::createTextureBuffer(uint32_t width, uint32_t height, GLenum format, GLenum componentFormat)
+void FrameBuffer::createTextureBuffer(uint32_t width, uint32_t height, GLenum format, GLenum internalFormat)
 {
 	if(m_textureID != 0)
 		return;
@@ -78,7 +80,7 @@ void FrameBuffer::createTextureBuffer(uint32_t width, uint32_t height, GLenum fo
 	glGenTextures(1, &m_textureID);
 	glBindTexture(GL_TEXTURE_2D, m_textureID);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, componentFormat, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_FLOAT, NULL);
 	
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);

@@ -12,7 +12,7 @@ public:
 	~FrameBuffer();
 	FrameBuffer(FrameBuffer&& other) noexcept;
 
-	void Create(uint32_t width, uint32_t height, GLenum format, GLenum componentFormat);
+	void Create(uint32_t width, uint32_t height, GLenum format, GLenum internalFormat);
 	void Bind() const;
 	void Unbind() const;
 	
@@ -25,5 +25,5 @@ private:
 	GLuint m_renderBufferObject{ 0 };
 	uint32_t m_width, m_height;
 
-	void createTextureBuffer(uint32_t width, uint32_t height, GLenum format, GLenum componentFormat);
+	void createTextureBuffer(uint32_t width, uint32_t height, GLenum format, GLenum internalFormat);
 };

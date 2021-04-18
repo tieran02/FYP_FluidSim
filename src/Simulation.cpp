@@ -3,6 +3,8 @@
 
 #include <glad/gl.h>
 
+#include "renderer/BlurTexture.h"
+
 Simulation::Simulation(Renderer& renderer) : m_renderer(renderer), m_isPaused(false)
 {
 	m_camera.LootAt(glm::vec3(0,25.0f,0.0f));
@@ -60,6 +62,9 @@ void Simulation::Update()
 	//glDisable(0x0BC0);
 	m_depthFrameBuffer.Unbind();
 
+	//blur depth buffer
+	BlurTexture::Blur(m_depthFrameBuffer.TextureID(), Window::Width(), Window::Height(), GL_RED, GL_RED, m_blurShader, m_fullscreenQuadMesh,64);
+
 	//Render box
 	m_backgroundFrameBuffer.Bind();
 	m_renderer.Clear();
@@ -84,6 +89,7 @@ void Simulation::createRenderResources()
 	m_instancedShader.Build("resources/shaders/teshShaderInstanced.vert","resources/shaders/testShader.frag");
 	m_depthShader.Build("resources/shaders/teshShaderInstanced.vert", "resources/shaders/depth.frag");
 	m_composeShader.Build("resources/shaders/compose.vert", "resources/shaders/compose.frag");
+	m_blurShader.Build("resources/shaders/compose.vert", "resources/shaders/blur.frag");
 	
 	plane.Build();
 	sphere.Build();
@@ -119,12 +125,12 @@ void Simulation::createRenderResources()
 	m_composeShader.Bind();
 	m_composeShader.SetMat4("projection", m_camera.PerspectiveMatrix(), false);
 	m_composeShader.SetVec2("screenSize", glm::vec2(Window::Width(), Window::Height()));
-	m_instancedShader.SetVec4("ourColor", glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
+	m_composeShader.SetVec4("ourColor", glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
 	m_composeShader.Unbind();
 
 	//Framebuffers
-	m_backgroundFrameBuffer.Create(Window::Width(), Window::Height(), GL_RGB, GL_FLOAT);
-	m_depthFrameBuffer.Create(Window::Width(), Window::Height(), GL_RED, GL_FLOAT);
+	m_backgroundFrameBuffer.Create(Window::Width(), Window::Height(), GL_RGB, GL_RGB);
+	m_depthFrameBuffer.Create(Window::Width(), Window::Height(), GL_RED, GL_RED);
 
 	std::vector<Vertex> quadVerts =
 	{

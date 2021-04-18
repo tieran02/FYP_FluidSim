@@ -8,6 +8,7 @@ uniform mat4 view;
 uniform mat4 perspective;
 
 out vec3 Normal;
+out vec3 Color;
 
 void main()
 {
