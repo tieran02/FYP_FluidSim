@@ -23,10 +23,13 @@ uniform mat4 perspective;
 
 out vec3 Normal;
 out vec3 Color;
+out vec4 clipspacePos;
 
 void main()
 {
     vec3 instancePos = vec3(positions[gl_InstanceID].x,positions[gl_InstanceID].y,positions[gl_InstanceID].z);
+    clipspacePos = perspective * view * vec4(instancePos + aPos, 1.0);
+
     gl_Position = perspective * view * vec4(instancePos + aPos, 1.0);
     Normal = aNorm;
 

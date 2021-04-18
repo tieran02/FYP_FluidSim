@@ -66,8 +66,7 @@ void Renderer::BuildVAO()
 
 void Renderer::BeginFrame() const
 {
-	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	ClearColor(glm::vec3(0.0f, 0.0f, 0.0f));
 
 	glBindVertexArray(m_VAO);
 }
@@ -75,6 +74,17 @@ void Renderer::BeginFrame() const
 void Renderer::EndFrame() const
 {
 	glBindVertexArray(0);
+}
+
+void Renderer::Clear() const
+{
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void Renderer::ClearColor(const glm::vec3& color) const
+{
+	glClearColor(color.x, color.y, color.z, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void Renderer::Draw(const Mesh& mesh, const Shader& shader, const Transform& transform) const

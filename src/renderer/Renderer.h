@@ -19,6 +19,8 @@ class Renderer : NonCopyable, NonMovable
 
 	void BeginFrame() const;
 	void EndFrame() const;
+	void Clear() const;
+	void ClearColor(const glm::vec3& color = glm::vec3(0.0f)) const;
 
 	void Draw(const Mesh& mesh, const Shader& shader, const Transform& transform) const;
 	void Draw(const Mesh& mesh, const Shader& shader) const;
