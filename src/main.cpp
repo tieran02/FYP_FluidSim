@@ -9,9 +9,8 @@ int main()
 
 	constexpr uint32_t WIDTH{1920}, HEIGHT{1080};
 	Window window{"Fluid Simulation", WIDTH, HEIGHT};
-	Renderer renderer{WIDTH,HEIGHT};
-
-	Simulation simulation(renderer);
+	Simulation simulation;
+	simulation.Init();
 
 	window.SetKeyCallback(std::bind(&Simulation::KeyCallback, &simulation,
 		std::placeholders::_1,std::placeholders::_2,std::placeholders::_3));

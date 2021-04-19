@@ -15,7 +15,7 @@ class Renderer : NonCopyable, NonMovable
 {
  public:
 	Renderer(uint32_t viewportWidth, uint32_t viewportHeight);
-	~Renderer();
+	virtual ~Renderer();
 
 	void BeginFrame() const;
 	void EndFrame() const;
