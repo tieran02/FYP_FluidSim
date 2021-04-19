@@ -11,6 +11,7 @@ public:
 	~FluidRenderer() override;
 	
 	void Render();
+	Camera& GetCamera();
 private:
 	const ParticleSet& m_particles;
 	SpherePrimitive sphere{ 0.1f,24,16 };

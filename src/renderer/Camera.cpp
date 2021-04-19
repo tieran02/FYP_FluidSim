@@ -82,6 +82,11 @@ const glm::vec3& Camera::Up() const
 	return m_up;
 }
 
+const glm::vec3& Camera::Position() const
+{
+	return m_position;
+}
+
 float Camera::FOV() const
 {
 	return m_fov;

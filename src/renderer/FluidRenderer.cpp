@@ -76,7 +76,7 @@ void FluidRenderer::Render()
 		GL_RED, GL_RED, m_blurShader, m_fullscreenQuadMesh, 1);
 
 	//Render the normals from the depth buffer
-	glDisable(GL_DEPTH_TEST);
+	//glDisable(GL_DEPTH_TEST);
 
 	//Draw normals from the depth buffer into the normalFBO (Screen space normals)
 	m_normalFBO.Bind();
@@ -93,10 +93,15 @@ void FluidRenderer::Render()
 	glBindTexture(GL_TEXTURE_2D, m_normalFBO.TextureID());
 	Draw(m_fullscreenQuadMesh, m_composeShader);
 	
-	glEnable(GL_DEPTH_TEST);
+	//glEnable(GL_DEPTH_TEST);
 
 	EndFrame();
 	
+}
+
+Camera& FluidRenderer::GetCamera()
+{
+	return m_camera;
 }
 
 void FluidRenderer::compileShaders()
@@ -132,11 +137,11 @@ void FluidRenderer::compileShaders()
 	m_normalShader.SetVec2("screenSize", glm::vec2(Window::Width(), Window::Height()));
 	m_normalShader.SetFloat("ProjectFov", m_camera.FOV());
 	m_normalShader.Unbind();
-	
+
 	m_composeShader.Bind();
 	m_composeShader.SetMat4("projection", m_camera.PerspectiveMatrix(), false);
 	m_composeShader.SetVec2("screenSize", glm::vec2(Window::Width(), Window::Height()));
-	m_composeShader.SetVec4("ourColor", glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
+	m_composeShader.SetVec4("ourColor", glm::vec4(0.4f, 0.5f, 0.8f, 1.0f));
 	m_composeShader.Unbind();
 }
 
@@ -159,8 +164,11 @@ void FluidRenderer::updateShaderUniforms()
 	m_depthShader.Bind();
 	m_depthShader.SetMat4("view", m_camera.ViewMatrix(), false);
 	m_depthShader.Unbind();
+	
 	m_composeShader.Bind();
 	m_composeShader.SetMat4("view", m_camera.ViewMatrix(), false);
+	m_composeShader.SetVec3("eyePosition", m_camera.Position());
+	m_composeShader.SetVec2("clipPositionToEye", glm::vec2(tanf(m_camera.FOV() * 0.5f) * (Window::Width() / Window::Height()), tanf(m_camera.FOV() * 0.5f)));
 	m_composeShader.Unbind();
 }
 

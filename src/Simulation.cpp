@@ -39,19 +39,20 @@ void Simulation::restart()
 
 void Simulation::KeyCallback(int key, int action, int mode)
 {
+	Camera& camera = m_renderer->GetCamera();
 	switch (key)
 	{
 	case GLFW_KEY_W:
-		//m_camera.Move(m_camera.Forward());
+		camera.Move(camera.Forward());
 		break;
 	case GLFW_KEY_S:
-		//m_camera.Move(-m_camera.Forward());
+		camera.Move(-camera.Forward());
 		break;
 	case GLFW_KEY_A:
-		//m_camera.Move(-glm::cross(m_camera.Forward(), m_camera.Up()));
+		camera.Move(-glm::cross(camera.Forward(), camera.Up()));
 		break;
 	case GLFW_KEY_D:
-		//m_camera.Move(glm::cross(m_camera.Forward(), m_camera.Up()));
+		camera.Move(glm::cross(camera.Forward(), camera.Up()));
 		break;
 	case GLFW_KEY_F5:
 		restart();
@@ -65,7 +66,9 @@ void Simulation::KeyCallback(int key, int action, int mode)
 
 void Simulation::CursorCallback(double xPos, double yPos)
 {
-	//m_camera.MousePosition(xPos,yPos);
+	Camera& camera = m_renderer->GetCamera();
+	
+	camera.MousePosition(xPos,yPos);
 }
 
 void Simulation::MouseButtonCallback(int button, int action, int mod)
