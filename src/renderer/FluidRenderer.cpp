@@ -73,10 +73,10 @@ void FluidRenderer::Render()
 
 	//Blur depth texture into blurDepthTexture
 	BlurTexture::Blur(m_depthFBO.TextureID(), m_blurDepthTexture, Window::Width(), Window::Height(),
-		GL_RED, GL_RED, m_blurShader, m_fullscreenQuadMesh, 64);
+		GL_RED, GL_RED, m_blurShader, m_fullscreenQuadMesh, 1);
 
 	//Render the normals from the depth buffer
-	//glDisable(GL_DEPTH_TEST);
+	glDisable(GL_DEPTH_TEST);
 
 	//Draw normals from the depth buffer into the normalFBO (Screen space normals)
 	m_normalFBO.Bind();
@@ -93,7 +93,7 @@ void FluidRenderer::Render()
 	glBindTexture(GL_TEXTURE_2D, m_normalFBO.TextureID());
 	Draw(m_fullscreenQuadMesh, m_composeShader);
 	
-	//glEnable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_TEST);
 
 	EndFrame();
 	
@@ -106,7 +106,7 @@ void FluidRenderer::compileShaders()
 	m_depthShader.Build("resources/shaders/teshShaderInstanced.vert", "resources/shaders/depth.frag");
 	m_composeShader.Build("resources/shaders/compose.vert", "resources/shaders/compose.frag");
 	m_normalShader.Build("resources/shaders/compose.vert", "resources/shaders/normal.frag");
-	m_blurShader.Build("resources/shaders/compose.vert", "resources/shaders/blur.frag");
+	m_blurShader.Build("resources/shaders/compose.vert", "resources/shaders/bilateralBlur.frag");
 
 	//set shader uniforms
 	m_defaultShader.Bind();
