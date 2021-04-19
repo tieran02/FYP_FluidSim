@@ -1,4 +1,6 @@
 #include "FluidRenderer.h"
+
+#include "BlurTexture.h"
 #include "sph/ParticleSet.h"
 
 FluidRenderer::FluidRenderer(uint32_t viewportWidth, uint32_t viewportHeight, const ParticleSet& particles) : Renderer(viewportWidth, viewportHeight), m_particles(particles)
@@ -6,6 +8,7 @@ FluidRenderer::FluidRenderer(uint32_t viewportWidth, uint32_t viewportHeight, co
 	m_camera.LootAt(glm::vec3(0, 25.0f, 0.0f));
 	compileShaders();
 	createFrameBuffers();
+	createBlurDepthTexture();
 
 	sphere.Build();
 	plane.Build();
@@ -47,7 +50,12 @@ FluidRenderer::FluidRenderer(uint32_t viewportWidth, uint32_t viewportHeight, co
 	m_planeTransforms[5].SetPosition(glm::vec3(-2.5f, 0, 0));
 	
 	m_camera.LootAt(glm::vec3(0, 0.0f, 0.0f));
-	
+}
+
+FluidRenderer::~FluidRenderer()
+{
+	if(m_blurDepthTexture != 0)
+		glDeleteTextures(1, &m_blurDepthTexture);
 }
 
 void FluidRenderer::Render()
@@ -63,10 +71,14 @@ void FluidRenderer::Render()
 	drawParticles(m_depthShader);
 	m_depthFBO.Unbind();
 
+	//Blur depth texture into blurDepthTexture
+	BlurTexture::Blur(m_depthFBO.TextureID(), m_blurDepthTexture, Window::Width(), Window::Height(),
+		GL_RED, GL_RED, m_blurShader, m_fullscreenQuadMesh, 64);
+
 	//Draw final quad combining the FBOs
 	glDisable(GL_DEPTH_TEST);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, m_depthFBO.TextureID());
+	glBindTexture(GL_TEXTURE_2D, m_blurDepthTexture);
 	//glActiveTexture(GL_TEXTURE1);
 	//glBindTexture(GL_TEXTURE_2D, m_backgroundFrameBuffer.TextureID());
 	Draw(m_fullscreenQuadMesh, m_composeShader);
@@ -131,6 +143,23 @@ void FluidRenderer::updateShaderUniforms()
 	m_composeShader.Bind();
 	m_composeShader.SetMat4("view", m_camera.ViewMatrix(), false);
 	m_composeShader.Unbind();
+}
+
+void FluidRenderer::createBlurDepthTexture()
+{
+	if (m_blurDepthTexture != 0)
+		return;
+	
+	glGenTextures(1, &m_blurDepthTexture);
+	glBindTexture(GL_TEXTURE_2D, m_blurDepthTexture);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, Window::Width(), Window::Height(), 0, GL_RED, GL_FLOAT, NULL);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
 }
 
 void FluidRenderer::uploadPositions()

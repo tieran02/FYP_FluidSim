@@ -8,6 +8,8 @@ class FluidRenderer : public Renderer
 {
 public:
 	FluidRenderer(uint32_t viewportWidth, uint32_t viewportHeight, const ParticleSet& particles);
+	~FluidRenderer() override;
+	
 	void Render();
 private:
 	const ParticleSet& m_particles;
@@ -21,9 +23,13 @@ private:
 	Mesh m_fullscreenQuadMesh;
 	std::array<Transform, 6> m_planeTransforms;
 
+	//OpenGL data
+	GLuint m_blurDepthTexture;
+
 	void compileShaders();
 	void createFrameBuffers();
 	void updateShaderUniforms();
+	void createBlurDepthTexture();
 	void uploadPositions();
 	void drawParticles(const Shader& shader);
 	void drawBox();
