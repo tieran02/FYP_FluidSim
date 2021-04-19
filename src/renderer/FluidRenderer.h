@@ -24,7 +24,7 @@ private:
 	std::array<Transform, 6> m_planeTransforms;
 
 	//OpenGL data
-	GLuint m_blurDepthTexture;
+	GLuint m_blurDepthTexture{0};
 
 	void compileShaders();
 	void createFrameBuffers();

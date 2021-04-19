@@ -17,6 +17,7 @@ class Camera
 
 	const glm::vec3& Forward() const;
 	const glm::vec3& Up() const;
+	float FOV() const;
  private:
 	glm::vec3 m_position, m_up, m_front;
  	float m_nearClip, m_farClip, m_fov;

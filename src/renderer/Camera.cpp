@@ -82,6 +82,11 @@ const glm::vec3& Camera::Up() const
 	return m_up;
 }
 
+float Camera::FOV() const
+{
+	return m_fov;
+}
+
 glm::mat4 Camera::calculatePerspective() const
 {
 	float aspect = (float)Window::Width() / (float)Window::Height();

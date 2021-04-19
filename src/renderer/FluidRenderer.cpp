@@ -75,14 +75,25 @@ void FluidRenderer::Render()
 	BlurTexture::Blur(m_depthFBO.TextureID(), m_blurDepthTexture, Window::Width(), Window::Height(),
 		GL_RED, GL_RED, m_blurShader, m_fullscreenQuadMesh, 64);
 
-	//Draw final quad combining the FBOs
-	glDisable(GL_DEPTH_TEST);
+	//Render the normals from the depth buffer
+	//glDisable(GL_DEPTH_TEST);
+
+	//Draw normals from the depth buffer into the normalFBO (Screen space normals)
+	m_normalFBO.Bind();
+	Clear();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, m_blurDepthTexture);
-	//glActiveTexture(GL_TEXTURE1);
-	//glBindTexture(GL_TEXTURE_2D, m_backgroundFrameBuffer.TextureID());
+	Draw(m_fullscreenQuadMesh, m_normalShader);
+	m_normalFBO.Unbind();
+
+	//Draw final quad combining the FBOs
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, m_depthFBO.TextureID());
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, m_normalFBO.TextureID());
 	Draw(m_fullscreenQuadMesh, m_composeShader);
-	glEnable(GL_DEPTH_TEST);
+	
+	//glEnable(GL_DEPTH_TEST);
 
 	EndFrame();
 	
@@ -94,6 +105,7 @@ void FluidRenderer::compileShaders()
 	m_sphereShader.Build("resources/shaders/teshShaderInstanced.vert", "resources/shaders/testShader.frag");
 	m_depthShader.Build("resources/shaders/teshShaderInstanced.vert", "resources/shaders/depth.frag");
 	m_composeShader.Build("resources/shaders/compose.vert", "resources/shaders/compose.frag");
+	m_normalShader.Build("resources/shaders/compose.vert", "resources/shaders/normal.frag");
 	m_blurShader.Build("resources/shaders/compose.vert", "resources/shaders/blur.frag");
 
 	//set shader uniforms
@@ -115,6 +127,12 @@ void FluidRenderer::compileShaders()
 	m_depthShader.SetVec4("ourColor", glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
 	m_depthShader.Unbind();
 
+	m_normalShader.Bind();
+	m_normalShader.SetMat4("projection", m_camera.PerspectiveMatrix(), false);
+	m_normalShader.SetVec2("screenSize", glm::vec2(Window::Width(), Window::Height()));
+	m_normalShader.SetFloat("ProjectFov", m_camera.FOV());
+	m_normalShader.Unbind();
+	
 	m_composeShader.Bind();
 	m_composeShader.SetMat4("projection", m_camera.PerspectiveMatrix(), false);
 	m_composeShader.SetVec2("screenSize", glm::vec2(Window::Width(), Window::Height()));
@@ -126,6 +144,7 @@ void FluidRenderer::createFrameBuffers()
 {
 	//Framebuffers
 	m_depthFBO.Create(Window::Width(), Window::Height(), GL_RED, GL_RED);
+	m_normalFBO.Create(Window::Width(), Window::Height(), GL_RGBA, GL_RGBA);
 }
 
 void FluidRenderer::updateShaderUniforms()
