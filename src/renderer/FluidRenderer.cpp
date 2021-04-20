@@ -79,18 +79,18 @@ void FluidRenderer::Render()
 	//glDisable(GL_DEPTH_TEST);
 
 	//Draw normals from the depth buffer into the normalFBO (Screen space normals)
-	m_normalFBO.Bind();
+	m_averagedNormalFBO.Bind();
 	Clear();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, m_blurDepthTexture);
-	Draw(m_fullscreenQuadMesh, m_normalShader);
-	m_normalFBO.Unbind();
+	Draw(m_fullscreenQuadMesh, m_averagedNormalShader);
+	m_averagedNormalFBO.Unbind();
 
 	//Draw final quad combining the FBOs
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, m_depthFBO.TextureID());
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, m_normalFBO.TextureID());
+	glBindTexture(GL_TEXTURE_2D, m_averagedNormalFBO.TextureID());
 	Draw(m_fullscreenQuadMesh, m_composeShader);
 	
 	//glEnable(GL_DEPTH_TEST);
@@ -110,7 +110,7 @@ void FluidRenderer::compileShaders()
 	m_sphereShader.Build("resources/shaders/teshShaderInstanced.vert", "resources/shaders/testShader.frag");
 	m_depthShader.Build("resources/shaders/teshShaderInstanced.vert", "resources/shaders/depth.frag");
 	m_composeShader.Build("resources/shaders/compose.vert", "resources/shaders/compose.frag");
-	m_normalShader.Build("resources/shaders/compose.vert", "resources/shaders/normal.frag");
+	m_averagedNormalShader.Build("resources/shaders/compose.vert", "resources/shaders/screenSpaceAvgNormal.frag");
 	m_blurShader.Build("resources/shaders/compose.vert", "resources/shaders/bilateralBlur.frag");
 
 	//set shader uniforms
@@ -132,11 +132,11 @@ void FluidRenderer::compileShaders()
 	m_depthShader.SetVec4("ourColor", glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
 	m_depthShader.Unbind();
 
-	m_normalShader.Bind();
-	m_normalShader.SetMat4("projection", m_camera.PerspectiveMatrix(), false);
-	m_normalShader.SetVec2("screenSize", glm::vec2(Window::Width(), Window::Height()));
-	m_normalShader.SetFloat("ProjectFov", m_camera.FOV());
-	m_normalShader.Unbind();
+	m_averagedNormalShader.Bind();
+	m_averagedNormalShader.SetMat4("projection", m_camera.PerspectiveMatrix(), false);
+	m_averagedNormalShader.SetVec2("screenSize", glm::vec2(Window::Width(), Window::Height()));
+	m_averagedNormalShader.SetFloat("ProjectFov", m_camera.FOV());
+	m_averagedNormalShader.Unbind();
 
 	m_composeShader.Bind();
 	m_composeShader.SetMat4("projection", m_camera.PerspectiveMatrix(), false);
@@ -149,6 +149,7 @@ void FluidRenderer::createFrameBuffers()
 {
 	//Framebuffers
 	m_depthFBO.Create(Window::Width(), Window::Height(), GL_RED, GL_RED);
+	m_averagedNormalFBO.Create(Window::Width(), Window::Height(), GL_RGBA, GL_RGBA);
 	m_normalFBO.Create(Window::Width(), Window::Height(), GL_RGBA, GL_RGBA);
 }
 
@@ -164,6 +165,9 @@ void FluidRenderer::updateShaderUniforms()
 	m_depthShader.Bind();
 	m_depthShader.SetMat4("view", m_camera.ViewMatrix(), false);
 	m_depthShader.Unbind();
+	m_averagedNormalShader.Bind();
+	m_averagedNormalShader.SetMat4("view", m_camera.ViewMatrix(), false);
+	m_averagedNormalShader.Unbind();
 	
 	m_composeShader.Bind();
 	m_composeShader.SetMat4("view", m_camera.ViewMatrix(), false);

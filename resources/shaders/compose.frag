@@ -31,17 +31,21 @@ vec3 eyespacePos(vec2 pos, float depth) {
 }
 
 vec3 WorldPosFromDepth(float depth) {
-    float z = depth * 2.0 - 1.0;
+	return viewportToEyeSpace(TexCoords, depth);
+}
 
-    vec4 clipSpacePosition = vec4(TexCoords * 2.0 - 1.0, z, 1.0);
-    vec4 viewSpacePosition = inverse(projection) * clipSpacePosition;
+float fresnel(float rr1, float rr2, vec3 n, vec3 d) {
+	float r = rr1 / rr2;
+	float theta1 = dot(n, -d);
+	float theta2 = sqrt(1.0f - r * r * (1.0f - theta1 * theta1));
 
-    // Perspective division
-    viewSpacePosition /= viewSpacePosition.w;
+	// Figure out what the Fresnel equations say about what happens next
+	float rs = (rr1 * theta1 - rr2 * theta2) / (rr1 * theta1 + rr2 * theta2);
+	rs = rs * rs;
+	float rp = (rr1 * theta2 - rr2 * theta1) / (rr1 * theta2 + rr2 * theta1);
+	rp = rp * rp;
 
-    vec4 worldSpacePosition = inverse(view) * viewSpacePosition;
-
-    return worldSpacePosition.xyz;
+	return((rs + rp) / 5.0f);
 }
 
 void main()
@@ -61,21 +65,14 @@ void main()
 		vec3 ViewPos = eyespacePos(TexCoords, particleDepth);
 		vec3 WorldPos = WorldPosFromDepth(particleDepth);
 
-		vec3 LightDirection = normalize(vec3( 0.0f, 1.0f, 0.0f));
+		vec3 LightDirection = normalize(vec3( 0.0, 1.0, 0.0));
 		vec4 lightColor = vec4(1.0, 1.0, 1.0, 1.0);
 
-		vec4 SpecularColor = vec4(0, 0, 0, 0);
-		vec3 VertexToEye = normalize(eyePosition - WorldPos);
+		vec3 fromEye = normalize(-WorldPos);
 		vec3 LightReflect = normalize(reflect(LightDirection, normal));
-		float Specular = dot(VertexToEye, LightReflect);
-		if (Specular > 0)
-		{
-			Specular = pow(Specular, SpecularPower);
-			SpecularColor = lightColor * SpecularIntensity * Specular;
-		}
-		//float Fresnel = 0.1 + (1.0 - 0.1)* pow((1.0-max(dot(normal,-normalize(ViewPos) ), 0.0)), 5.0);
+		float spec = pow(dot(fromEye, LightReflect), SpecularPower);
+		vec4 SpecularColor = lightColor * SpecularIntensity * spec;
 
-		
 		//single hardcoded directional light for testing
 		// diffuse shading
 		float diff = max(dot(normal, LightDirection), 0.0) * 0.5 + 0.5;

@@ -6,6 +6,8 @@ in vec2 TexCoords;
 uniform vec2 screenSize;
 uniform float ProjectFov = 65.0;
 uniform mat4 projection;
+uniform mat4 view;
+
 
 layout(binding = 0) uniform sampler2D depthTexture;
 
@@ -76,7 +78,7 @@ vec4 GetNormal()
 	float OffsetX = 1 / screenSize.x;
 	float OffsetY = 1 / screenSize.y;
 
-	int SampleOffset = 3;
+	int SampleOffset = 6;
 	int Counter = 0;
 
 	if (Depth > 0)
@@ -106,8 +108,9 @@ vec4 GetNormal()
 				}
 			}
 		Normal = Normal / float(Counter);
+		Normal = Normal * 2.0 - 1.0;
 		Normal = normalize(Normal);
-		Normal = Normal*0.5 + vec3(0.5);
+		Normal = Normal * 0.5 + vec3(0.5);
 	}
 	return vec4(Normal, 1.0);
 }
