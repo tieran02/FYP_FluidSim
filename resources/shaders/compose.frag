@@ -55,7 +55,7 @@ void main()
 
 
 	//FragColor = vec4(vec3(particleDepth),1.0f);
-	if(particleDepth == 0.0f) 
+	if(particleDepth == 0.0) 
 	{
 		FragColor = vec4(0.2, 0.3, 0.3, 1.0);
 	}
@@ -69,10 +69,16 @@ void main()
 		vec4 lightColor = vec4(1.0, 1.0, 1.0, 1.0);
 
 		vec3 fromEye = normalize(-WorldPos);
+		vec4 SpecularColor = vec4(0, 0, 0, 0);
 		vec3 LightReflect = normalize(reflect(LightDirection, normal));
-		float spec = pow(dot(fromEye, LightReflect), SpecularPower);
-		vec4 SpecularColor = lightColor * SpecularIntensity * spec;
+		float SpecularFactory = dot(fromEye, LightReflect);
+		if (SpecularFactory > 0)
+		{
+			SpecularFactory = pow(SpecularFactory, SpecularPower);
+			SpecularColor   = lightColor * SpecularIntensity * SpecularFactory;
+		}
 
+		
 		//single hardcoded directional light for testing
 		// diffuse shading
 		float diff = max(dot(normal, LightDirection), 0.0) * 0.5 + 0.5;
