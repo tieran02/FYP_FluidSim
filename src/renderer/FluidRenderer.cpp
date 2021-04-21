@@ -4,12 +4,58 @@
 #include "sph/ParticleSet.h"
 #include "Texture.h"
 
+constexpr float skyboxVertices[] = {
+	// positions
+	-1.0f,  1.0f, -1.0f,
+	-1.0f, -1.0f, -1.0f,
+	1.0f, -1.0f, -1.0f,
+	1.0f, -1.0f, -1.0f,
+	1.0f,  1.0f, -1.0f,
+	-1.0f,  1.0f, -1.0f,
+
+	-1.0f, -1.0f,  1.0f,
+	-1.0f, -1.0f, -1.0f,
+	-1.0f,  1.0f, -1.0f,
+	-1.0f,  1.0f, -1.0f,
+	-1.0f,  1.0f,  1.0f,
+	-1.0f, -1.0f,  1.0f,
+
+	1.0f, -1.0f, -1.0f,
+	1.0f, -1.0f,  1.0f,
+	1.0f,  1.0f,  1.0f,
+	1.0f,  1.0f,  1.0f,
+	1.0f,  1.0f, -1.0f,
+	1.0f, -1.0f, -1.0f,
+
+	-1.0f, -1.0f,  1.0f,
+	-1.0f,  1.0f,  1.0f,
+	1.0f,  1.0f,  1.0f,
+	1.0f,  1.0f,  1.0f,
+	1.0f, -1.0f,  1.0f,
+	-1.0f, -1.0f,  1.0f,
+
+	-1.0f,  1.0f, -1.0f,
+	1.0f,  1.0f, -1.0f,
+	1.0f,  1.0f,  1.0f,
+	1.0f,  1.0f,  1.0f,
+	-1.0f,  1.0f,  1.0f,
+	-1.0f,  1.0f, -1.0f,
+
+	-1.0f, -1.0f, -1.0f,
+	-1.0f, -1.0f,  1.0f,
+	1.0f, -1.0f, -1.0f,
+	1.0f, -1.0f, -1.0f,
+	-1.0f, -1.0f,  1.0f,
+	1.0f, -1.0f,  1.0f
+};
+
 FluidRenderer::FluidRenderer(uint32_t viewportWidth, uint32_t viewportHeight, const ParticleSet& particles) : Renderer(viewportWidth, viewportHeight), m_particles(particles)
 {
 	m_camera.LootAt(glm::vec3(0, 25.0f, 0.0f));
 	compileShaders();
 	createFrameBuffers();
-	createBlurDepthTexture();
+	createTextures();
+	createSkyboxVAO();
 
 	sphere.Build();
 	plane.Build();
@@ -55,7 +101,11 @@ FluidRenderer::FluidRenderer(uint32_t viewportWidth, uint32_t viewportHeight, co
 
 FluidRenderer::~FluidRenderer()
 {
+	if(m_skyboxVBO != 0)
+		glDeleteBuffers(1, &m_skyboxVBO);
 
+	if(m_skyboxVAO != 0)
+		glDeleteVertexArrays(1, &m_skyboxVAO);
 }
 
 void FluidRenderer::Render()
@@ -64,7 +114,13 @@ void FluidRenderer::Render()
 	updateShaderUniforms();
 
 	BeginFrame();
-	
+
+	//Draw skybox
+	m_backgroundFBO.Bind();
+	Clear();
+	drawSkybox();
+	m_backgroundFBO.Unbind();
+
 	//Draw particles to depth buffer using the depth FBO
 	m_depthFBO.Bind();
 	Clear();
@@ -86,8 +142,9 @@ void FluidRenderer::Render()
 	m_averagedNormalFBO.Unbind();
 
 	//Draw final quad combining the FBOs
-	m_depthFBO.GetTexture()->Bind(0);
+	m_blurDepthTexture.Bind(0);
 	m_averagedNormalFBO.GetTexture()->Bind(1);
+	m_backgroundFBO.GetTexture()->Bind(2);
 	Draw(m_fullscreenQuadMesh, m_composeShader);
 	
 	//glEnable(GL_DEPTH_TEST);
@@ -109,6 +166,7 @@ void FluidRenderer::compileShaders()
 	m_composeShader.Build("resources/shaders/compose.vert", "resources/shaders/compose.frag");
 	m_averagedNormalShader.Build("resources/shaders/compose.vert", "resources/shaders/screenSpaceAvgNormal.frag");
 	m_blurShader.Build("resources/shaders/compose.vert", "resources/shaders/bilateralBlur.frag");
+	m_skyboxShader.Build("resources/shaders/skybox.vert", "resources/shaders/skybox.frag");
 
 	//set shader uniforms
 	m_defaultShader.Bind();
@@ -140,6 +198,12 @@ void FluidRenderer::compileShaders()
 	m_composeShader.SetVec2("screenSize", glm::vec2(Window::Width(), Window::Height()));
 	m_composeShader.SetVec4("ourColor", glm::vec4(0.4f, 0.5f, 0.8f, 1.0f));
 	m_composeShader.Unbind();
+
+	m_skyboxShader.Bind();
+	m_skyboxShader.SetMat4("view", m_camera.ViewMatrix(), false);
+	m_skyboxShader.SetMat4("projection", m_camera.PerspectiveMatrix(), false);
+	m_defaultShader.Unbind();
+
 }
 
 void FluidRenderer::createFrameBuffers()
@@ -148,6 +212,7 @@ void FluidRenderer::createFrameBuffers()
 	m_depthFBO.Create(Window::Width(), Window::Height());
 	m_averagedNormalFBO.Create(Window::Width(), Window::Height());
 	m_normalFBO.Create(Window::Width(), Window::Height());
+	m_backgroundFBO.Create(Window::Width(), Window::Height());
 }
 
 void FluidRenderer::updateShaderUniforms()
@@ -165,6 +230,9 @@ void FluidRenderer::updateShaderUniforms()
 	m_averagedNormalShader.Bind();
 	m_averagedNormalShader.SetMat4("view", m_camera.ViewMatrix(), false);
 	m_averagedNormalShader.Unbind();
+	m_skyboxShader.Bind();
+	m_skyboxShader.SetMat4("view", glm::mat4(glm::mat3(m_camera.ViewMatrix())), false);
+	m_skyboxShader.Unbind();
 	
 	m_composeShader.Bind();
 	m_composeShader.SetMat4("view", m_camera.ViewMatrix(), false);
@@ -173,13 +241,39 @@ void FluidRenderer::updateShaderUniforms()
 	m_composeShader.Unbind();
 }
 
-void FluidRenderer::createBlurDepthTexture()
+void FluidRenderer::createTextures()
 {
 	if (m_blurDepthTexture.TextureID() != 0)
 		return;
 
 	m_blurDepthTexture.CreateEmptyTexture2D(Window::Width(), Window::Height());
+
+	m_skyboxTexture.CreateCubemapFromFile
+	(
+	{
+		"resources/textures/skybox/posx.jpg",
+		"resources/textures/skybox/negx.jpg",
+		"resources/textures/skybox/posy.jpg",
+		"resources/textures/skybox/negy.jpg",
+		"resources/textures/skybox/posz.jpg",
+		"resources/textures/skybox/negz.jpg",
+		 }
+	);
 }
+
+void FluidRenderer::createSkyboxVAO()
+{
+	glGenVertexArrays(1, &m_skyboxVAO);
+	glGenBuffers(1, &m_skyboxVBO);
+	glBindVertexArray(m_skyboxVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, m_skyboxVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+	glBindVertexArray(0);
+}
+
 
 void FluidRenderer::uploadPositions()
 {
@@ -202,3 +296,17 @@ void FluidRenderer::drawBox()
 	Draw(plane.GetMesh(), m_defaultShader, m_planeTransforms[4]);
 	Draw(plane.GetMesh(), m_defaultShader, m_planeTransforms[5]);
 }
+
+void FluidRenderer::drawSkybox()
+{
+	glBindVertexArray(m_skyboxVAO);
+
+	glDepthMask(GL_FALSE);
+	m_skyboxShader.Bind();
+	m_skyboxTexture.Bind(0);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glDepthMask(GL_TRUE);
+
+	glBindVertexArray(m_VAO);
+}
+

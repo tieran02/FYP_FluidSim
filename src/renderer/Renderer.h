@@ -28,6 +28,6 @@ class Renderer : NonCopyable, NonMovable
 	void DrawInstanced(const Mesh& mesh, const Shader& shader, const std::vector<Buffer>& instanceBuffer, size_t instanceCount) const;
  private:
 	void BuildVAO();
-
+ protected:
 	unsigned int m_VAO;
 };

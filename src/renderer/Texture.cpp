@@ -38,6 +38,7 @@ void Texture::CreateEmptyTexture2D(GLuint width, GLuint height)
 
 	m_width = width;
 	m_height = height;
+	m_textureType = TextureType::TEXTURE2D;
 
 	glGenTextures(1, &m_textureID);
 	glBindTexture(GL_TEXTURE_2D, m_textureID);
@@ -60,9 +61,16 @@ void Texture::CreateTextureFromFile(const std::string& path)
 
 	int width, height, nrChannels;
 	unsigned char *data = stbi_load("container.jpg", &width, &height, &nrChannels, 0);
+	if(!data)
+	{
+		LOG_CORE_ERROR("Texture::CreateTextureFromFile failed to load at path:{0}", path);
+		stbi_image_free(data);
+		return;
+	}
 
 	m_width = width;
 	m_height = height;
+	m_textureType = TextureType::TEXTURE2D;
 
 	glGenTextures(1, &m_textureID);
 	glBindTexture(GL_TEXTURE_2D, m_textureID);
@@ -77,6 +85,43 @@ void Texture::CreateTextureFromFile(const std::string& path)
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	stbi_image_free(data);
+}
+
+void Texture::CreateCubemapFromFile(const std::vector<std::string>& faces)
+{
+	if(m_textureID != 0)
+		return;
+
+	m_textureType = TextureType::CUBEMAP;
+
+	glGenTextures(1, &m_textureID);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
+
+	int width, height, nrChannels;
+	for (unsigned int i = 0; i < faces.size(); i++)
+	{
+		unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+		if (data)
+		{
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+				0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data
+			);
+			stbi_image_free(data);
+		}
+		else
+		{
+			LOG_CORE_ERROR("Texture::CreateCubemapFromFile failed to load at path:{0}", faces[i]);
+			stbi_image_free(data);
+		}
+	}
+
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 }
 
 void Texture::CopyTexture(const Texture& sourceTexture)
@@ -94,7 +139,7 @@ void Texture::CopyTexture(const Texture& sourceTexture)
 		LOG_CORE_FATAL("Texture::CopyTexture source internal format is not the same as texture internal format");
 		return;
 	}
-	
+
 	glCopyImageSubData(sourceTexture.m_textureID, GL_TEXTURE_2D, 0, 0, 0, 0,
 		m_textureID, GL_TEXTURE_2D, 0, 0, 0, 0,
 		m_width, m_height, 1);
@@ -153,13 +198,31 @@ void Texture::BlurTexture(const Shader& blurShader, const Mesh& quadMesh, uint32
 void Texture::Bind(GLuint activeTextureSlot) const
 {
 	activeTexture(activeTextureSlot);
-	glBindTexture(GL_TEXTURE_2D, m_textureID);
+
+	switch (m_textureType)
+	{
+	case TextureType::TEXTURE2D:
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
+		break;
+	case TextureType::CUBEMAP:
+		glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
+		break;
+	}
+
 }
 
 void Texture::Unbind(GLuint activeTextureSlot) const
 {
 	activeTexture(activeTextureSlot);
-	glBindTexture(GL_TEXTURE_2D, 0);
+	switch (m_textureType)
+	{
+	case TextureType::TEXTURE2D:
+		glBindTexture(GL_TEXTURE_2D, 0);
+		break;
+	case TextureType::CUBEMAP:
+		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+		break;
+	}
 }
 
 GLuint Texture::TextureID() const
@@ -191,5 +254,3 @@ void Texture::activeTexture(GLuint activeTextureSlot) const
 
 	glActiveTexture(GL_TEXTURE0 + activeTextureSlot);
 }
-
-

@@ -16,6 +16,7 @@ uniform vec4 ourColor;
 
 layout(binding = 0) uniform sampler2D depthTexture;
 layout(binding = 1) uniform sampler2D normalTexture;
+layout(binding = 2) uniform sampler2D backgroundTexture;
 
 vec3 viewportToEyeSpace(vec2 vCoord, float vEyeZ)
 {
@@ -57,7 +58,7 @@ void main()
 	//FragColor = vec4(vec3(particleDepth),1.0f);
 	if(particleDepth == 0.0) 
 	{
-		FragColor = vec4(0.2, 0.3, 0.3, 1.0);
+		FragColor = texture(backgroundTexture, TexCoords);
 	}
 	else
 	{

@@ -6,6 +6,12 @@
 class Shader;
 class Mesh;
 
+enum class TextureType
+{
+	TEXTURE2D,
+	CUBEMAP
+};
+
 class Texture : NonCopyable
 {
  public:
@@ -15,6 +21,7 @@ class Texture : NonCopyable
 
 	void CreateEmptyTexture2D(GLuint width, GLuint height);
 	void CreateTextureFromFile(const std::string& path);
+	void CreateCubemapFromFile(const std::vector<std::string>& faces);
 	void CopyTexture(const Texture& sourceTexture);
 	void BlurTexture(const Shader& blurShader, const Mesh& quadMesh, uint32_t amount);
 
@@ -30,6 +37,7 @@ class Texture : NonCopyable
 	GLuint m_textureID{0};
 	GLenum m_format, m_internalFormat;
 	GLuint m_width, m_height;
+	TextureType m_textureType;
 
 	void activeTexture(GLuint activeTextureSlot) const;
 
