@@ -8,11 +8,11 @@
 class FrameBuffer : NonCopyable
 {
 public:
-	FrameBuffer();
+	FrameBuffer(GLenum foramt, GLenum internalFormat);
 	~FrameBuffer();
 	FrameBuffer(FrameBuffer&& other) noexcept;
 
-	void Create(uint32_t width, uint32_t height, GLenum format, GLenum internalFormat);
+	void Create(uint32_t width, uint32_t height);
 	void Bind() const;
 	void Unbind() const;
 	
@@ -24,6 +24,7 @@ private:
 	GLuint m_textureID{ 0 };
 	GLuint m_renderBufferObject{ 0 };
 	uint32_t m_width, m_height;
+	GLenum m_format, m_internalFormat;
 
 	void createTextureBuffer(uint32_t width, uint32_t height, GLenum format, GLenum internalFormat);
 };

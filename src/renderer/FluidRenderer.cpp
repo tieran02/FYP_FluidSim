@@ -148,9 +148,9 @@ void FluidRenderer::compileShaders()
 void FluidRenderer::createFrameBuffers()
 {
 	//Framebuffers
-	m_depthFBO.Create(Window::Width(), Window::Height(), GL_RED, GL_RED);
-	m_averagedNormalFBO.Create(Window::Width(), Window::Height(), GL_RGBA, GL_RGBA);
-	m_normalFBO.Create(Window::Width(), Window::Height(), GL_RGBA, GL_RGBA);
+	m_depthFBO.Create(Window::Width(), Window::Height());
+	m_averagedNormalFBO.Create(Window::Width(), Window::Height());
+	m_normalFBO.Create(Window::Width(), Window::Height());
 }
 
 void FluidRenderer::updateShaderUniforms()

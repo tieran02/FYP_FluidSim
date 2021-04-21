@@ -71,11 +71,11 @@ void main()
 		vec3 fromEye = normalize(-WorldPos);
 		vec4 SpecularColor = vec4(0, 0, 0, 0);
 		vec3 LightReflect = normalize(reflect(LightDirection, normal));
-		float SpecularFactory = dot(fromEye, LightReflect);
-		if (SpecularFactory > 0)
+		float spec = dot(fromEye, LightReflect);
+		if (spec > 0)
 		{
-			SpecularFactory = pow(SpecularFactory, SpecularPower);
-			SpecularColor   = lightColor * SpecularIntensity * SpecularFactory;
+			spec = pow(spec, SpecularPower);
+			SpecularColor   = lightColor * SpecularIntensity * spec;
 		}
 
 		

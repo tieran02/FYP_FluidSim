@@ -18,9 +18,9 @@ private:
 	QuadPrimitive plane{ glm::vec2(5.0f,5.0f) };
 	Camera m_camera{ glm::vec3(0,5.0f,-7.5f),0.1f,50.0f,65.0f };
 	Shader m_depthShader, m_averagedNormalShader, m_normalShader, m_composeShader, m_sphereShader, m_blurShader, m_defaultShader;
-	FrameBuffer m_depthFBO;
-	FrameBuffer m_averagedNormalFBO;
-	FrameBuffer m_normalFBO;
+	FrameBuffer m_depthFBO{GL_RED, GL_RED};
+	FrameBuffer m_averagedNormalFBO{GL_RGBA, GL_RGBA};
+	FrameBuffer m_normalFBO{GL_RGBA, GL_RGBA};
 	std::vector<Buffer> m_storageBuffers;
 	Mesh m_fullscreenQuadMesh;
 	std::array<Transform, 6> m_planeTransforms;
