@@ -1,3 +1,4 @@
+#include "stb_image.h"
 #include <util/Log.h>
 #include "Texture.h"
 #include "Shader.h"
@@ -80,7 +81,7 @@ void Texture::CreateTextureFromFile(const std::string& path)
 
 void Texture::CopyTexture(const Texture& sourceTexture)
 {
-	if(m_textureID != 0 || sourceTexture.m_textureID == 0)
+	if(m_textureID == 0 || sourceTexture.m_textureID == 0)
 		return;
 
 	if(m_format != sourceTexture.m_format)
@@ -93,9 +94,7 @@ void Texture::CopyTexture(const Texture& sourceTexture)
 		LOG_CORE_FATAL("Texture::CopyTexture source internal format is not the same as texture internal format");
 		return;
 	}
-
-	CreateEmptyTexture2D(sourceTexture.m_width, sourceTexture.m_height);
-
+	
 	glCopyImageSubData(sourceTexture.m_textureID, GL_TEXTURE_2D, 0, 0, 0, 0,
 		m_textureID, GL_TEXTURE_2D, 0, 0, 0, 0,
 		m_width, m_height, 1);
@@ -150,4 +149,47 @@ void Texture::BlurTexture(const Shader& blurShader, const Mesh& quadMesh, uint32
 	glDeleteTextures(2, &pingpongBuffer[0]);
 	glDeleteFramebuffers(2, &pingpongFBO[0]);
 }
+
+void Texture::Bind(GLuint activeTextureSlot) const
+{
+	activeTexture(activeTextureSlot);
+	glBindTexture(GL_TEXTURE_2D, m_textureID);
+}
+
+void Texture::Unbind(GLuint activeTextureSlot) const
+{
+	activeTexture(activeTextureSlot);
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+GLuint Texture::TextureID() const
+{
+	return m_textureID;
+}
+
+GLenum Texture::Format() const
+{
+	return m_format;
+}
+GLenum Texture::InteralForamt() const
+{
+	return m_internalFormat;
+}
+GLuint Texture::Width() const
+{
+	return m_width;
+}
+GLuint Texture::Height() const
+{
+	return m_height;
+}
+
+void Texture::activeTexture(GLuint activeTextureSlot) const
+{
+	if(activeTextureSlot >= 32)
+		LOG_CORE_ERROR("Texture::activeTexture max active texture in OpenGL is 32 (31 index)");
+
+	glActiveTexture(GL_TEXTURE0 + activeTextureSlot);
+}
+
 

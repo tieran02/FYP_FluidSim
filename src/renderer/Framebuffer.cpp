@@ -1,26 +1,28 @@
 #include "Framebuffer.h"
 
 #include "util/Log.h"
+#include "Texture.h"
 
-FrameBuffer::FrameBuffer(GLenum foramt, GLenum internalFormat) :m_format(foramt), m_internalFormat(internalFormat)
+FrameBuffer::FrameBuffer(GLenum foramt, GLenum internalFormat) :
+	m_format(foramt),
+	m_internalFormat(internalFormat)
 {
-	
+	m_texture = std::make_unique<Texture>(foramt, internalFormat);
 }
 
 FrameBuffer::~FrameBuffer()
 {
-	if (m_textureID == 0)
-		return;
+	if (m_renderBufferObject != 0)
+		glDeleteRenderbuffers(1, &m_renderBufferObject);
 
-	glDeleteRenderbuffers(1, &m_renderBufferObject);
-	glDeleteTextures(1, &m_textureID);
-	glDeleteFramebuffers(1, &m_frameBufferID);
+	if (m_frameBufferID != 0)
+		glDeleteFramebuffers(1, &m_frameBufferID);
 }
 
 FrameBuffer::FrameBuffer(FrameBuffer&& other) noexcept
 {
 	m_frameBufferID = other.m_frameBufferID;
-	m_textureID = other.m_textureID;
+	m_texture = std::move(other.m_texture);
 	m_renderBufferObject = other.m_renderBufferObject;
 	m_width = other.m_width;
 	m_height = other.m_height;
@@ -28,7 +30,7 @@ FrameBuffer::FrameBuffer(FrameBuffer&& other) noexcept
 	m_internalFormat = other.m_internalFormat;
 	
 	other.m_frameBufferID = 0;
-	other.m_textureID = 0;
+	other.m_texture = nullptr;
 	other.m_renderBufferObject = 0;
 	other.m_width = 0;
 	other.m_height = 0;
@@ -38,7 +40,7 @@ FrameBuffer::FrameBuffer(FrameBuffer&& other) noexcept
 
 void FrameBuffer::Create(uint32_t width, uint32_t height)
 {
-	if (m_textureID != 0)
+	if (m_texture && m_texture->TextureID() != 0)
 		return;
 
 	m_width = width;
@@ -47,10 +49,10 @@ void FrameBuffer::Create(uint32_t width, uint32_t height)
 	glGenFramebuffers(1, &m_frameBufferID);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_frameBufferID);
 
-	createTextureBuffer(width, height, m_format, m_internalFormat);
+	m_texture->CreateEmptyTexture2D(width,height);
 
 	// attach texture to currently bound framebuffer object
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_textureID, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_texture->TextureID(), 0);
 
 	//Attach depth and stencil to framebuffer
 	glGenRenderbuffers(1, &m_renderBufferObject);
@@ -74,21 +76,4 @@ void FrameBuffer::Bind() const
 void FrameBuffer::Unbind() const
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-void FrameBuffer::createTextureBuffer(uint32_t width, uint32_t height, GLenum format, GLenum internalFormat)
-{
-	if(m_textureID != 0)
-		return;
-	
-	glGenTextures(1, &m_textureID);
-	glBindTexture(GL_TEXTURE_2D, m_textureID);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_FLOAT, nullptr);
-	
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
 }

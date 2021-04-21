@@ -2,6 +2,7 @@
 
 #include "BlurTexture.h"
 #include "sph/ParticleSet.h"
+#include "Texture.h"
 
 FluidRenderer::FluidRenderer(uint32_t viewportWidth, uint32_t viewportHeight, const ParticleSet& particles) : Renderer(viewportWidth, viewportHeight), m_particles(particles)
 {
@@ -54,8 +55,7 @@ FluidRenderer::FluidRenderer(uint32_t viewportWidth, uint32_t viewportHeight, co
 
 FluidRenderer::~FluidRenderer()
 {
-	if(m_blurDepthTexture != 0)
-		glDeleteTextures(1, &m_blurDepthTexture);
+
 }
 
 void FluidRenderer::Render()
@@ -72,8 +72,8 @@ void FluidRenderer::Render()
 	m_depthFBO.Unbind();
 
 	//Blur depth texture into blurDepthTexture
-	BlurTexture::Blur(m_depthFBO.TextureID(), m_blurDepthTexture, Window::Width(), Window::Height(),
-		GL_RED, GL_RED, m_blurShader, m_fullscreenQuadMesh, 1);
+	m_blurDepthTexture.CopyTexture(*m_depthFBO.GetTexture());
+	m_blurDepthTexture.BlurTexture(m_blurShader, m_fullscreenQuadMesh, 1);
 
 	//Render the normals from the depth buffer
 	//glDisable(GL_DEPTH_TEST);
@@ -81,16 +81,13 @@ void FluidRenderer::Render()
 	//Draw normals from the depth buffer into the normalFBO (Screen space normals)
 	m_averagedNormalFBO.Bind();
 	Clear();
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, m_blurDepthTexture);
+	m_blurDepthTexture.Bind(0);
 	Draw(m_fullscreenQuadMesh, m_averagedNormalShader);
 	m_averagedNormalFBO.Unbind();
 
 	//Draw final quad combining the FBOs
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, m_depthFBO.TextureID());
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, m_averagedNormalFBO.TextureID());
+	m_depthFBO.GetTexture()->Bind(0);
+	m_averagedNormalFBO.GetTexture()->Bind(1);
 	Draw(m_fullscreenQuadMesh, m_composeShader);
 	
 	//glEnable(GL_DEPTH_TEST);
@@ -178,19 +175,10 @@ void FluidRenderer::updateShaderUniforms()
 
 void FluidRenderer::createBlurDepthTexture()
 {
-	if (m_blurDepthTexture != 0)
+	if (m_blurDepthTexture.TextureID() != 0)
 		return;
-	
-	glGenTextures(1, &m_blurDepthTexture);
-	glBindTexture(GL_TEXTURE_2D, m_blurDepthTexture);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, Window::Width(), Window::Height(), 0, GL_RED, GL_FLOAT, NULL);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+	m_blurDepthTexture.CreateEmptyTexture2D(Window::Width(), Window::Height());
 }
 
 void FluidRenderer::uploadPositions()

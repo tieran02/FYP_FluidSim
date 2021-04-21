@@ -1,6 +1,7 @@
 #pragma once
 #include "Framebuffer.h"
 #include "Renderer.h"
+#include "Texture.h"
 
 struct ParticleSet;
 
@@ -26,7 +27,7 @@ private:
 	std::array<Transform, 6> m_planeTransforms;
 
 	//OpenGL data
-	GLuint m_blurDepthTexture{0};
+	Texture m_blurDepthTexture{GL_RED, GL_RED};
 
 	void compileShaders();
 	void createFrameBuffers();
