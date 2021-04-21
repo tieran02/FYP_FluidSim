@@ -145,6 +145,7 @@ void FluidRenderer::Render()
 	m_blurDepthTexture.Bind(0);
 	m_averagedNormalFBO.GetTexture()->Bind(1);
 	m_backgroundFBO.GetTexture()->Bind(2);
+	m_skyboxTexture.Bind(3);
 	Draw(m_fullscreenQuadMesh, m_composeShader);
 	
 	//glEnable(GL_DEPTH_TEST);

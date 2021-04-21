@@ -17,6 +17,7 @@ uniform vec4 ourColor;
 layout(binding = 0) uniform sampler2D depthTexture;
 layout(binding = 1) uniform sampler2D normalTexture;
 layout(binding = 2) uniform sampler2D backgroundTexture;
+layout(binding = 3) uniform samplerCube skybox;
 
 vec3 viewportToEyeSpace(vec2 vCoord, float vEyeZ)
 {
@@ -79,6 +80,13 @@ void main()
 			SpecularColor   = lightColor * SpecularIntensity * spec;
 		}
 
+
+		vec3 Reflection = reflect(ViewPos, normal);
+		vec4 ReflectionColor = vec4(texture(skybox, Reflection).rgb, 1.0);
+
+		float Radio = 1.0 / 1.33;
+		vec3 Refraction = refract(ViewPos, normal, Radio);
+		vec4 RefractionColor = vec4(texture(skybox, Refraction).rgb, 1.0);
 		
 		//single hardcoded directional light for testing
 		// diffuse shading
@@ -87,6 +95,6 @@ void main()
 
 		//FragColor = vec4(normal, 1.0f);
 		vec4 diffuse = lightColor * diff * lightIntensity;
-		FragColor = (ourColor * diffuse) + SpecularColor;
+		FragColor = (ourColor * diffuse) + SpecularColor + mix(ReflectionColor, RefractionColor, 1.0);
 	}
 }
