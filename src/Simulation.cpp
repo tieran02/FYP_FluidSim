@@ -74,6 +74,3 @@ void Simulation::MouseButtonCallback(int button, int action, int mod)
 {
 
 }
-
-
-
