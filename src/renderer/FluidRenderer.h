@@ -18,10 +18,11 @@ private:
 	SpherePrimitive sphere{ 0.1f,24,16 };
 	QuadPrimitive plane{ glm::vec2(5.0f,5.0f) };
 	Camera m_camera{ glm::vec3(0,5.0f,-7.5f),0.1f,50.0f,65.0f };
-	Shader m_depthShader, m_averagedNormalShader, m_normalShader, m_composeShader, m_sphereShader, m_blurShader, m_defaultShader, m_skyboxShader;
+	Shader m_depthShader, m_averagedNormalShader, m_normalShader, m_composeShader, m_sphereShader, m_bilateralBlurShader, m_gaussianBlurShader, m_defaultShader, m_skyboxShader, m_thicknessShader;
 	FrameBuffer m_depthFBO{GL_RED, GL_RED};
 	FrameBuffer m_averagedNormalFBO{GL_RGBA, GL_RGBA};
 	FrameBuffer m_normalFBO{GL_RGBA, GL_RGBA};
+	FrameBuffer m_thicknessFBO{ GL_RED, GL_RED };
 	FrameBuffer m_backgroundFBO{GL_RGBA, GL_RGBA};
 	std::vector<Buffer> m_storageBuffers;
 	Mesh m_fullscreenQuadMesh;
@@ -29,6 +30,7 @@ private:
 
 	//OpenGL data
 	Texture m_blurDepthTexture{GL_RED, GL_RED};
+	Texture m_blurThicknessTexture{ GL_RED, GL_RED };
 	Texture m_skyboxTexture{GL_RGB, GL_RGB};
 
 	GLuint m_skyboxVAO{0}, m_skyboxVBO;

@@ -21,8 +21,6 @@ void main()
 {           
 	float depth = (2 * near) / (far + near -  gl_FragCoord.z * (far - near));
 	
-	if (depth > 1.0) 
-		discard;
 
 	particleDepth = depth;
 }

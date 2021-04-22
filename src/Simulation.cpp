@@ -24,7 +24,6 @@ void Simulation::Update()
 		m_solver->Update();
 
 	m_renderer->Render();
-	
 }
 
 void Simulation::restart()

@@ -129,10 +129,7 @@ void FluidRenderer::Render()
 
 	//Blur depth texture into blurDepthTexture
 	m_blurDepthTexture.CopyTexture(*m_depthFBO.GetTexture());
-	m_blurDepthTexture.BlurTexture(m_blurShader, m_fullscreenQuadMesh, 1);
-
-	//Render the normals from the depth buffer
-	//glDisable(GL_DEPTH_TEST);
+	m_blurDepthTexture.BlurTexture(m_bilateralBlurShader, m_fullscreenQuadMesh, 1);
 
 	//Draw normals from the depth buffer into the normalFBO (Screen space normals)
 	m_averagedNormalFBO.Bind();
@@ -141,17 +138,30 @@ void FluidRenderer::Render()
 	Draw(m_fullscreenQuadMesh, m_averagedNormalShader);
 	m_averagedNormalFBO.Unbind();
 
+	//Render thickness without the depth test for addictive blend
+	m_thicknessFBO.Bind();
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_COLOR, GL_ONE);
+	Clear();
+	drawParticles(m_thicknessShader);
+	glDisable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
+	m_thicknessFBO.Unbind();
+
+	//Blur thickness texture into blurThicknessTexture
+	m_blurThicknessTexture.CopyTexture(*m_thicknessFBO.GetTexture());
+	m_blurThicknessTexture.BlurTexture(m_gaussianBlurShader, m_fullscreenQuadMesh, 32);
+
 	//Draw final quad combining the FBOs
 	m_blurDepthTexture.Bind(0);
 	m_averagedNormalFBO.GetTexture()->Bind(1);
 	m_backgroundFBO.GetTexture()->Bind(2);
 	m_skyboxTexture.Bind(3);
+	m_blurThicknessTexture.Bind(4);
 	Draw(m_fullscreenQuadMesh, m_composeShader);
-	
-	//glEnable(GL_DEPTH_TEST);
 
 	EndFrame();
-	
 }
 
 Camera& FluidRenderer::GetCamera()
@@ -166,27 +176,30 @@ void FluidRenderer::compileShaders()
 	m_depthShader.Build("resources/shaders/teshShaderInstanced.vert", "resources/shaders/depth.frag");
 	m_composeShader.Build("resources/shaders/compose.vert", "resources/shaders/compose.frag");
 	m_averagedNormalShader.Build("resources/shaders/compose.vert", "resources/shaders/screenSpaceAvgNormal.frag");
-	m_blurShader.Build("resources/shaders/compose.vert", "resources/shaders/bilateralBlur.frag");
+	m_bilateralBlurShader.Build("resources/shaders/compose.vert", "resources/shaders/bilateralBlur.frag");
+	m_gaussianBlurShader.Build("resources/shaders/compose.vert", "resources/shaders/blur.frag");
 	m_skyboxShader.Build("resources/shaders/skybox.vert", "resources/shaders/skybox.frag");
+	m_thicknessShader.Build("resources/shaders/teshShaderInstanced.vert", "resources/shaders/thickness.frag");
+
 
 	//set shader uniforms
 	m_defaultShader.Bind();
-	m_defaultShader.SetMat4("view", m_camera.ViewMatrix(), false);
 	m_defaultShader.SetMat4("perspective", m_camera.PerspectiveMatrix(), false);
 	m_defaultShader.SetVec4("ourColor", glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
 	m_defaultShader.Unbind();
 	
 	m_sphereShader.Bind();
-	m_sphereShader.SetMat4("view", m_camera.ViewMatrix(), false);
 	m_sphereShader.SetMat4("perspective", m_camera.PerspectiveMatrix(), false);
 	m_sphereShader.SetVec4("ourColor", glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
 	m_sphereShader.Unbind();
 
 	m_depthShader.Bind();
-	m_depthShader.SetMat4("view", m_camera.ViewMatrix(), false);
 	m_depthShader.SetMat4("perspective", m_camera.PerspectiveMatrix(), false);
-	m_depthShader.SetVec4("ourColor", glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
 	m_depthShader.Unbind();
+
+	m_thicknessShader.Bind();
+	m_thicknessShader.SetMat4("perspective", m_camera.PerspectiveMatrix(), false);
+	m_thicknessShader.Unbind();
 
 	m_averagedNormalShader.Bind();
 	m_averagedNormalShader.SetMat4("projection", m_camera.PerspectiveMatrix(), false);
@@ -197,11 +210,10 @@ void FluidRenderer::compileShaders()
 	m_composeShader.Bind();
 	m_composeShader.SetMat4("projection", m_camera.PerspectiveMatrix(), false);
 	m_composeShader.SetVec2("screenSize", glm::vec2(Window::Width(), Window::Height()));
-	m_composeShader.SetVec4("ourColor", glm::vec4(0.4f, 0.5f, 0.8f, 1.0f));
+	m_composeShader.SetVec4("ourColor", glm::vec4(0.1f, 0.4f, 0.8f, 1.0f));
 	m_composeShader.Unbind();
 
 	m_skyboxShader.Bind();
-	m_skyboxShader.SetMat4("view", m_camera.ViewMatrix(), false);
 	m_skyboxShader.SetMat4("projection", m_camera.PerspectiveMatrix(), false);
 	m_defaultShader.Unbind();
 
@@ -213,6 +225,7 @@ void FluidRenderer::createFrameBuffers()
 	m_depthFBO.Create(Window::Width(), Window::Height());
 	m_averagedNormalFBO.Create(Window::Width(), Window::Height());
 	m_normalFBO.Create(Window::Width(), Window::Height());
+	m_thicknessFBO.Create(Window::Width(), Window::Height());
 	m_backgroundFBO.Create(Window::Width(), Window::Height());
 }
 
@@ -231,6 +244,9 @@ void FluidRenderer::updateShaderUniforms()
 	m_averagedNormalShader.Bind();
 	m_averagedNormalShader.SetMat4("view", m_camera.ViewMatrix(), false);
 	m_averagedNormalShader.Unbind();
+	m_thicknessShader.Bind();
+	m_thicknessShader.SetMat4("view", m_camera.ViewMatrix(), false);
+	m_thicknessShader.Unbind();
 	m_skyboxShader.Bind();
 	m_skyboxShader.SetMat4("view", glm::mat4(glm::mat3(m_camera.ViewMatrix())), false);
 	m_skyboxShader.Unbind();
@@ -248,6 +264,7 @@ void FluidRenderer::createTextures()
 		return;
 
 	m_blurDepthTexture.CreateEmptyTexture2D(Window::Width(), Window::Height());
+	m_blurThicknessTexture.CreateEmptyTexture2D(Window::Width(), Window::Height());
 
 	m_skyboxTexture.CreateCubemapFromFile
 	(
