@@ -1,7 +1,7 @@
 #define MAX_LOCAL_SIZE 256
 
-__constant float RestitutionCoefficient  = 0.2f;
-__constant float frictionCoeffient = 0.1f;
+__constant float RestitutionCoefficient  = 0.45f;
+__constant float frictionCoeffient = 0.3f;
 
 typedef struct _collisionPoint
 {

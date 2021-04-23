@@ -14,7 +14,7 @@ PCISPHSolverGPU::PCISPHSolverGPU(float timeStep, size_t particleCount, const Box
 {
 	m_targetDensitiy = 400.0f;
 	m_negativePressureScale = 0.03f;
-	m_viscosityCoefficient = 0.0195f;
+	m_viscosityCoefficient = 0.0075f;
 	compileKernels();
 	createBuffers();
 }
