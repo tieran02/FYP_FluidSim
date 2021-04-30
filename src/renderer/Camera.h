@@ -27,4 +27,5 @@ class Camera
  	glm::mat4 m_perspective, m_view;
 
 	float yaw, pitch, lastX ,lastY;
+	bool m_firstTimeMove;
 };

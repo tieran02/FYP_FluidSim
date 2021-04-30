@@ -12,7 +12,8 @@ Camera::Camera(const glm::vec3& pos, float nearClip, float farClip, float fov) :
 	//lastX(Window::Width()/2.0f),
 	//lastY(Window::Height()/2.0f),
 	pitch(0.0f),
-	yaw(0.0f)
+	yaw(90.0f),
+	m_firstTimeMove{true}
 {
 	m_perspective = calculatePerspective();
 	LootAt(m_position + m_up);
@@ -31,6 +32,13 @@ void Camera::Move(const glm::vec3& amount)
 
 void Camera::MousePosition(float xpos, float ypos)
 {
+	if(m_firstTimeMove)
+	{
+		lastX = xpos;
+		lastY = ypos;
+		m_firstTimeMove= false;
+	}
+
 	float xoffset = xpos - lastX;
 	float yoffset = lastY - ypos;
 	lastX = xpos;
