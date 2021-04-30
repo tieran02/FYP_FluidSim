@@ -11,7 +11,7 @@ enum class BufferType
 	STORAGE_BUFFER
 };
 
-class Buffer : NonCopyable
+class Buffer : NonCopyable, NonMovable
 {
  public:
 	Buffer(BufferType bufferType);
