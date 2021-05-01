@@ -150,7 +150,7 @@ void FluidRenderer::Render()
 
 	//Blur thickness texture into blurThicknessTexture
 	m_blurThicknessTexture.CopyTexture(*m_thicknessFBO.GetTexture());
-	m_blurThicknessTexture.BlurTexture(m_gaussianBlurShader, m_fullscreenQuadMesh, 32);
+	m_blurThicknessTexture.BlurTexture(m_gaussianBlurShader, m_fullscreenQuadMesh, 8);
 
 	//Draw final quad combining the FBOs
 	m_blurDepthTexture.Bind(0);
