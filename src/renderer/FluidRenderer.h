@@ -11,6 +11,16 @@ struct ParticleSet;
 class FluidRenderer : public Renderer
 {
 public:
+	enum class RenderMode
+	{
+		SPHERE,
+		FLUID,
+		NORMAL,
+		DEPTH,
+		THICKNESS
+	};
+
+public:
 	FluidRenderer(uint32_t viewportWidth, uint32_t viewportHeight, uint32_t particleCount);
 	~FluidRenderer() override;
 	
@@ -19,6 +29,8 @@ public:
 
 	const Buffer& GetPositionStorageBuffer() const;
 	const Buffer& GetPressureStorageBuffer() const;
+
+	void ChangeRenderMode(RenderMode mode);
 private:
 	uint32_t m_particleCount;
 	SpherePrimitive sphere{ 0.1f,24,16 };
@@ -33,6 +45,7 @@ private:
 	std::vector<Buffer> m_storageBuffers;
 	Mesh m_fullscreenQuadMesh;
 	std::array<Transform, 6> m_planeTransforms;
+	RenderMode m_renderMode;
 
 	//OpenGL data
 	Texture m_blurDepthTexture{GL_RED, GL_RED};
@@ -50,6 +63,12 @@ private:
 	void uploadPositions();
 	void drawParticles(const Shader& shader);
 	void drawBox();
+
+	void fluidRender();
+	void sphereRender();
+	void normalRender();
+	void depthRender();
+	void thicknessRender();
 
 	
 };

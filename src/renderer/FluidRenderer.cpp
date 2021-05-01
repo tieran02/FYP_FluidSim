@@ -48,7 +48,9 @@ constexpr float skyboxVertices[] = {
 	1.0f, -1.0f,  1.0f
 };
 
-FluidRenderer::FluidRenderer(uint32_t viewportWidth, uint32_t viewportHeight, uint32_t particleCount) : Renderer(viewportWidth, viewportHeight), m_particleCount(particleCount)
+FluidRenderer::FluidRenderer(uint32_t viewportWidth, uint32_t viewportHeight, uint32_t particleCount) : Renderer(viewportWidth, viewportHeight),
+	m_particleCount(particleCount),
+	m_renderMode(RenderMode::FLUID)
 {
 	m_camera.LootAt(glm::vec3(0, 25.0f, 0.0f));
 	compileShaders();
@@ -114,51 +116,27 @@ void FluidRenderer::Render()
 
 	BeginFrame();
 
-	//Draw skybox
-	m_backgroundFBO.Bind();
-	Clear();
-	drawSkybox();
-	m_backgroundFBO.Unbind();
+	switch (m_renderMode)
+	{
+	case RenderMode::SPHERE:
+		sphereRender();
+		break;
+	case RenderMode::FLUID:
+		fluidRender();
+		break;
+	case RenderMode::NORMAL:
+		normalRender();
+		break;
+	case RenderMode::DEPTH:
+		depthRender();
+		break;
+	case RenderMode::THICKNESS:
+		thicknessRender();
+		break;
+	default: ;
+	}
 
-	//Draw particles to depth buffer using the depth FBO
-	m_depthFBO.Bind();
-	Clear();
-	drawParticles(m_depthShader);
-	m_depthFBO.Unbind();
-
-	//Blur depth texture into blurDepthTexture
-	m_blurDepthTexture.CopyTexture(*m_depthFBO.GetTexture());
-	m_blurDepthTexture.BlurTexture(m_bilateralBlurShader, m_fullscreenQuadMesh, 1);
-
-	//Draw normals from the depth buffer into the normalFBO (Screen space normals)
-	m_averagedNormalFBO.Bind();
-	Clear();
-	m_blurDepthTexture.Bind(0);
-	Draw(m_fullscreenQuadMesh, m_averagedNormalShader);
-	m_averagedNormalFBO.Unbind();
-
-	//Render thickness without the depth test for addictive blend
-	m_thicknessFBO.Bind();
-	glDisable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_COLOR, GL_ONE);
-	Clear();
-	drawParticles(m_thicknessShader);
-	glDisable(GL_BLEND);
-	glEnable(GL_DEPTH_TEST);
-	m_thicknessFBO.Unbind();
-
-	//Blur thickness texture into blurThicknessTexture
-	m_blurThicknessTexture.CopyTexture(*m_thicknessFBO.GetTexture());
-	m_blurThicknessTexture.BlurTexture(m_gaussianBlurShader, m_fullscreenQuadMesh, 8);
-
-	//Draw final quad combining the FBOs
-	m_blurDepthTexture.Bind(0);
-	m_averagedNormalFBO.GetTexture()->Bind(1);
-	m_backgroundFBO.GetTexture()->Bind(2);
-	m_skyboxTexture.Bind(3);
-	m_blurThicknessTexture.Bind(4);
-	Draw(m_fullscreenQuadMesh, m_composeShader);
+	
 
 	EndFrame();
 }
@@ -176,6 +154,11 @@ const Buffer& FluidRenderer::GetPositionStorageBuffer() const
 const Buffer& FluidRenderer::GetPressureStorageBuffer() const
 {
 	return m_storageBuffers[1];
+}
+
+void FluidRenderer::ChangeRenderMode(RenderMode mode)
+{
+	m_renderMode = mode;
 }
 
 void FluidRenderer::compileShaders()
@@ -322,6 +305,100 @@ void FluidRenderer::drawBox()
 	Draw(plane.GetMesh(), m_defaultShader, m_planeTransforms[3]);
 	Draw(plane.GetMesh(), m_defaultShader, m_planeTransforms[4]);
 	Draw(plane.GetMesh(), m_defaultShader, m_planeTransforms[5]);
+}
+
+void FluidRenderer::fluidRender()
+{
+	//Draw skybox
+	m_backgroundFBO.Bind();
+	Clear();
+	drawSkybox();
+	m_backgroundFBO.Unbind();
+
+	//Draw particles to depth buffer using the depth FBO
+	m_depthFBO.Bind();
+	Clear();
+	drawParticles(m_depthShader);
+	m_depthFBO.Unbind();
+
+	//Blur depth texture into blurDepthTexture
+	m_blurDepthTexture.CopyTexture(*m_depthFBO.GetTexture());
+	m_blurDepthTexture.BlurTexture(m_bilateralBlurShader, m_fullscreenQuadMesh, 1);
+
+	//Draw normals from the depth buffer into the normalFBO (Screen space normals)
+	m_averagedNormalFBO.Bind();
+	Clear();
+	m_blurDepthTexture.Bind(0);
+	Draw(m_fullscreenQuadMesh, m_averagedNormalShader);
+	m_averagedNormalFBO.Unbind();
+
+	//Render thickness without the depth test for addictive blend
+	m_thicknessFBO.Bind();
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_COLOR, GL_ONE);
+	Clear();
+	drawParticles(m_thicknessShader);
+	glDisable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
+	m_thicknessFBO.Unbind();
+
+	//Blur thickness texture into blurThicknessTexture
+	m_blurThicknessTexture.CopyTexture(*m_thicknessFBO.GetTexture());
+	m_blurThicknessTexture.BlurTexture(m_gaussianBlurShader, m_fullscreenQuadMesh, 8);
+
+	//Draw final quad combining the FBOs
+	m_blurDepthTexture.Bind(0);
+	m_averagedNormalFBO.GetTexture()->Bind(1);
+	m_backgroundFBO.GetTexture()->Bind(2);
+	m_skyboxTexture.Bind(3);
+	m_blurThicknessTexture.Bind(4);
+	Draw(m_fullscreenQuadMesh, m_composeShader);
+}
+
+void FluidRenderer::sphereRender()
+{
+	//Draw particles to depth buffer using the depth FBO
+	Clear();
+	drawParticles(m_sphereShader);
+}
+
+void FluidRenderer::normalRender()
+{
+	//Draw particles to depth buffer using the depth FBO
+	m_depthFBO.Bind();
+	Clear();
+	drawParticles(m_depthShader);
+	m_depthFBO.Unbind();
+
+	//Blur depth texture into blurDepthTexture
+	m_blurDepthTexture.CopyTexture(*m_depthFBO.GetTexture());
+	m_blurDepthTexture.BlurTexture(m_bilateralBlurShader, m_fullscreenQuadMesh, 1);
+
+	//Draw normals from the depth buffer into the normalFBO (Screen space normals)
+	Clear();
+	m_blurDepthTexture.Bind(0);
+	Draw(m_fullscreenQuadMesh, m_averagedNormalShader);
+}
+
+
+void FluidRenderer::depthRender()
+{
+	//Draw particles to depth buffer using the depth FBO
+	Clear();
+	drawParticles(m_depthShader);
+}
+
+void FluidRenderer::thicknessRender()
+{
+	//Render thickness without the depth test for addictive blend
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_COLOR, GL_ONE);
+	Clear();
+	drawParticles(m_thicknessShader);
+	glDisable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
 }
 
 void FluidRenderer::drawSkybox()

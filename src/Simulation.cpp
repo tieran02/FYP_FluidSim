@@ -55,8 +55,23 @@ void Simulation::KeyCallback(int key, int action, int mode)
 	case GLFW_KEY_D:
 		camera.Move(glm::cross(camera.Forward(), camera.Up()));
 		break;
-	case GLFW_KEY_F5:
+	case GLFW_KEY_F10:
 		restart();
+		break;
+	case GLFW_KEY_F1:
+		m_renderer->ChangeRenderMode(FluidRenderer::RenderMode::SPHERE);
+		break;
+	case GLFW_KEY_F2:
+		m_renderer->ChangeRenderMode(FluidRenderer::RenderMode::DEPTH);
+		break;
+	case GLFW_KEY_F3:
+		m_renderer->ChangeRenderMode(FluidRenderer::RenderMode::NORMAL);
+		break;
+	case GLFW_KEY_F4:
+		m_renderer->ChangeRenderMode(FluidRenderer::RenderMode::THICKNESS);
+		break;
+	case GLFW_KEY_F5:
+		m_renderer->ChangeRenderMode(FluidRenderer::RenderMode::FLUID);
 		break;
 	case GLFW_KEY_P:
 		if(action == GLFW_RELEASE)
