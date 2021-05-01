@@ -48,6 +48,11 @@ void Window::Close()
 	glfwSetWindowShouldClose(m_window,true);
 }
 
+GLFWwindow* Window::GetGLFWwindow()
+{
+	return m_instance->m_window;
+}
+
 void Window::init()
 {
 	// Init GLFW

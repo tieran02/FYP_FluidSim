@@ -2,15 +2,17 @@
 
 #include "util/Log.h"
 #include "util/Util.h"
+#include "renderer/Buffer.h"
 
 //Due to memory restriction on the GPU need to limit the number of max neighbours for a given point known as K
 constexpr size_t K = 256;
 
-PCISPHSolverGPU::PCISPHSolverGPU(float timeStep, size_t particleCount, const BoxCollider& boxCollider, OpenCLContext& context) :
+PCISPHSolverGPU::PCISPHSolverGPU(float timeStep, size_t particleCount, const BoxCollider& boxCollider, OpenCLContext& context, const Buffer& storagePostionBuffer) :
 	PCISPHSolverCPU(timeStep,particleCount,boxCollider), 
 	m_context(context),
 	m_particlePoints(particleCount),
-	m_localWorkGroupSize(std::min(64,static_cast<int>(particleCount)))
+	m_localWorkGroupSize(std::min(64,static_cast<int>(particleCount))),
+	m_storagePostionBuffer(storagePostionBuffer)
 {
 	m_targetDensitiy = 400.0f;
 	m_negativePressureScale = 0.03f;
@@ -258,6 +260,8 @@ void PCISPHSolverGPU::copyIntoState()
 {
 	try
 	{
+		m_context.Queue().enqueueAcquireGLObjects(&m_openGLBuffers);
+		
 		std::array<cl::Event, 2> events;
 		m_context.Queue().enqueueCopyBuffer(m_positiionBuffer.value(), m_statePositionBuffer.value(), 0, 0, sizeof(ParticlePoint) * m_particles.Size(), nullptr, &events[0]);
 		m_context.Queue().enqueueCopyBuffer(m_velocityBuffer.value(), m_stateVelocityBuffer.value(), 0, 0, sizeof(ParticlePoint) * m_particles.Size(), nullptr, &events[1]);
@@ -323,9 +327,12 @@ void PCISPHSolverGPU::EndTimeStep()
 		m_context.Queue().enqueueCopyBuffer(m_statePositionBuffer.value(), m_positiionBuffer.value(), 0, 0, sizeof(ParticlePoint) * m_particles.Size(), nullptr, &events[0]);
 		m_context.Queue().enqueueCopyBuffer(m_stateVelocityBuffer.value(), m_velocityBuffer.value(), 0, 0, sizeof(ParticlePoint) * m_particles.Size(), nullptr, &events[1]);
 
+		//We still need to copy the buffer back to host memory as nearest neighbors is still on the CPU.
 		copyToHost();
 
 		m_context.Queue().finish();
+
+		m_context.Queue().enqueueReleaseGLObjects(&m_openGLBuffers);
 	}
 	catch (cl::Error& err)
 	{
@@ -338,10 +345,15 @@ void PCISPHSolverGPU::createBuffers()
 {
 	try
 	{
-		if(!m_positiionBuffer.has_value())
-			m_positiionBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(ParticlePoint) * m_particles.Size());
+		if (!m_positiionBuffer.has_value())
+		{
+			m_positiionBuffer = cl::BufferGL(m_context.Context(), CL_MEM_READ_WRITE, m_storagePostionBuffer.ID());
+			m_openGLBuffers.push_back(m_positiionBuffer.value());
+		}
+		m_context.Queue().enqueueAcquireGLObjects(&m_openGLBuffers);
 		m_context.Queue().enqueueWriteBuffer(m_positiionBuffer.value(),CL_TRUE,0,sizeof(ParticlePoint) * m_particles.Size(), m_particles.Positions.data());
-
+		m_context.Queue().enqueueReleaseGLObjects(&m_openGLBuffers);
+		
 		if (!m_velocityBuffer.has_value())
 			m_velocityBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(ParticlePoint) * m_particles.Size());
 		m_context.Queue().enqueueWriteBuffer(m_velocityBuffer.value(),CL_TRUE,0,sizeof(ParticlePoint) * m_particles.Size(), m_particles.Velocities.data());

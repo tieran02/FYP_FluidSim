@@ -11,13 +11,15 @@ struct ParticleSet;
 class FluidRenderer : public Renderer
 {
 public:
-	FluidRenderer(uint32_t viewportWidth, uint32_t viewportHeight, const ParticleSet& particles);
+	FluidRenderer(uint32_t viewportWidth, uint32_t viewportHeight, uint32_t particleCount);
 	~FluidRenderer() override;
 	
 	void Render();
 	Camera& GetCamera();
+
+	const Buffer& GetPositionStorageBuffer() const;
 private:
-	const ParticleSet& m_particles;
+	uint32_t m_particleCount;
 	SpherePrimitive sphere{ 0.1f,24,16 };
 	QuadPrimitive plane{ glm::vec2(5.0f,5.0f) };
 	Camera m_camera{ glm::vec3(0,5.0f,-7.5f),0.1f,50.0f,65.0f };

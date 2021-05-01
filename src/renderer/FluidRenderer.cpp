@@ -48,7 +48,7 @@ constexpr float skyboxVertices[] = {
 	1.0f, -1.0f,  1.0f
 };
 
-FluidRenderer::FluidRenderer(uint32_t viewportWidth, uint32_t viewportHeight, const ParticleSet& particles) : Renderer(viewportWidth, viewportHeight), m_particles(particles)
+FluidRenderer::FluidRenderer(uint32_t viewportWidth, uint32_t viewportHeight, uint32_t particleCount) : Renderer(viewportWidth, viewportHeight), m_particleCount(particleCount)
 {
 	m_camera.LootAt(glm::vec3(0, 25.0f, 0.0f));
 	compileShaders();
@@ -62,8 +62,8 @@ FluidRenderer::FluidRenderer(uint32_t viewportWidth, uint32_t viewportHeight, co
 	//build instanced buffer
 	m_storageBuffers.emplace_back(Buffer{ BufferType::STORAGE_BUFFER });
 	m_storageBuffers.emplace_back(Buffer{ BufferType::STORAGE_BUFFER });
-	m_storageBuffers[0].Build((void*)m_particles.Positions.data(), sizeof(ParticlePoint) * particles.Size(), 0);
-	m_storageBuffers[1].Build((void*)m_particles.Pressures.data(), sizeof(float) * particles.Size(), 1);
+	m_storageBuffers[0].Build(nullptr, sizeof(ParticlePoint) * particleCount, 0);
+	m_storageBuffers[1].Build(nullptr, sizeof(float) * particleCount, 1);
 
 	//Create fullscreen quad to combine the FBOs
 	std::vector<Vertex> quadVerts =
@@ -166,6 +166,11 @@ void FluidRenderer::Render()
 Camera& FluidRenderer::GetCamera()
 {
 	return m_camera;
+}
+
+const Buffer& FluidRenderer::GetPositionStorageBuffer() const
+{
+	return m_storageBuffers[0];
 }
 
 void FluidRenderer::compileShaders()
@@ -295,13 +300,13 @@ void FluidRenderer::createSkyboxVAO()
 void FluidRenderer::uploadPositions()
 {
 	//upload pos and pressure
-	m_storageBuffers[0].Upload((void*)m_particles.Positions.data(), sizeof(ParticlePoint) * m_particles.Size());
-	m_storageBuffers[1].Upload((void*)m_particles.Pressures.data(), sizeof(float) * m_particles.Size());
+	//m_storageBuffers[0].Upload((void*)m_particles.Positions.data(), sizeof(ParticlePoint) * m_particles.Size());
+	//m_storageBuffers[1].Upload((void*)m_particles.Pressures.data(), sizeof(float) * m_particles.Size());
 }
 
 void FluidRenderer::drawParticles(const Shader& shader)
 {
-	DrawInstanced(sphere.GetMesh(), shader, m_storageBuffers, m_particles.Size());
+	DrawInstanced(sphere.GetMesh(), shader, m_storageBuffers, m_particleCount);
 }
 
 void FluidRenderer::drawBox()

@@ -2,6 +2,9 @@
 #include "OpenCLContext.h"
 #include "util/Util.h"
 
+#include "platform/Window.h"
+
+
 OpenCLContext::OpenCLContext()
 {
 	initilise();
@@ -30,12 +33,14 @@ void OpenCLContext::initilise()
 		std::vector<cl::Platform> platforms;
 		cl::Platform::get(&platforms);
 
-		cl_context_properties properties[] =
+		cl_context_properties properties[] = 
 		{
-			CL_CONTEXT_PLATFORM,
-			(cl_context_properties)(platforms[0])(),
+			CL_GL_CONTEXT_KHR, (cl_context_properties)glfwGetWGLContext(Window::GetGLFWwindow()),
+			CL_WGL_HDC_KHR, (cl_context_properties)GetDC(glfwGetWin32Window(Window::GetGLFWwindow())),
+			CL_CONTEXT_PLATFORM, (cl_context_properties)(platforms[0])(),
 			0
 		};
+		
 		if(platforms.empty())
 		{
 			LOG_CORE_FATAL("FAILED TO FIND A OPENCL PLATFORM");
@@ -47,7 +52,7 @@ void OpenCLContext::initilise()
 															platforms[0].getInfo<CL_PLATFORM_VERSION>(),
 															platforms[0].getInfo<CL_PLATFORM_VENDOR>());
 
-		m_context = cl::Context(CL_DEVICE_TYPE_ALL, properties);
+		m_context = cl::Context(CL_DEVICE_TYPE_GPU, properties);
 		std::vector<cl::Device> devices = m_context.getInfo<CL_CONTEXT_DEVICES>();
 
 		if(devices.empty())
@@ -59,6 +64,9 @@ void OpenCLContext::initilise()
 		//TODO: should pick the best device if multiple
 		m_device = devices[0];
 		LOG_CORE_INFO("OpenCL Device: {0}", m_device.getInfo<CL_DEVICE_NAME>());
+
+		/*if (m_device.getInfo<CL_DEVICE_EXTENSIONS>().find("cl_khr_gl_sharing") == std::string::npos)
+			LOG_CORE_FATAL("OpenCL context doesn't have gl sharing extension");*/
 
 		m_queue = cl::CommandQueue(m_context,m_device,0,&err);
 	}

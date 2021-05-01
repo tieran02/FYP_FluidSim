@@ -1,4 +1,5 @@
 #pragma once
+#include <glad/gl.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -6,9 +7,13 @@
 #define APIENTRY
 #endif
 
-#define GLFW_INCLUDE_NONE
+#ifdef _WIN32
+#define GLFW_EXPOSE_NATIVE_WIN32
+#define GLFW_EXPOSE_NATIVE_WGL
+#endif
+
 #include <GLFW/glfw3.h>
-#include "glad/gl.h"
+#include <GLFW/glfw3native.h>
 
 #include <string>
 #include <functional>
@@ -25,6 +30,7 @@ class Window
 	void Run(const std::function<void()>& draw);
 	void Close();
 
+	static GLFWwindow* GetGLFWwindow();
 	static uint32_t Width();
 	static uint32_t Height();
 

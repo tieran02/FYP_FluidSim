@@ -11,10 +11,12 @@
 #include "opencl/OpenCLContext.h"
 #include <optional>
 
+class Buffer;
+
 class PCISPHSolverGPU : public PCISPHSolverCPU
 {
 public:
-	PCISPHSolverGPU(float timeStep, size_t particleCount, const BoxCollider& boxCollider, OpenCLContext& context);
+	PCISPHSolverGPU(float timeStep, size_t particleCount, const BoxCollider& boxCollider, OpenCLContext& context, const Buffer& storagePostionBuffer);
 	void Setup() override;
 protected:
 	void BeginTimeStep() override;
@@ -37,6 +39,9 @@ protected:
 	OpenCLContext& m_context;
 	int m_localWorkGroupSize;
 
+	const Buffer& m_storagePostionBuffer;
+	std::vector<cl::Memory> m_openGLBuffers;
+	
 	std::optional<cl::Buffer> m_positiionBuffer;
 	std::optional<cl::Buffer> m_velocityBuffer;
 	std::optional<cl::Buffer> m_forcesBuffer;
