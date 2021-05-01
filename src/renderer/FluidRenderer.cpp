@@ -202,7 +202,7 @@ void FluidRenderer::compileShaders()
 	m_composeShader.Bind();
 	m_composeShader.SetMat4("projection", m_camera.PerspectiveMatrix(), false);
 	m_composeShader.SetVec2("screenSize", glm::vec2(Window::Width(), Window::Height()));
-	m_composeShader.SetVec4("ourColor", glm::vec4(0.1f, 0.4f, 0.8f, 1.0f));
+	m_composeShader.SetVec4("waterColor", glm::vec4(0.1f, 0.4f, 0.8f, 1.0f));
 	m_composeShader.Unbind();
 
 	m_skyboxShader.Bind();
@@ -224,6 +224,8 @@ void FluidRenderer::createFrameBuffers()
 void FluidRenderer::updateShaderUniforms()
 {
 	//update Camera views
+	glm::mat3 invView = glm::mat3(glm::inverse(m_camera.ViewMatrix()));
+	
 	m_defaultShader.Bind();
 	m_defaultShader.SetMat4("view", m_camera.ViewMatrix(), false);
 	m_defaultShader.Unbind();
@@ -245,8 +247,8 @@ void FluidRenderer::updateShaderUniforms()
 	
 	m_composeShader.Bind();
 	m_composeShader.SetMat4("view", m_camera.ViewMatrix(), false);
-	m_composeShader.SetVec3("eyePosition", m_camera.Position());
 	m_composeShader.SetVec2("clipPositionToEye", glm::vec2(tanf(m_camera.FOV() * 0.5f) * (Window::Width() / Window::Height()), tanf(m_camera.FOV() * 0.5f)));
+	m_composeShader.SetMat3("invView3", invView, false);
 	m_composeShader.Unbind();
 }
 

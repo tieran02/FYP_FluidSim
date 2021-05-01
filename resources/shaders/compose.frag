@@ -5,14 +5,14 @@ in vec2 TexCoords;
 in vec4 ModelPos;
 
 uniform vec2 screenSize;
-uniform vec3 eyePosition;
 uniform vec2 clipPositionToEye;
 uniform float ProjectFov = 65.0;
 uniform float SpecularPower = 32.0;
 uniform float SpecularIntensity = 0.9;
 uniform mat4 projection;
 uniform mat4 view;
-uniform vec4 ourColor;
+uniform mat3 invView3;
+uniform vec4 waterColor;
 
 layout(binding = 0) uniform sampler2D depthTexture;
 layout(binding = 1) uniform sampler2D normalTexture;
@@ -69,14 +69,14 @@ void main()
 
 		//TODO z posiing is incorrect in get pos
 		//vec3 ViewDirection = normalize(-WorldPos).xyz;
-		vec3 ViewDirection = normalize(mat3(inverse(view)) * fromEye).xyz;
-		vec3 N =  mat3(inverse(view)) * normal;
+		vec3 ViewDirection = normalize(invView3 * fromEye).xyz;
+		vec3 N =  invView3 * normal;
 
 		vec3 Reflection = reflect(ViewDirection, N);
 		vec4 ReflectionColor = vec4(texture(skybox, Reflection).rgb, 1.0);
 
 		float Radio = 1.0 / 1.33;
-		vec3 transmission = (1.0-(1.0-ourColor.xyz)*thickness);
+		vec3 transmission = (1.0-(1.0-waterColor.xyz)*thickness);
 		vec3 Refraction = refract(ViewDirection, N, Radio);
 		vec4 RefractionColor = texture(skybox, Refraction) * vec4(transmission, 1.0);
 		
@@ -88,6 +88,6 @@ void main()
 		//FragColor = vec4(normal, 1.0f);
 		vec4 diffuse = lightColor * diff * lightIntensity;
 
-		FragColor = (ourColor * diffuse) + SpecularColor + mix(ReflectionColor, RefractionColor, 0.7);
+		FragColor = (waterColor * diffuse) + SpecularColor + mix(ReflectionColor, RefractionColor, 0.7);
 	}
 }

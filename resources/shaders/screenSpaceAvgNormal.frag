@@ -8,7 +8,6 @@ uniform float ProjectFov = 65.0;
 uniform mat4 projection;
 uniform mat4 view;
 
-
 layout(binding = 0) uniform sampler2D depthTexture;
 
 
