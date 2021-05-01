@@ -177,8 +177,6 @@ int main()
 	AABB m_aabb(glm::vec3(-110),glm::vec3(110));
 	gpuHashmap.BuildTests(points4, m_aabb);
 	gpuHashmap.NearestNeighborTests(points4, m_aabb);
-//	OpenCLBruteForceNNTests bruteNN;
-//	bruteNN.BuildTests(randomPoints4(512));
 
 	return 0;
 }
