@@ -10,7 +10,8 @@ void Simulation::Init()
 {
 	m_renderer = std::make_unique<FluidRenderer>(Window::Width(), Window::Height(), SPHERE_COUNT);
 
-	m_solver = std::make_unique<PCISPHSolverGPU>( 1.0f / 60.0f, SPHERE_COUNT, boxCollider, m_openCLContext, m_renderer->GetPositionStorageBuffer() );
+	m_solver = std::make_unique<PCISPHSolverGPU>( 1.0f / 60.0f, SPHERE_COUNT, boxCollider, m_openCLContext, 
+		m_renderer->GetPositionStorageBuffer(), m_renderer->GetPressureStorageBuffer() );
 }
 
 void Simulation::Update()

@@ -16,7 +16,8 @@ class Buffer;
 class PCISPHSolverGPU : public PCISPHSolverCPU
 {
 public:
-	PCISPHSolverGPU(float timeStep, size_t particleCount, const BoxCollider& boxCollider, OpenCLContext& context, const Buffer& storagePostionBuffer);
+	PCISPHSolverGPU(float timeStep, size_t particleCount, const BoxCollider& boxCollider, OpenCLContext& context,
+		const Buffer& storagePostionBuffer, const Buffer& storagePressureBuffer);
 	void Setup() override;
 protected:
 	void BeginTimeStep() override;
@@ -40,6 +41,7 @@ protected:
 	int m_localWorkGroupSize;
 
 	const Buffer& m_storagePostionBuffer;
+	const Buffer& m_storagePressureBuffer;
 	std::vector<cl::Memory> m_openGLBuffers;
 	
 	std::optional<cl::Buffer> m_positiionBuffer;

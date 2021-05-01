@@ -173,6 +173,11 @@ const Buffer& FluidRenderer::GetPositionStorageBuffer() const
 	return m_storageBuffers[0];
 }
 
+const Buffer& FluidRenderer::GetPressureStorageBuffer() const
+{
+	return m_storageBuffers[1];
+}
+
 void FluidRenderer::compileShaders()
 {
 	m_defaultShader.Build("resources/shaders/testShader.vert", "resources/shaders/testShader.frag");

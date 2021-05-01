@@ -7,12 +7,14 @@
 //Due to memory restriction on the GPU need to limit the number of max neighbours for a given point known as K
 constexpr size_t K = 256;
 
-PCISPHSolverGPU::PCISPHSolverGPU(float timeStep, size_t particleCount, const BoxCollider& boxCollider, OpenCLContext& context, const Buffer& storagePostionBuffer) :
+PCISPHSolverGPU::PCISPHSolverGPU(float timeStep, size_t particleCount, const BoxCollider& boxCollider, OpenCLContext& context
+	, const Buffer& storagePostionBuffer, const Buffer& storagePressureBuffer) :
 	PCISPHSolverCPU(timeStep,particleCount,boxCollider), 
 	m_context(context),
 	m_particlePoints(particleCount),
 	m_localWorkGroupSize(std::min(64,static_cast<int>(particleCount))),
-	m_storagePostionBuffer(storagePostionBuffer)
+	m_storagePostionBuffer(storagePostionBuffer),
+	m_storagePressureBuffer(storagePressureBuffer)
 {
 	m_targetDensitiy = 400.0f;
 	m_negativePressureScale = 0.03f;
@@ -367,8 +369,13 @@ void PCISPHSolverGPU::createBuffers()
 		m_context.Queue().enqueueWriteBuffer(m_densitiyBuffer.value(),CL_TRUE,0,sizeof(cl_float) * m_particles.Size(), m_particles.Densities.data());
 
 		if (!m_pressureBuffer.has_value())
-			m_pressureBuffer = cl::Buffer(m_context.Context(), CL_MEM_READ_WRITE, sizeof(cl_float) * m_particles.Size());
-		m_context.Queue().enqueueWriteBuffer(m_pressureBuffer.value(),CL_TRUE,0,sizeof(cl_float) * m_particles.Size(), m_particles.Pressures.data());
+		{
+			m_pressureBuffer = cl::BufferGL(m_context.Context(), CL_MEM_READ_WRITE, m_storagePressureBuffer.ID());
+			m_openGLBuffers.push_back(m_pressureBuffer.value());
+		}
+		m_context.Queue().enqueueAcquireGLObjects(&m_openGLBuffers);
+		m_context.Queue().enqueueWriteBuffer(m_pressureBuffer.value(), CL_TRUE, 0, sizeof(cl_float) * m_particles.Size(), m_particles.Pressures.data());
+		m_context.Queue().enqueueReleaseGLObjects(&m_openGLBuffers);
 
 		//state buffers
 		if (!m_statePositionBuffer.has_value())

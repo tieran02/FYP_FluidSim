@@ -18,6 +18,7 @@ public:
 	Camera& GetCamera();
 
 	const Buffer& GetPositionStorageBuffer() const;
+	const Buffer& GetPressureStorageBuffer() const;
 private:
 	uint32_t m_particleCount;
 	SpherePrimitive sphere{ 0.1f,24,16 };
