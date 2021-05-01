@@ -10,7 +10,6 @@
 #include <string>
 #include <unordered_map>
 #include <NonCopyable.h>
-#include <NonMovable.h>
 
 class OpenCLContext;
 

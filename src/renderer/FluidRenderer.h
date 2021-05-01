@@ -1,7 +1,10 @@
 #pragma once
 #include "Framebuffer.h"
+#include <array>
 #include "Renderer.h"
 #include "Texture.h"
+#include "Camera.h"
+#include "primitives/SpherePrimitive.h"
 
 struct ParticleSet;
 

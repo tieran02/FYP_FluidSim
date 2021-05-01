@@ -94,10 +94,6 @@ std::unique_ptr<KDNode<K>> KDTree<K>::buildTree(const KDTree::point_Iterator& be
 	std::size_t len = end - begin;
 	auto mid = begin + len / 2;
 
-	//TODO implement leaf size
-	//if(len <= m_leafLimit)
-	//	return nullptr;
-
 	auto cmp = [axis](const KDPair& p1, const KDPair& p2)
 	{
 		return p1.first[axis] < p2.first[axis];
@@ -236,7 +232,6 @@ void KDTree<K>::findNearestNodesWithinRadius(KDNode<K>* branch,
 
 	findNearestNodesWithinRadius(section, point, next_lv, nearestNodes, radius2);
 
-	// only check the other branch if it makes sense to do so
 	if (dx2 <= radius2) {
 		findNearestNodesWithinRadius(other, point, next_lv, nearestNodes, radius2);
 	}

@@ -29,15 +29,6 @@ bool BoxCollider::CollisionOccured(const glm::vec3& point,
 			return true;
 
 	}
-
-//	auto closestPoint = m_aabb.GetClosestPoint(point,false);
-//	collisionData.ContactPoint = closestPoint.first;
-//	collisionData.CollisionNormal = closestPoint.second;
-//	collisionData.Distance = glm::distance(point,collisionData.ContactPoint);
-//
-//	if(m_aabb.IsPointInside(collisionData.ContactPoint)  || collisionData.Distance < 0.1f)
-//		return true;
-
 	return false;
 }
 

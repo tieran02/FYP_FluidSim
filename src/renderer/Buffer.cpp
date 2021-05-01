@@ -1,6 +1,5 @@
 #include "Buffer.h"
 #include "Vertex.h"
-#include <exception>
 #include <util/Log.h>
 
 Buffer::Buffer(BufferType bufferType) : m_type{bufferType}, m_id{0}

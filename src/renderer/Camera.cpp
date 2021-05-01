@@ -9,8 +9,6 @@ Camera::Camera(const glm::vec3& pos, float nearClip, float farClip, float fov) :
 	m_fov(glm::radians(fov)),
 	m_front(0.0f, 0.0f, -1.0f),
 	m_up(0.0f, 1.0f, 0.0f),
-	//lastX(Window::Width()/2.0f),
-	//lastY(Window::Height()/2.0f),
 	pitch(0.0f),
 	yaw(90.0f),
 	m_firstTimeMove{true}

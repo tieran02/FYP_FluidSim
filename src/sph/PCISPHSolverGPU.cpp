@@ -97,9 +97,6 @@ void PCISPHSolverGPU::ApplyForces()
 
 		std::array<cl::Event, 10> events;
 		
-		//Apply gravity
-		//m_context.Queue().enqueueFillBuffer(m_forcesBuffer.value(), ParticlePoint(glm::vec3(0.0f,-9.81f,0.0f)), 0, sizeof(ParticlePoint) * m_particles.Size());
-		
 		//apply viscosity forces
 		m_context.Queue().enqueueNDRangeKernel(*viscosityForcesKernel,
 			0,
@@ -219,19 +216,8 @@ void PCISPHSolverGPU::ResolveCollisions()
 	resolveCollisions(m_statePositionBuffer.value(), m_stateVelocityBuffer.value());
 }
 
-std::vector<ParticlePoint> pos;
-std::vector<ParticlePoint> vel;
 void PCISPHSolverGPU::resolveCollisions(cl::Buffer& positions, cl::Buffer& velocities)
 {
-	//pos.resize(m_particles.Size());
-	//vel.resize(m_particles.Size());
-	//m_context.Queue().enqueueReadBuffer(positions, CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), pos.data());
-	//m_context.Queue().enqueueReadBuffer(velocities, CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), vel.data());
-	//
-	//SPHSolverCPU::resolveCollisions(pos, vel);
-	//m_context.Queue().enqueueWriteBuffer(positions, CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), pos.data());
-	//m_context.Queue().enqueueWriteBuffer(velocities, CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), vel.data());
-	
 	//check if the OpenCL context has the Brute NN search program
 	OpenCLProgram* program = m_context.GetProgram("collisions");
 	CORE_ASSERT(program, "Failed to find OpenCLProgram for collisions (Make sure its compiled)");
@@ -463,19 +449,7 @@ void PCISPHSolverGPU::computeNeighborList()
 }
 
 void PCISPHSolverGPU::computeDensities()
-{
-	//try
-	//{
-	//	m_context.Queue().enqueueReadBuffer(m_positiionBuffer.value(), CL_TRUE, 0, sizeof(ParticlePoint) * m_particles.Size(), m_particles.Positions.data());
-	//	SPHSolverCPU::computeDensities();
-	//	m_context.Queue().enqueueWriteBuffer(m_densitiyBuffer.value(), CL_TRUE, 0, sizeof(CL_FLOAT) * m_particles.Size(), m_particles.Densities.data());
-	//}
-	//catch (cl::Error& err)
-	//{
-	//	LOG_CORE_ERROR("OpenCL Error: {0}, {1}", err.what(), Util::GetCLErrorString(err.err()));
-	//	throw;
-	//}
-	
+{	
 	//check if the OpenCL context has the Brute NN search program
 	OpenCLProgram* program = m_context.GetProgram("sph");
 	CORE_ASSERT(program, "Failed to find OpenCLProgram for sph (Make sure its compiled)");
@@ -486,21 +460,7 @@ void PCISPHSolverGPU::computeDensities()
 
 	try
 	{
-		//kernelSumKernel->setArg(0, m_positiionBuffer.value());
-		//kernelSumKernel->setArg(1, m_neighborBuffer.value());
-		//kernelSumKernel->setArg(2, m_kernelSumBuffer.value());
-
 		std::array<cl::Event, 2> events;
-		//
-		////reset kernel sums
-		//m_context.Queue().enqueueNDRangeKernel(*kernelSumKernel,
-		//	0,
-		//	cl::NDRange(m_particles.Size()),
-		//	cl::NDRange(m_localWorkGroupSize),
-		//	nullptr,
-		//	&events[0]);
-		//events[0].wait();
-
 		densityKernel->setArg(0, m_positiionBuffer.value());
 		densityKernel->setArg(1, m_neighborBuffer.value());
 		densityKernel->setArg(2, m_densitiyBuffer.value());

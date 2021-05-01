@@ -1,6 +1,5 @@
 #include "FluidRenderer.h"
 
-#include "BlurTexture.h"
 #include "sph/ParticleSet.h"
 #include "Texture.h"
 

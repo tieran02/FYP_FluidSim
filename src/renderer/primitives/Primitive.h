@@ -1,7 +1,5 @@
 #pragma once
 
-#include <vector>
-#include <renderer/Vertex.h>
 #include "Mesh.h"
 
 class Primitive

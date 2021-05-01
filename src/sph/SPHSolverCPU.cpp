@@ -1,9 +1,5 @@
-#include <util/Log.h>
 #include <Simulation.h>
 #include "SPHSolverCPU.h"
-#include <omp.h>
-#include <iterator>
-#include <iostream>
 #include <random>
 #include "math/SmoothedKernel.h"
 #include "math/SpikedKernel.h"

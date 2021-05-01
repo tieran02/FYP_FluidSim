@@ -128,28 +128,6 @@ void GpuSpatialHash::Build(const std::vector<point4_t>& points)
 			cl::NDRange(m_pointCount),
 			cl::NDRange(64));
 
-//		m_openCLContext.Queue().enqueueReadBuffer(*m_cellStartIndexBuffer,
-//			true,
-//			0,
-//			subdivisions * subdivisions * subdivisions * sizeof(cl_uint),
-//			index.data(),
-//			nullptr,
-//			&event);
-//		//wait for event to finish
-//
-//		cl::Event event1;
-//		m_openCLContext.Queue().enqueueReadBuffer(*m_cellSizeIndexBuffer,
-//			true,
-//			0,
-//			m_subdivisions * m_subdivisions * m_subdivisions * sizeof(cl_uint),
-//			sizes.data(),
-//			nullptr,
-//			&event1);
-		//wait for event to finish
-		//event.wait();
-		//event1.wait();
-
-
 	}catch (cl::Error& err)
 	{
 		LOG_CORE_ERROR("OpenCL Error: {0}, {1}", err.what(), Util::GetCLErrorString(err.err()));

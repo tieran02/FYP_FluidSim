@@ -8,7 +8,7 @@
 
 class Texture;
 
-class FrameBuffer : NonCopyable
+class FrameBuffer : NonCopyable, NonMovable
 {
 public:
 	FrameBuffer(GLenum foramt, GLenum internalFormat);

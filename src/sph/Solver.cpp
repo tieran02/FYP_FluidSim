@@ -1,5 +1,4 @@
 #include "Solver.h"
-#include <GLFW/glfw3.h>
 #include <chrono>
 
 Solver::Solver(float timeStep) : TIMESTEP(timeStep)

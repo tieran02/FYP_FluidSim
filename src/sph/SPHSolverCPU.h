@@ -1,6 +1,5 @@
 #pragma once
 
-#include <math/PlaneCollider.h>
 #include <math/BoxCollider.h>
 #include "Solver.h"
 #include "ParticleSet.h"
