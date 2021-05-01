@@ -100,3 +100,9 @@ const char* Util::GetCLErrorString(cl_int error)
 	default: return "Unknown OpenCL error";
 	}
 }
+
+float Util::MapValue(float inValue, float minInRange, float maxInRange, float minOutRange, float maxOutRange)
+{
+	float x = (inValue - minInRange) / (maxInRange - minInRange);
+	return minOutRange + (maxOutRange - minOutRange) * x;
+}

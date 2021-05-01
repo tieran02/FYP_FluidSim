@@ -34,7 +34,7 @@ void Simulation::restart()
 	if (!m_solver)
 		return;
 	
-	m_solver->Reset();
+	m_solver->Reset(Solver::Scenario::OneSided);
 }
 
 

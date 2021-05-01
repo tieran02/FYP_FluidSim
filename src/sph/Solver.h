@@ -8,11 +8,18 @@ using namespace std::chrono_literals;
 class Solver
 {
  public:
+	enum class Scenario
+	{
+		OneSided,
+		Fill
+	};
+
+ public:
 	Solver(float timeStep);
 	virtual ~Solver();
 	void Update();
-	virtual void Setup() = 0;
-	virtual void Reset() = 0;
+	virtual void Setup(Scenario scenario) = 0;
+	virtual void Reset(Scenario scenario) = 0;
 
  protected:
 	virtual void BeginTimeStep() = 0;
@@ -24,7 +31,6 @@ class Solver
 	const float TIMESTEP;
  private:
 	const std::chrono::nanoseconds timestep{33ms};
-
 	std::chrono::time_point<std::chrono::high_resolution_clock> time_start;
 	std::chrono::nanoseconds lag;
 };

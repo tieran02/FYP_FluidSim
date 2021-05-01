@@ -23,9 +23,9 @@ PCISPHSolverGPU::PCISPHSolverGPU(float timeStep, size_t particleCount, const Box
 	createBuffers();
 }
 
-void PCISPHSolverGPU::Setup()
+void PCISPHSolverGPU::Setup(Scenario scenario)
 {
-	SPHSolverCPU::Setup();
+	SPHSolverCPU::Setup(scenario);
 	createBuffers();
 }
 

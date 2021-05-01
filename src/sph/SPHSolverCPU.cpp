@@ -3,6 +3,7 @@
 #include <random>
 #include "math/SmoothedKernel.h"
 #include "math/SpikedKernel.h"
+#include "util/Util.h"
 
 SPHSolverCPU::SPHSolverCPU(float timeStep, size_t particleCount, const BoxCollider& boxCollider) :
 	Solver(timeStep),
@@ -13,35 +14,27 @@ SPHSolverCPU::SPHSolverCPU(float timeStep, size_t particleCount, const BoxCollid
 	KERNEL_RADIUS(PARTICLE_RADIUS*4),
 	BOX_COLLIDER(boxCollider)
 {
-	Setup();
+	Setup(Scenario::OneSided);
 }
 
-void SPHSolverCPU::Setup()
+void SPHSolverCPU::Setup(Scenario scenario)
 {
-	std::random_device rd;
-	std::mt19937 mt(rd());
-	std::uniform_real_distribution<float> dist(0.25f, 1.25f);
-
-	const int perRow = (BOX_COLLIDER.GetAABB().Max().x * 2) / KERNEL_RADIUS;
-	constexpr float spacing = 0.2f;
-
-	for (int i = 0; i < PARTICLE_COUNT; i++)
+	switch (scenario)
 	{
-		float x = ((i % perRow) * spacing) - (perRow / 2) + dist(mt);
-		float y = ((0 * spacing) + (float)(((i / perRow) / perRow) * spacing) * 0.05f);
-		float z = (((i / perRow) % perRow) * spacing) - (perRow / 2) + dist(mt);
-
-		x+= -BOX_COLLIDER.GetAABB().Max().x + perRow*0.5f;
-		z+= -BOX_COLLIDER.GetAABB().Max().z + perRow*0.5f;
-		y+= BOX_COLLIDER.GetAABB().Min().y + 2.0f;
-		m_particles.Positions[i].vec = glm::vec3(x, y, z);
+	case Scenario::OneSided:
+		setupOneSidedParticles();
+		break;
+	case Scenario::Fill:
+		setupFillParticles();
+		break;
+	default: ;
 	}
 }
 
-void SPHSolverCPU::Reset()
+void SPHSolverCPU::Reset(Scenario scenario)
 {
 	m_particles.Reset();
-	Setup();
+	Setup(scenario);
 }
 
 void SPHSolverCPU::BeginTimeStep()
@@ -354,6 +347,42 @@ void SPHSolverCPU::fakeViscosity()
 	for (int i = 0; i < m_particles.Size(); ++i)
 	{
 		v[1].vec = lerp(v[i].vec,smoothedVelocities[i], factor);
+	}
+}
+
+void SPHSolverCPU::setupOneSidedParticles()
+{
+	const int perRow = static_cast<int>(floorf(cbrtf(PARTICLE_COUNT)));
+
+	for (int i = 0; i < PARTICLE_COUNT; i++)
+	{
+		float x = (i % perRow);
+		float y = (i / perRow) / perRow;
+		float z = ((i / perRow) % perRow);
+
+		x = Util::MapValue(x, 0, perRow, BOX_COLLIDER.GetAABB().Min().x, 0.0f);
+		y = Util::MapValue(y, 0, perRow, BOX_COLLIDER.GetAABB().Min().y, BOX_COLLIDER.GetAABB().Max().y);
+		z = Util::MapValue(z, 0, perRow, BOX_COLLIDER.GetAABB().Min().z, BOX_COLLIDER.GetAABB().Max().z);
+
+		m_particles.Positions[i].vec = glm::vec3(x, y, z);
+	}
+}
+
+void SPHSolverCPU::setupFillParticles()
+{
+	const int perRow = static_cast<int>(floorf(cbrtf(PARTICLE_COUNT)));
+	
+	for (int i = 0; i < PARTICLE_COUNT; i++)
+	{
+		float x = (i % perRow);
+		float y = (i / perRow) / perRow;
+		float z = ((i / perRow) % perRow);
+
+		x = Util::MapValue(x, 0, perRow, BOX_COLLIDER.GetAABB().Min().x, BOX_COLLIDER.GetAABB().Max().x);
+		y = Util::MapValue(y, 0, perRow, BOX_COLLIDER.GetAABB().Min().y, BOX_COLLIDER.GetAABB().Max().y);
+		z = Util::MapValue(z, 0, perRow, BOX_COLLIDER.GetAABB().Min().z, BOX_COLLIDER.GetAABB().Max().z);
+		
+		m_particles.Positions[i].vec = glm::vec3(x, y, z);
 	}
 }
 

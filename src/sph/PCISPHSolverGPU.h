@@ -18,7 +18,7 @@ class PCISPHSolverGPU : public PCISPHSolverCPU
 public:
 	PCISPHSolverGPU(float timeStep, size_t particleCount, const BoxCollider& boxCollider, OpenCLContext& context,
 		const Buffer& storagePostionBuffer, const Buffer& storagePressureBuffer);
-	void Setup() override;
+	void Setup(Scenario scenario) override;
 protected:
 	void BeginTimeStep() override;
 	void ApplyForces() override;

@@ -8,12 +8,13 @@
 
 class SPHSolverCPU : public Solver
 {
+public:
  public:
 	SPHSolverCPU(float timeStep, size_t particleCount, const BoxCollider& boxCollider);
 	virtual ~SPHSolverCPU() = default;
 
-	void Setup() override;
-	void Reset() override;
+	void Setup(Scenario scenario) override;
+	void Reset(Scenario scenario) override;
 	const ParticleSet& Particles() const;
  protected:
 	void BeginTimeStep() override;
@@ -47,6 +48,9 @@ class SPHSolverCPU : public Solver
 	void viscosityForces();
 
 	void fakeViscosity();
+
+	void setupOneSidedParticles();
+	void setupFillParticles();
 
 	ParticleState m_state;
 	const glm::vec3 GRAVITY{0.0f,-9.81f,0.0f};
