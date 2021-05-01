@@ -7,8 +7,8 @@ public:
 	void Stop();
 	double Time() const;
 private:
-	std::chrono::steady_clock::time_point startPoint;
-	std::chrono::steady_clock::time_point endPoint;
+	std::chrono::high_resolution_clock::time_point startPoint;
+	std::chrono::high_resolution_clock::time_point endPoint;
 };
 
 inline void Stopwatch::Start()
