@@ -14,6 +14,12 @@ Texture::~Texture()
 {
 	if(m_textureID != 0)
 		glDeleteTextures(1, &m_textureID);
+
+	//destroy
+	if (m_blurPingPongBuffers[0] != 0) {
+		glDeleteTextures(2, &m_blurPingPongBuffers[0]);
+		glDeleteFramebuffers(2, &m_blurPingPongFBOs[0]);
+	}
 }
 
 Texture::Texture(Texture&& other) noexcept
@@ -147,20 +153,22 @@ void Texture::CopyTexture(const Texture& sourceTexture)
 
 void Texture::BlurTexture(const Shader& blurShader, const Mesh& quadMesh, uint32_t amount)
 {
-	unsigned int pingpongFBO[2];
-	unsigned int pingpongBuffer[2];
-	glGenFramebuffers(2, pingpongFBO);
-	glGenTextures(2, pingpongBuffer);
+	if(m_blurPingPongFBOs[0] == 0)
+	{
+		glGenFramebuffers(2, m_blurPingPongFBOs.data());
+		glGenTextures(2, m_blurPingPongBuffers.data());
+	}
+
 	for (unsigned int i = 0; i < 2; i++)
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[i]);
-		glBindTexture(GL_TEXTURE_2D, pingpongBuffer[i]);
+		glBindFramebuffer(GL_FRAMEBUFFER, m_blurPingPongFBOs[i]);
+		glBindTexture(GL_TEXTURE_2D, m_blurPingPongBuffers[i]);
 		glTexImage2D(GL_TEXTURE_2D, 0, m_internalFormat, m_width, m_height, 0, m_format, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // we clamp to the edge as the blur filter would otherwise sample repeated texture values!
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pingpongBuffer[i], 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_blurPingPongBuffers[i], 0);
 
 		// also check if framebuffers are complete (no need for depth buffer)
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -172,11 +180,11 @@ void Texture::BlurTexture(const Shader& blurShader, const Mesh& quadMesh, uint32
 	blurShader.Bind();
 	for (unsigned int i = 0; i < amount; i++)
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[horizontal]);
+		glBindFramebuffer(GL_FRAMEBUFFER, m_blurPingPongFBOs[horizontal]);
 		blurShader.SetInt("horizontal", horizontal);
 
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, first_iteration ? m_textureID : pingpongBuffer[!horizontal]);  // bind texture of other framebuffer (or scene if first iteration)
+		glBindTexture(GL_TEXTURE_2D, first_iteration ? m_textureID : m_blurPingPongBuffers[!horizontal]);  // bind texture of other framebuffer (or scene if first iteration)
 
 		quadMesh.Draw();
 		horizontal = !horizontal;
@@ -186,13 +194,10 @@ void Texture::BlurTexture(const Shader& blurShader, const Mesh& quadMesh, uint32
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	blurShader.Unbind();
 
-	glCopyImageSubData(pingpongBuffer[!horizontal], GL_TEXTURE_2D, 0, 0, 0, 0,
+	glCopyImageSubData(m_blurPingPongBuffers[!horizontal], GL_TEXTURE_2D, 0, 0, 0, 0,
 		m_textureID, GL_TEXTURE_2D, 0, 0, 0, 0,
 		m_width, m_height, 1);
 
-	//destroy
-	glDeleteTextures(2, &pingpongBuffer[0]);
-	glDeleteFramebuffers(2, &pingpongFBO[0]);
 }
 
 void Texture::Bind(GLuint activeTextureSlot) const

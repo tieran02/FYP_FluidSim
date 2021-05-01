@@ -39,6 +39,9 @@ class Texture : NonCopyable
 	GLuint m_width, m_height;
 	TextureType m_textureType;
 
+	std::array<GLuint, 2> m_blurPingPongBuffers{ 0, 0 };
+	std::array<GLuint, 2> m_blurPingPongFBOs{0, 0};
+
 	void activeTexture(GLuint activeTextureSlot) const;
 
 
