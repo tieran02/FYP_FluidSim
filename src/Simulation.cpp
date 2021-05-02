@@ -12,6 +12,11 @@ void Simulation::Init()
 
 	m_solver = std::make_unique<PCISPHSolverGPU>( 1.0f / 60.0f, SPHERE_COUNT, boxCollider, m_openCLContext, 
 		m_renderer->GetPositionStorageBuffer(), m_renderer->GetPressureStorageBuffer() );
+
+	LOG_CORE_INFO("F1-F5: Change render modes");
+	LOG_CORE_INFO("F9-F11: Change scenarios");
+	LOG_CORE_INFO("P: pause");
+	LOG_CORE_INFO("WASD: To move");
 }
 
 void Simulation::Update()
