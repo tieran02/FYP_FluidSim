@@ -28,13 +28,13 @@ void Simulation::Update()
 	m_renderer->Render();
 }
 
-void Simulation::restart()
+void Simulation::restart(Solver::Scenario scenario)
 {
 	CORE_ASSERT(m_solver, "Solver is nullptr");
 	if (!m_solver)
 		return;
 	
-	m_solver->Reset(Solver::Scenario::OneSided);
+	m_solver->Reset(scenario);
 }
 
 
@@ -55,8 +55,14 @@ void Simulation::KeyCallback(int key, int action, int mode)
 	case GLFW_KEY_D:
 		camera.Move(glm::cross(camera.Forward(), camera.Up()));
 		break;
+	case GLFW_KEY_F9:
+		restart(Solver::Scenario::Fill);
+		break;
 	case GLFW_KEY_F10:
-		restart();
+		restart(Solver::Scenario::OneSided);
+		break;
+	case GLFW_KEY_F11:
+		restart(Solver::Scenario::TwoSided);
 		break;
 	case GLFW_KEY_F1:
 		m_renderer->ChangeRenderMode(FluidRenderer::RenderMode::SPHERE);

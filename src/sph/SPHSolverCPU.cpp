@@ -14,7 +14,7 @@ SPHSolverCPU::SPHSolverCPU(float timeStep, size_t particleCount, const BoxCollid
 	KERNEL_RADIUS(PARTICLE_RADIUS*4),
 	BOX_COLLIDER(boxCollider)
 {
-	Setup(Scenario::OneSided);
+	Setup(Scenario::TwoSided);
 }
 
 void SPHSolverCPU::Setup(Scenario scenario)
@@ -26,6 +26,9 @@ void SPHSolverCPU::Setup(Scenario scenario)
 		break;
 	case Scenario::Fill:
 		setupFillParticles();
+		break;
+	case Scenario::TwoSided:
+		setupTwoSidedParticles();
 		break;
 	default: ;
 	}
@@ -365,6 +368,43 @@ void SPHSolverCPU::setupOneSidedParticles()
 		z = Util::MapValue(z, 0, perRow, BOX_COLLIDER.GetAABB().Min().z, BOX_COLLIDER.GetAABB().Max().z);
 
 		m_particles.Positions[i].vec = glm::vec3(x, y, z);
+	}
+}
+
+void SPHSolverCPU::setupTwoSidedParticles()
+{
+	const int halfCount = PARTICLE_COUNT / 2;
+	const int perRow = static_cast<int>(floorf(cbrtf(halfCount)));
+
+	for (int i = 0; i < PARTICLE_COUNT; i++)
+	{
+
+
+		//Setup Right Side
+		if (i < PARTICLE_COUNT / 2)
+		{
+			float x = (i % perRow);
+			float y = (i / perRow) / perRow;
+			float z = ((i / perRow) % perRow);
+			
+			x = Util::MapValue(x, 0, perRow, BOX_COLLIDER.GetAABB().Min().x, -BOX_COLLIDER.GetAABB().Width() * 0.33f);
+			y = Util::MapValue(y, 0, perRow, BOX_COLLIDER.GetAABB().Min().y, BOX_COLLIDER.GetAABB().Max().y * 0.75f);
+			z = Util::MapValue(z, 0, perRow, BOX_COLLIDER.GetAABB().Min().z, 0.0f);
+			m_particles.Positions[i].vec = glm::vec3(x, y, z);
+
+		}
+		else
+		{
+			float x = ((i - halfCount) % perRow);
+			float y = ((i - halfCount) / perRow) / perRow;
+			float z = (((i - halfCount) / perRow) % perRow);
+			
+			x = Util::MapValue(x, 0, perRow, BOX_COLLIDER.GetAABB().Width() * 0.33f, BOX_COLLIDER.GetAABB().Max().x);
+			y = Util::MapValue(y, 0, perRow, BOX_COLLIDER.GetAABB().Min().y, BOX_COLLIDER.GetAABB().Max().y * 0.75f);
+			z = Util::MapValue(z, 0, perRow, 0.0f, BOX_COLLIDER.GetAABB().Max().z);
+			m_particles.Positions[i].vec = glm::vec3(x, y, z);
+
+		}
 	}
 }
 

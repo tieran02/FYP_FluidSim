@@ -11,7 +11,8 @@ class Solver
 	enum class Scenario
 	{
 		OneSided,
-		Fill
+		Fill,
+		TwoSided
 	};
 
  public:

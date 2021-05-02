@@ -25,5 +25,5 @@ class Simulation
 	std::unique_ptr<PCISPHSolverGPU> m_solver;
 	std::unique_ptr<FluidRenderer> m_renderer;
 	
-	void restart();
+	void restart(Solver::Scenario scenario);
 };

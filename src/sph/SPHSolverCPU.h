@@ -50,6 +50,7 @@ public:
 	void fakeViscosity();
 
 	void setupOneSidedParticles();
+	void setupTwoSidedParticles();
 	void setupFillParticles();
 
 	ParticleState m_state;
